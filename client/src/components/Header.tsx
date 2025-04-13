@@ -16,7 +16,7 @@ export default function Header() {
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <img src="/images/logo.jpg" alt="Aafiyaa Charity Clinics Logo" className="h-14" />
+              <img src="/images/logo-transparent.svg" alt="Aafiyaa Charity Clinics Logo" className="h-16" />
             </Link>
           </div>
           
