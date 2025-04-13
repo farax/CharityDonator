@@ -1,5 +1,6 @@
 import { Link } from 'wouter';
 import { Heart, MapPin, Mail, Phone, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import logoImage from '../assets/logo.svg';
 
 export default function Footer() {
   return (
@@ -8,7 +9,7 @@ export default function Footer() {
         {/* Organization Info */}
         <div>
           <div className="flex items-center space-x-2 mb-4">
-            <img src="/logo/logo.svg" alt="MedDonate Logo" className="h-10" />
+            <img src={logoImage} alt="Aafiyaa Charity Clinics Logo" className="h-12" />
           </div>
           <p className="text-gray-300 mb-4">
             MedDonate: Healthcare for All. We provide essential medical services to those in need worldwide through your generous donations.
