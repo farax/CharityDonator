@@ -105,16 +105,16 @@ export default function DonationWidget() {
           {/* Donation Type Tabs */}
           <div className="flex flex-wrap border-b border-gray-200 mb-6">
             <button 
-              className={`px-4 py-2 font-semibold text-sm sm:text-base ${type === 'zakaat' ? 'text-primary bg-blue-50 rounded-t-lg border-b-2 border-primary' : 'text-gray-600 hover:text-primary'}`}
-              onClick={() => handleDonationTypeChange('zakaat')}
-            >
-              Zakaat
-            </button>
-            <button 
               className={`px-4 py-2 font-semibold text-sm sm:text-base ${type === 'sadqah' ? 'text-primary bg-blue-50 rounded-t-lg border-b-2 border-primary' : 'text-gray-600 hover:text-primary'}`}
               onClick={() => handleDonationTypeChange('sadqah')}
             >
               Sadqah
+            </button>
+            <button 
+              className={`px-4 py-2 font-semibold text-sm sm:text-base ${type === 'zakaat' ? 'text-primary bg-blue-50 rounded-t-lg border-b-2 border-primary' : 'text-gray-600 hover:text-primary'}`}
+              onClick={() => handleDonationTypeChange('zakaat')}
+            >
+              Zakaat
             </button>
             <button 
               className={`px-4 py-2 font-semibold text-sm sm:text-base ${type === 'interest' ? 'text-primary bg-blue-50 rounded-t-lg border-b-2 border-primary' : 'text-gray-600 hover:text-primary'}`}

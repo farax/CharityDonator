@@ -26,7 +26,7 @@ interface DonationContextType {
 const DonationContext = createContext<DonationContextType | undefined>(undefined);
 
 export function DonationProvider({ children }: { children: React.ReactNode }) {
-  const [type, setType] = useState<DonationType>('zakaat');
+  const [type, setType] = useState<DonationType>('sadqah');
   const [amount, setAmount] = useState<number>(10);
   const [customAmount, setCustomAmount] = useState<string>('');
   const [isCustomAmount, setIsCustomAmount] = useState<boolean>(false);
