@@ -243,7 +243,7 @@ export default function DonationWidget() {
             
             {/* Donate Button */}
             <Button 
-              className="w-full bg-primary hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-md transition duration-150"
+              className="w-full bg-primary hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-md transition duration-150"
               onClick={handleDonateClick}
             >
               Donate Now

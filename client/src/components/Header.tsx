@@ -50,7 +50,7 @@ export default function Header() {
               Contact
             </Link>
             <Link href="/payment">
-              <Button className="bg-primary text-white hover:bg-blue-600 transition duration-150">
+              <Button className="bg-primary text-white hover:bg-teal-600 transition duration-150">
                 Donate
               </Button>
             </Link>
@@ -98,7 +98,7 @@ export default function Header() {
               </Link>
               <Link href="/payment">
                 <Button 
-                  className="w-full bg-primary text-white hover:bg-blue-600 transition duration-150" 
+                  className="w-full bg-primary text-white hover:bg-teal-600 transition duration-150" 
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Donate

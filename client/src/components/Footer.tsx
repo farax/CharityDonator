@@ -8,13 +8,10 @@ export default function Footer() {
         {/* Organization Info */}
         <div>
           <div className="flex items-center space-x-2 mb-4">
-            <span className="text-primary text-2xl">
-              <Heart className="h-6 w-6 fill-primary inline" />
-            </span>
-            <span className="font-bold text-xl text-white">MedRelief</span>
+            <img src="/logo/logo.svg" alt="MedDonate Logo" className="h-10" />
           </div>
           <p className="text-gray-300 mb-4">
-            Providing medical relief to those in need around the world through your generous donations.
+            MedDonate: Healthcare for All. We provide essential medical services to those in need worldwide through your generous donations.
           </p>
           <div className="flex space-x-4">
             <a href="#" className="text-gray-300 hover:text-white">
@@ -106,7 +103,7 @@ export default function Footer() {
             </li>
             <li className="flex items-start">
               <Mail className="h-5 w-5 mt-1 mr-2 text-gray-400" />
-              <span className="text-gray-300">info@medrelief.org</span>
+              <span className="text-gray-300">info@meddonate.org</span>
             </li>
             <li className="flex items-start">
               <Phone className="h-5 w-5 mt-1 mr-2 text-gray-400" />
@@ -118,7 +115,7 @@ export default function Footer() {
       
       <div className="container mx-auto px-4 mt-8 pt-6 border-t border-gray-700">
         <div className="flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-400 text-sm">© {new Date().getFullYear()} MedRelief. All rights reserved.</p>
+          <p className="text-gray-400 text-sm">© {new Date().getFullYear()} MedDonate. All rights reserved.</p>
           <div className="mt-4 md:mt-0">
             <ul className="flex space-x-4 text-sm">
               <li>
