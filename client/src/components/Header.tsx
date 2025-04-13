@@ -16,10 +16,7 @@ export default function Header() {
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <span className="text-primary text-2xl">
-                <Heart className="h-6 w-6 fill-primary" />
-              </span>
-              <span className="font-bold text-xl text-gray-800">MedRelief</span>
+              <img src="/logo/logo.svg" alt="MedDonate Logo" className="h-10" />
             </Link>
           </div>
           
