@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link } from 'wouter';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import logoImage from '../assets/logo.svg';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -17,7 +16,7 @@ export default function Header() {
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <img src={logoImage} alt="MedDonate Logo" className="h-10" />
+              <img src="/images/logo.svg" alt="Aafiyaa Charity Clinics Logo" className="h-10" />
             </Link>
           </div>
           
