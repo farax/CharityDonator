@@ -130,24 +130,67 @@ export default function DonationWidget() {
             {type === 'sadqah' && (
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Payment Frequency</h3>
-                <RadioGroup 
-                  value={frequency} 
-                  onValueChange={(value) => setFrequency(value as 'one-off' | 'weekly' | 'monthly')}
-                  className="flex flex-wrap gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="one-off" id="one-off" />
-                    <Label htmlFor="one-off">One-off</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div 
+                    className={`flex flex-col items-center justify-center p-3 rounded-lg border cursor-pointer transition-all ${
+                      frequency === 'one-off' 
+                        ? 'bg-blue-50 border-blue-300 shadow-sm' 
+                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                    }`}
+                    onClick={() => setFrequency('one-off')}
+                  >
+                    <div className={`w-8 h-4 rounded-full mb-2 relative ${
+                      frequency === 'one-off' ? 'bg-primary' : 'bg-gray-300'
+                    }`}>
+                      <div 
+                        className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${
+                          frequency === 'one-off' ? 'bg-white right-0.5' : 'bg-white left-0.5'
+                        }`} 
+                      />
+                    </div>
+                    <span className="text-sm font-medium">One-off</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="weekly" id="weekly" />
-                    <Label htmlFor="weekly">Weekly</Label>
+
+                  <div 
+                    className={`flex flex-col items-center justify-center p-3 rounded-lg border cursor-pointer transition-all ${
+                      frequency === 'weekly' 
+                        ? 'bg-blue-50 border-blue-300 shadow-sm' 
+                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                    }`}
+                    onClick={() => setFrequency('weekly')}
+                  >
+                    <div className={`w-8 h-4 rounded-full mb-2 relative ${
+                      frequency === 'weekly' ? 'bg-primary' : 'bg-gray-300'
+                    }`}>
+                      <div 
+                        className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${
+                          frequency === 'weekly' ? 'bg-white right-0.5' : 'bg-white left-0.5'
+                        }`} 
+                      />
+                    </div>
+                    <span className="text-sm font-medium">Weekly</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="monthly" id="monthly" />
-                    <Label htmlFor="monthly">Monthly</Label>
+
+                  <div 
+                    className={`flex flex-col items-center justify-center p-3 rounded-lg border cursor-pointer transition-all ${
+                      frequency === 'monthly' 
+                        ? 'bg-blue-50 border-blue-300 shadow-sm' 
+                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                    }`}
+                    onClick={() => setFrequency('monthly')}
+                  >
+                    <div className={`w-8 h-4 rounded-full mb-2 relative ${
+                      frequency === 'monthly' ? 'bg-primary' : 'bg-gray-300'
+                    }`}>
+                      <div 
+                        className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${
+                          frequency === 'monthly' ? 'bg-white right-0.5' : 'bg-white left-0.5'
+                        }`} 
+                      />
+                    </div>
+                    <span className="text-sm font-medium">Monthly</span>
                   </div>
-                </RadioGroup>
+                </div>
               </div>
             )}
             
