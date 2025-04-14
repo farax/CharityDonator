@@ -13,7 +13,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16",
+  apiVersion: "2025-03-31.basil",
 }) : undefined;
 
 // Currency conversion API
@@ -43,7 +43,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/exchange-rates", async (req, res) => {
     try {
       const response = await fetch(exchangeRateUrl);
-      const data = await response.json();
+      const data = await response.json() as any;
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch exchange rates" });
@@ -56,7 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
       // Use IP-based geolocation service
       const response = await fetch(`https://ipapi.co/${ip}/json/`);
-      const data = await response.json();
+      const data = await response.json() as any;
       res.json({ currency: data.currency || 'USD' });
     } catch (error) {
       // Default to USD if there's an error

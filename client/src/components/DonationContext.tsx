@@ -3,7 +3,7 @@ import { Case } from '@shared/schema';
 
 type DonationType = 'zakaat' | 'sadqah' | 'interest';
 type FrequencyType = 'one-off' | 'weekly' | 'monthly';
-type PaymentMethodType = 'stripe' | 'apple_pay' | 'paypal' | 'pakistan_gateway';
+type PaymentMethodType = 'stripe' | 'apple_pay' | 'paypal' | 'google_pay' | 'pakistan_gateway';
 type DestinationProjectType = 'Clinic Operations' | 'Most deserving case';
 
 interface DonationContextType {
