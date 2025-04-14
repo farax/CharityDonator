@@ -79,6 +79,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   });
+  
+  // Update donation status
+  app.post("/api/update-donation-status", async (req, res) => {
+    try {
+      const { donationId, status, paymentMethod, paymentId } = req.body;
+      
+      if (!donationId || !status) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      const payment_id = paymentId || `${paymentMethod}_${Date.now()}`;
+      const donation = await storage.updateDonationStatus(donationId, status, payment_id);
+      
+      if (!donation) {
+        return res.status(404).json({ message: "Donation not found" });
+      }
+      
+      res.status(200).json({ success: true, donation });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update donation status" });
+    }
+  });
 
   // Stripe payment intent creation
   app.post("/api/create-payment-intent", async (req, res) => {
