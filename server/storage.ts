@@ -2,7 +2,8 @@ import {
   users, type User, type InsertUser, 
   donations, type Donation, type InsertDonation,
   endorsements, type Endorsement, type InsertEndorsement,
-  stats, type Stats, type InsertStats 
+  stats, type Stats, type InsertStats,
+  cases, type Case, type InsertCase
 } from "@shared/schema";
 
 // Define the storage interface with all necessary CRUD methods
@@ -25,26 +26,37 @@ export interface IStorage {
   // Stats methods
   getStats(): Promise<Stats | undefined>;
   updateStats(statsData: Partial<InsertStats>): Promise<Stats | undefined>;
+  
+  // Case methods
+  getCases(): Promise<Case[]>;
+  getActiveZakaatCases(): Promise<Case[]>;
+  getCase(id: number): Promise<Case | undefined>;
+  createCase(caseData: InsertCase): Promise<Case>;
+  updateCaseAmountCollected(id: number, additionalAmount: number): Promise<Case | undefined>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private donations: Map<number, Donation>;
   private endorsementsList: Map<number, Endorsement>;
+  private casesList: Map<number, Case>;
   private statsData: Stats | undefined;
   
   private userCurrentId: number;
   private donationCurrentId: number;
   private endorsementCurrentId: number;
+  private caseCurrentId: number;
 
   constructor() {
     this.users = new Map();
     this.donations = new Map();
     this.endorsementsList = new Map();
+    this.casesList = new Map();
     
     this.userCurrentId = 1;
     this.donationCurrentId = 1;
     this.endorsementCurrentId = 1;
+    this.caseCurrentId = 1;
     
     // Initialize with sample data
     this.initializeData();
@@ -70,6 +82,49 @@ export class MemStorage implements IStorage {
     
     sampleEndorsements.forEach(endorsement => {
       this.createEndorsement(endorsement);
+    });
+    
+    // Initialize donation cases
+    const sampleCases: InsertCase[] = [
+      { 
+        title: "Emergency Medical Supplies for Flood Victims",
+        description: "Providing essential medical supplies to families affected by recent flooding in rural communities. Your donation will help us deliver critical medications, first aid kits, and clean water tablets.",
+        imageUrl: "/images/cases/flood-victims.jpg",
+        amountRequired: 5000,
+        active: true
+      },
+      { 
+        title: "Children's Immunization Program",
+        description: "Funding immunization programs for children in underserved areas. These vaccinations protect against preventable diseases and save lives.",
+        imageUrl: "/images/cases/immunization.jpg",
+        amountRequired: 7500,
+        active: true
+      },
+      { 
+        title: "Mobile Medical Clinic",
+        description: "Supporting our mobile medical clinic that provides healthcare to remote villages without access to medical facilities. The clinic offers basic health screenings, treatments, and health education.",
+        imageUrl: "/images/cases/mobile-clinic.jpg",
+        amountRequired: 12000,
+        active: true
+      },
+      { 
+        title: "Medical Equipment for Rural Clinic",
+        description: "Purchasing essential medical equipment for our rural clinic that serves hundreds of patients weekly. This equipment will enhance diagnostic capabilities and treatment options.",
+        imageUrl: "/images/cases/rural-clinic.jpg",
+        amountRequired: 8500,
+        active: true
+      },
+      { 
+        title: "Maternal Health Services",
+        description: "Funding prenatal and postnatal care for expectant mothers in underserved communities. Your donation helps provide safe deliveries and healthy starts for mothers and babies.",
+        imageUrl: "/images/cases/maternal-health.jpg",
+        amountRequired: 6000,
+        active: true
+      }
+    ];
+    
+    sampleCases.forEach(caseData => {
+      this.createCase(caseData);
     });
   }
 
@@ -97,7 +152,16 @@ export class MemStorage implements IStorage {
     const donation: Donation = { 
       ...insertDonation, 
       id, 
-      createdAt: new Date() 
+      createdAt: new Date(),
+      name: insertDonation.name || null,
+      email: insertDonation.email || null,
+      status: insertDonation.status || 'pending',
+      currency: insertDonation.currency || 'USD',
+      frequency: insertDonation.frequency || 'one-off',
+      stripePaymentId: insertDonation.stripePaymentId || null,
+      paymentMethod: insertDonation.paymentMethod || null,
+      caseId: insertDonation.caseId || null,
+      destinationProject: insertDonation.destinationProject || null
     };
     this.donations.set(id, donation);
     return donation;
@@ -152,6 +216,47 @@ export class MemStorage implements IStorage {
     };
     
     return this.statsData;
+  }
+  
+  // Case methods
+  async getCases(): Promise<Case[]> {
+    return Array.from(this.casesList.values());
+  }
+  
+  async getActiveZakaatCases(): Promise<Case[]> {
+    return Array.from(this.casesList.values()).filter(
+      (caseItem) => caseItem.active && caseItem.amountCollected < caseItem.amountRequired
+    );
+  }
+  
+  async getCase(id: number): Promise<Case | undefined> {
+    return this.casesList.get(id);
+  }
+  
+  async createCase(caseData: InsertCase): Promise<Case> {
+    const id = this.caseCurrentId++;
+    const newCase: Case = {
+      ...caseData,
+      id,
+      amountCollected: 0,
+      active: caseData.active !== undefined ? caseData.active : true,
+      createdAt: new Date()
+    };
+    this.casesList.set(id, newCase);
+    return newCase;
+  }
+  
+  async updateCaseAmountCollected(id: number, additionalAmount: number): Promise<Case | undefined> {
+    const caseItem = this.casesList.get(id);
+    if (!caseItem) return undefined;
+    
+    const updatedCase: Case = {
+      ...caseItem,
+      amountCollected: caseItem.amountCollected + additionalAmount
+    };
+    
+    this.casesList.set(id, updatedCase);
+    return updatedCase;
   }
 }
 

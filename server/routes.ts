@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import Stripe from "stripe";
 import fetch from "node-fetch";
-import { insertDonationSchema } from "@shared/schema";
+import { insertDonationSchema, insertCaseSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
@@ -105,6 +105,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Case management routes
+  app.get("/api/cases", async (req, res) => {
+    try {
+      const cases = await storage.getCases();
+      res.json(cases);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch cases" });
+    }
+  });
+
+  app.get("/api/active-zakaat-cases", async (req, res) => {
+    try {
+      const cases = await storage.getActiveZakaatCases();
+      res.json(cases);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch active zakaat cases" });
+    }
+  });
+
+  app.get("/api/cases/:id", async (req, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const caseItem = await storage.getCase(caseId);
+      
+      if (!caseItem) {
+        return res.status(404).json({ message: "Case not found" });
+      }
+      
+      res.json(caseItem);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch case" });
+    }
+  });
+
+  app.post("/api/cases", async (req, res) => {
+    try {
+      const caseData = insertCaseSchema.parse(req.body);
+      const newCase = await storage.createCase(caseData);
+      res.status(201).json(newCase);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        res.status(400).json({ message: validationError.message });
+      } else {
+        res.status(500).json({ message: "Failed to create case" });
+      }
+    }
+  });
+
+  // Update amount collected for a case
+  app.patch("/api/cases/:id/amount-collected", async (req, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const { additionalAmount } = req.body;
+      
+      if (typeof additionalAmount !== 'number' || additionalAmount <= 0) {
+        return res.status(400).json({ message: "Additional amount must be a positive number" });
+      }
+      
+      const updatedCase = await storage.updateCaseAmountCollected(caseId, additionalAmount);
+      
+      if (!updatedCase) {
+        return res.status(404).json({ message: "Case not found" });
+      }
+      
+      res.json(updatedCase);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update case amount" });
+    }
+  });
+
   // Webhook for Stripe events
   app.post("/api/webhook", async (req, res) => {
     if (!stripe) {
@@ -135,6 +206,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (donation) {
           await storage.updateDonationStatus(donation.id, "completed");
+          
+          // If donation is for a specific case, update the case's amount collected
+          if (donation.caseId) {
+            await storage.updateCaseAmountCollected(donation.caseId, donation.amount);
+          }
         }
       }
 
