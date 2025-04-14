@@ -184,7 +184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Admin middleware to check if admin is authenticated
   const isAdminAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-    if (req.session.adminAuthenticated) {
+    if (req.session && req.session.adminAuthenticated === true) {
       next();
     } else {
       res.status(401).json({ message: "Unauthorized" });

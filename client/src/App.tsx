@@ -12,6 +12,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/payment" component={Payment} />
       <Route path="/admin/login" component={AdminLogin} />
+      {/* Make /admin come after /admin/login to ensure the right route is matched */}
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>

@@ -70,20 +70,34 @@ export default function Admin() {
     refetchInterval: 10000 // Refresh every 10 seconds
   });
   
-  // Check for 401 Unauthorized errors
+  // Check for authentication status and redirect if unauthorized
   useEffect(() => {
-    if (historyError || statsError) {
-      const error = historyError || statsError;
-      if (error instanceof Error && 'status' in error && error.status === 401) {
+    // First, attempt to verify admin status with a simple request
+    const checkAdminStatus = async () => {
+      try {
+        const res = await apiRequest('GET', '/api/payment-history');
+        if (!res.ok) {
+          if (res.status === 401) {
+            toast({
+              title: "Authentication Required",
+              description: "Please log in to access the admin dashboard",
+              variant: "destructive",
+            });
+            setLocation('/admin/login');
+          }
+        }
+      } catch (error) {
         toast({
-          title: "Authentication Required",
-          description: "Please log in to access the admin dashboard",
+          title: "Authentication Error",
+          description: "Unable to verify authentication status",
           variant: "destructive",
         });
         setLocation('/admin/login');
       }
-    }
-  }, [historyError, statsError, toast, setLocation]);
+    };
+    
+    checkAdminStatus();
+  }, [toast, setLocation]);
   
   if (isLoadingHistory || isLoadingStats) {
     return (
