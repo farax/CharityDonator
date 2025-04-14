@@ -99,6 +99,13 @@ export default function Header() {
               >
                 Contact
               </Link>
+              <Link 
+                href="/admin" 
+                className="font-medium text-gray-600 hover:text-primary" 
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Admin
+              </Link>
               <Link href="/payment">
                 <Button 
                   className="w-full bg-primary text-white hover:bg-teal-600 transition duration-150" 
