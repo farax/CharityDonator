@@ -7,7 +7,12 @@ import {
 } from "@shared/schema";
 
 // Define the storage interface with all necessary CRUD methods
+import session from "express-session";
+
 export interface IStorage {
+  // Session store for admin authentication
+  sessionStore: session.Store;
+  
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -38,12 +43,20 @@ export interface IStorage {
   updateCaseAmountCollected(id: number, additionalAmount: number): Promise<Case | undefined>;
 }
 
+import session from "express-session";
+import createMemoryStore from "memorystore";
+
+const MemoryStore = createMemoryStore(session);
+
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private donations: Map<number, Donation>;
   private endorsementsList: Map<number, Endorsement>;
   private casesList: Map<number, Case>;
   private statsData: Stats | undefined;
+  
+  // Add session store for admin authentication
+  public sessionStore: session.Store;
   
   private userCurrentId: number;
   private donationCurrentId: number;

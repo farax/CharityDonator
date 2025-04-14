@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -43,6 +47,8 @@ const statusColors: Record<string, string> = {
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
   
   // Fetch payment history
   const { 
@@ -51,7 +57,7 @@ export default function Admin() {
     error: historyError
   } = useQuery({
     queryKey: ['/api/payment-history'],
-    refetchInterval: 10000, // Refresh every 10 seconds
+    refetchInterval: 10000 // Refresh every 10 seconds
   });
   
   // Fetch payment statistics
@@ -61,8 +67,23 @@ export default function Admin() {
     error: statsError
   } = useQuery({
     queryKey: ['/api/payment-statistics'],
-    refetchInterval: 10000, // Refresh every 10 seconds
+    refetchInterval: 10000 // Refresh every 10 seconds
   });
+  
+  // Check for 401 Unauthorized errors
+  useEffect(() => {
+    if (historyError || statsError) {
+      const error = historyError || statsError;
+      if (error instanceof Error && 'status' in error && error.status === 401) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to access the admin dashboard",
+          variant: "destructive",
+        });
+        setLocation('/admin/login');
+      }
+    }
+  }, [historyError, statsError, toast, setLocation]);
   
   if (isLoadingHistory || isLoadingStats) {
     return (
@@ -92,7 +113,30 @@ export default function Admin() {
       
       <main className="flex-grow py-8 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-6">Payment Dashboard</h1>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold">Payment Dashboard</h1>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await apiRequest('POST', '/api/admin/logout');
+                  toast({
+                    title: "Logged out",
+                    description: "You have been logged out successfully",
+                  });
+                  setLocation('/admin/login');
+                } catch (error) {
+                  toast({
+                    title: "Logout failed",
+                    description: "There was a problem logging out",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              Logout
+            </Button>
+          </div>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-6">
