@@ -582,6 +582,12 @@ export default function Payment() {
                   {feeBreakdown && (
                     <div className="mt-4 pt-4 border-t border-gray-200">
                       <h4 className="font-medium text-gray-800 mb-2">Payment Fee Breakdown</h4>
+                      
+                      {/* Fee description based on payment gateway */}
+                      <div className="text-xs text-gray-500 italic mb-2">
+                        {feeBreakdown.feeDescription}
+                      </div>
+                      
                       <div className="text-sm text-gray-600 space-y-1">
                         <div className="flex justify-between">
                           <span>Base donation:</span>
@@ -596,11 +602,22 @@ export default function Payment() {
                         <div className="h-px bg-gray-200 my-1"></div>
                         <div className="flex justify-between font-medium">
                           <span>You pay:</span>
-                          <span>{donationDetails.currency} {feeBreakdown.totalWithFees.toFixed(2)}</span>
+                          <span>{donationDetails.currency} {coverFees 
+                            ? feeBreakdown.totalWithFees.toFixed(2) 
+                            : donationDetails.amount.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-green-600 font-medium">
                           <span>Charity receives:</span>
-                          <span>{donationDetails.currency} {feeBreakdown.donationAmount.toFixed(2)}</span>
+                          {coverFees ? (
+                            <span>{donationDetails.currency} {donationDetails.amount.toFixed(2)}</span>
+                          ) : (
+                            <span className="flex flex-col items-end">
+                              <span>{donationDetails.currency} {donationDetails.amount.toFixed(2)}</span>
+                              <span className="text-xs text-red-500 font-normal">
+                                (minus {donationDetails.currency} {feeBreakdown.processingFee.toFixed(2)} fees)
+                              </span>
+                            </span>
+                          )}
                         </div>
                       </div>
                       
@@ -617,7 +634,7 @@ export default function Payment() {
                           <label htmlFor="cover-fees" className="text-sm font-medium cursor-pointer">
                             {coverFees 
                               ? "I'll cover the payment processing fees" 
-                              : "I want the charity to pay processing fees"}
+                              : "Payment processor will deduct fees from donation"}
                           </label>
                         </div>
                       </div>

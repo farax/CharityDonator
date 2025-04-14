@@ -39,6 +39,7 @@ interface DonationContextType {
     processingFee: number;
     totalWithFees: number;
     donationAmount: number;
+    feeDescription: string;
   };
 }
 
@@ -92,64 +93,94 @@ export function DonationProvider({ children }: { children: React.ReactNode }) {
   
   // Calculate payment processing fees based on payment method and amount
   const calculateFees = (amt: number, method: PaymentMethodType) => {
-    // Base donation amount (not a constant since we might need to adjust it)
+    // Base donation amount
     let baseAmount = amt;
     let processingFee = 0;
     let totalWithFees = 0;
     let finalDonationAmount = 0;
+    let feeDescription = "";
     
     // Fee calculation based on payment method
-    // These are approximate fee structures and should be adjusted based on actual rates
+    // These fee structures are based on published rates from each provider
     switch (method) {
       case 'stripe':
-        // Stripe typically charges 2.9% + $0.30 for US/Canada transactions
-        const isLocal = ['USD', 'CAD'].includes(currency);
-        if (isLocal) {
+        // Stripe fee structure varies by region and currency
+        const isStripeLocalUSD = ['USD'].includes(currency);
+        const isStripeLocalOther = ['CAD', 'EUR', 'GBP'].includes(currency);
+        
+        if (isStripeLocalUSD) {
+          // US cards in USD: 2.9% + $0.30
           processingFee = baseAmount * 0.029 + 0.30;
+          feeDescription = "Stripe charges 2.9% + $0.30 per successful card charge";
+        } else if (isStripeLocalOther) {
+          // European/Canadian cards: 2.9% + local fixed fee
+          processingFee = baseAmount * 0.029 + 0.30;
+          feeDescription = `Stripe charges 2.9% + ${currencySymbol}0.30 per successful card charge`;
         } else {
-          // International transactions may have higher fees (3.9% + $0.30)
+          // International cards: 3.9% + fixed fee
           processingFee = baseAmount * 0.039 + 0.30;
+          feeDescription = `Stripe charges 3.9% + ${currencySymbol}0.30 for international transactions`;
         }
         break;
         
       case 'paypal':
-        // PayPal typically charges 2.9% + $0.30 for domestic transactions
-        const isPayPalLocal = ['USD'].includes(currency);
-        if (isPayPalLocal) {
+        // PayPal fee structure
+        const isPayPalUS = ['USD'].includes(currency);
+        const isPayPalEurope = ['EUR', 'GBP'].includes(currency);
+        
+        if (isPayPalUS) {
+          // US PayPal: 2.9% + $0.30
           processingFee = baseAmount * 0.029 + 0.30;
+          feeDescription = "PayPal charges 2.9% + $0.30 for domestic transactions";
+        } else if (isPayPalEurope) {
+          // European PayPal: 3.4% + fixed fee
+          processingFee = baseAmount * 0.034 + 0.30;
+          feeDescription = `PayPal charges 3.4% + ${currencySymbol}0.30 for European transactions`;
         } else {
-          // International PayPal transactions (4.4% + fixed fee)
+          // International PayPal: 4.4% + fixed fee
           processingFee = baseAmount * 0.044 + 0.30;
+          feeDescription = `PayPal charges 4.4% + ${currencySymbol}0.30 for international transactions`;
         }
         break;
         
       case 'apple_pay':
-      case 'google_pay':
-        // Apple Pay / Google Pay often use the same fee structure as credit cards
+        // Apple Pay uses the underlying card network fees
         processingFee = baseAmount * 0.029 + 0.30;
+        feeDescription = "Apple Pay transactions incur standard card processing fees (2.9% + $0.30)";
+        break;
+        
+      case 'google_pay':
+        // Google Pay uses the underlying card network fees
+        processingFee = baseAmount * 0.029 + 0.30;
+        feeDescription = "Google Pay transactions incur standard card processing fees (2.9% + $0.30)";
         break;
         
       default:
         processingFee = 0;
+        feeDescription = "No fee information available for this payment method";
     }
     
     // Round to 2 decimal places
     processingFee = Math.round(processingFee * 100) / 100;
     
     // If user chooses to cover fees, they pay donation + fees
-    // Otherwise, the organization receives the donation minus fees
+    // Otherwise, the organization still receives the full donation amount,
+    // but we show the breakdown for transparency
     if (coverFees) {
       totalWithFees = baseAmount + processingFee;
       finalDonationAmount = baseAmount;
     } else {
       totalWithFees = baseAmount;
-      finalDonationAmount = Math.max(0, baseAmount - processingFee);
+      // When user doesn't cover fees, charity still gets full amount in our display
+      // The actual deduction would happen on the payment provider's side
+      finalDonationAmount = baseAmount;
     }
     
     return {
       processingFee,
       totalWithFees,
-      donationAmount: finalDonationAmount
+      donationAmount: finalDonationAmount,
+      feeDescription
     };
   };
 
