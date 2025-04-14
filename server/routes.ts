@@ -145,6 +145,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch active zakaat cases" });
     }
   });
+  
+  // Get payment history (all donations with their status)
+  app.get("/api/payment-history", async (req, res) => {
+    try {
+      const donations = await storage.getDonations();
+      res.json(donations);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch payment history" });
+    }
+  });
+  
+  // Get payment statistics grouped by status, type, and payment method
+  app.get("/api/payment-statistics", async (req, res) => {
+    try {
+      const donations = await storage.getDonations();
+      
+      // Group donations by status
+      const byStatus = donations.reduce((acc, donation) => {
+        const status = donation.status || 'unknown';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      // Group donations by type
+      const byType = donations.reduce((acc, donation) => {
+        const type = donation.type || 'unknown';
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      // Group donations by payment method
+      const byPaymentMethod = donations.reduce((acc, donation) => {
+        const method = donation.paymentMethod || 'unknown';
+        acc[method] = (acc[method] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      // Calculate total amount donated (only for completed donations)
+      const totalDonated = donations
+        .filter(d => d.status === 'completed')
+        .reduce((sum, donation) => sum + donation.amount, 0);
+        
+      // Group completed donations by destination
+      const byDestination = donations
+        .filter(d => d.status === 'completed')
+        .reduce((acc, donation) => {
+          let destination = 'unknown';
+          if (donation.caseId) {
+            destination = `Case ID: ${donation.caseId}`;
+          } else if (donation.destinationProject) {
+            destination = donation.destinationProject;
+          }
+          acc[destination] = (acc[destination] || 0) + donation.amount;
+          return acc;
+        }, {} as Record<string, number>);
+        
+      res.json({
+        totalDonations: donations.length,
+        totalDonated,
+        byStatus,
+        byType,
+        byPaymentMethod,
+        byDestination
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch payment statistics" });
+    }
+  });
 
   app.get("/api/cases/:id", async (req, res) => {
     try {

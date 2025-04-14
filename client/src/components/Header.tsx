@@ -49,6 +49,9 @@ export default function Header() {
             <Link href="/contact" className="font-medium text-gray-600 hover:text-primary">
               Contact
             </Link>
+            <Link href="/admin" className="font-medium text-gray-600 hover:text-primary">
+              Admin
+            </Link>
             <Link href="/payment">
               <Button className="bg-primary text-white hover:bg-teal-600 transition duration-150">
                 Donate
