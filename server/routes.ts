@@ -1,5 +1,13 @@
-import type { Express } from "express";
+import express, { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import session from "express-session";
+
+// Add type declaration for session
+declare module 'express-session' {
+  interface SessionData {
+    adminAuthenticated?: boolean;
+  }
+}
 import { storage } from "./storage";
 import Stripe from "stripe";
 import fetch from "node-fetch";
@@ -146,8 +154,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get payment history (all donations with their status)
-  app.get("/api/payment-history", async (req, res) => {
+  // Admin authentication
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+      
+      const isValid = await storage.validateAdminCredentials(username, password);
+      
+      if (isValid) {
+        // Create a session for the admin
+        req.session.adminAuthenticated = true;
+        res.json({ success: true });
+      } else {
+        res.status(401).json({ message: "Invalid credentials" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+  
+  app.post("/api/admin/logout", (req, res) => {
+    req.session.adminAuthenticated = false;
+    res.json({ success: true });
+  });
+  
+  // Admin middleware to check if admin is authenticated
+  const isAdminAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+    if (req.session.adminAuthenticated) {
+      next();
+    } else {
+      res.status(401).json({ message: "Unauthorized" });
+    }
+  };
+  
+  // Get payment history (all donations with their status) - protected
+  app.get("/api/payment-history", isAdminAuthenticated, async (req, res) => {
     try {
       const donations = await storage.getDonations();
       res.json(donations);
@@ -156,8 +201,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get payment statistics grouped by status, type, and payment method
-  app.get("/api/payment-statistics", async (req, res) => {
+  // Get payment statistics grouped by status, type, and payment method - protected
+  app.get("/api/payment-statistics", isAdminAuthenticated, async (req, res) => {
     try {
       const donations = await storage.getDonations();
       

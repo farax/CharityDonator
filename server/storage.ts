@@ -13,6 +13,9 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
+  // Admin methods
+  validateAdminCredentials(username: string, password: string): Promise<boolean>;
+  
   // Donation methods
   createDonation(donation: InsertDonation): Promise<Donation>;
   getDonation(id: number): Promise<Donation | undefined>;
@@ -144,6 +147,16 @@ export class MemStorage implements IStorage {
     const user: User = { ...insertUser, id };
     this.users.set(id, user);
     return user;
+  }
+  
+  // Admin methods
+  async validateAdminCredentials(username: string, password: string): Promise<boolean> {
+    // In a real app, you would use proper password hashing
+    // This is a simplified version for demonstration purposes
+    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    
+    return username === adminUsername && password === adminPassword;
   }
   
   // Donation methods

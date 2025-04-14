@@ -3,6 +3,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Payment from "@/pages/Payment";
 import Admin from "@/pages/Admin";
+import AdminLogin from "@/pages/AdminLogin";
 import { DonationProvider } from "@/components/DonationContext";
 
 function Router() {
@@ -10,6 +11,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/payment" component={Payment} />
+      <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>
