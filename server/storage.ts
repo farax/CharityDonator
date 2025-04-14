@@ -1,3 +1,5 @@
+import session from "express-session";
+import createMemoryStore from "memorystore";
 import { 
   users, type User, type InsertUser, 
   donations, type Donation, type InsertDonation,
@@ -7,8 +9,6 @@ import {
 } from "@shared/schema";
 
 // Define the storage interface with all necessary CRUD methods
-import session from "express-session";
-
 export interface IStorage {
   // Session store for admin authentication
   sessionStore: session.Store;
@@ -43,9 +43,6 @@ export interface IStorage {
   updateCaseAmountCollected(id: number, additionalAmount: number): Promise<Case | undefined>;
 }
 
-import session from "express-session";
-import createMemoryStore from "memorystore";
-
 const MemoryStore = createMemoryStore(session);
 
 export class MemStorage implements IStorage {
@@ -55,7 +52,7 @@ export class MemStorage implements IStorage {
   private casesList: Map<number, Case>;
   private statsData: Stats | undefined;
   
-  // Add session store for admin authentication
+  // Session store for admin authentication
   public sessionStore: session.Store;
   
   private userCurrentId: number;
@@ -73,6 +70,11 @@ export class MemStorage implements IStorage {
     this.donationCurrentId = 1;
     this.endorsementCurrentId = 1;
     this.caseCurrentId = 1;
+    
+    // Initialize memory store for session data
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
     
     // Initialize with sample data
     this.initializeData();
