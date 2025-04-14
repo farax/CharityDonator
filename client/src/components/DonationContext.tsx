@@ -33,6 +33,13 @@ interface DonationContextType {
   showCaseSelector: boolean;
   setShowCaseSelector: (show: boolean) => void;
   availableCurrencies: string[];
+  coverFees: boolean;
+  setCoverFees: (cover: boolean) => void;
+  calculateFees: (amount: number, method: PaymentMethodType) => {
+    processingFee: number;
+    totalWithFees: number;
+    donationAmount: number;
+  };
 }
 
 const DonationContext = createContext<DonationContextType | undefined>(undefined);
@@ -52,6 +59,7 @@ export function DonationProvider({ children }: { children: React.ReactNode }) {
     'Clinic Operations'
   );
   const [showCaseSelector, setShowCaseSelector] = useState<boolean>(false);
+  const [coverFees, setCoverFees] = useState<boolean>(true);
   
   // List of available currencies
   const availableCurrencies = [
@@ -81,6 +89,69 @@ export function DonationProvider({ children }: { children: React.ReactNode }) {
   const convertAmount = (amt: number): string => {
     return `${(amt * exchangeRate).toFixed(2)}`;
   };
+  
+  // Calculate payment processing fees based on payment method and amount
+  const calculateFees = (amt: number, method: PaymentMethodType) => {
+    // Base donation amount (not a constant since we might need to adjust it)
+    let baseAmount = amt;
+    let processingFee = 0;
+    let totalWithFees = 0;
+    let finalDonationAmount = 0;
+    
+    // Fee calculation based on payment method
+    // These are approximate fee structures and should be adjusted based on actual rates
+    switch (method) {
+      case 'stripe':
+        // Stripe typically charges 2.9% + $0.30 for US/Canada transactions
+        const isLocal = ['USD', 'CAD'].includes(currency);
+        if (isLocal) {
+          processingFee = baseAmount * 0.029 + 0.30;
+        } else {
+          // International transactions may have higher fees (3.9% + $0.30)
+          processingFee = baseAmount * 0.039 + 0.30;
+        }
+        break;
+        
+      case 'paypal':
+        // PayPal typically charges 2.9% + $0.30 for domestic transactions
+        const isPayPalLocal = ['USD'].includes(currency);
+        if (isPayPalLocal) {
+          processingFee = baseAmount * 0.029 + 0.30;
+        } else {
+          // International PayPal transactions (4.4% + fixed fee)
+          processingFee = baseAmount * 0.044 + 0.30;
+        }
+        break;
+        
+      case 'apple_pay':
+      case 'google_pay':
+        // Apple Pay / Google Pay often use the same fee structure as credit cards
+        processingFee = baseAmount * 0.029 + 0.30;
+        break;
+        
+      default:
+        processingFee = 0;
+    }
+    
+    // Round to 2 decimal places
+    processingFee = Math.round(processingFee * 100) / 100;
+    
+    // If user chooses to cover fees, they pay donation + fees
+    // Otherwise, the organization receives the donation minus fees
+    if (coverFees) {
+      totalWithFees = baseAmount + processingFee;
+      finalDonationAmount = baseAmount;
+    } else {
+      totalWithFees = baseAmount;
+      finalDonationAmount = Math.max(0, baseAmount - processingFee);
+    }
+    
+    return {
+      processingFee,
+      totalWithFees,
+      donationAmount: finalDonationAmount
+    };
+  };
 
   const contextValue: DonationContextType = {
     type,
@@ -108,7 +179,10 @@ export function DonationProvider({ children }: { children: React.ReactNode }) {
     setDestinationProject,
     showCaseSelector,
     setShowCaseSelector,
-    availableCurrencies
+    availableCurrencies,
+    coverFees,
+    setCoverFees,
+    calculateFees
   };
 
   return (
