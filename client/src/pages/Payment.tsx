@@ -474,8 +474,20 @@ export default function Payment() {
   const [clientSecret, setClientSecret] = useState("");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { currency, paymentMethod, setPaymentMethod } = useDonation();
+  const { 
+    currency, 
+    paymentMethod, 
+    setPaymentMethod, 
+    coverFees, 
+    setCoverFees, 
+    calculateFees 
+  } = useDonation();
   const [donationDetails, setDonationDetails] = useState<any>(null);
+  const [feeBreakdown, setFeeBreakdown] = useState<{
+    processingFee: number;
+    totalWithFees: number;
+    donationAmount: number;
+  } | null>(null);
 
   useEffect(() => {
     // Get donation details from session storage
@@ -496,11 +508,16 @@ export default function Payment() {
     
     // Only create a payment intent if using Stripe
     if (paymentMethod === 'stripe') {
+      // Calculate the appropriate amount based on whether fees are covered
+      const fees = calculateFees(donation.amount, paymentMethod);
+      const finalAmount = coverFees ? fees.totalWithFees : donation.amount;
+      
       // Create PaymentIntent as soon as the page loads
       apiRequest("POST", "/api/create-payment-intent", { 
-        amount: donation.amount,
+        amount: finalAmount,
         currency: donation.currency || currency,
-        donationId: donation.id
+        donationId: donation.id,
+        coverFees: coverFees
       })
         .then((res) => res.json())
         .then((data) => {
@@ -515,7 +532,15 @@ export default function Payment() {
           console.error("Payment intent error:", error);
         });
     }
-  }, [setLocation, toast, currency, paymentMethod]);
+  }, [setLocation, toast, currency, paymentMethod, coverFees, calculateFees]);
+  
+  // Calculate fee breakdown when donation details or payment method changes
+  useEffect(() => {
+    if (donationDetails && donationDetails.amount) {
+      const fees = calculateFees(donationDetails.amount, paymentMethod);
+      setFeeBreakdown(fees);
+    }
+  }, [donationDetails, paymentMethod, coverFees, calculateFees]);
 
   // Format frequency for display
   const formatFrequency = (frequency: string) => {
@@ -552,6 +577,52 @@ export default function Payment() {
                       <p>Case ID: <span className="font-medium">{donationDetails.caseId}</span></p>
                     )}
                   </div>
+                  
+                  {/* Payment Fee Breakdown */}
+                  {feeBreakdown && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <h4 className="font-medium text-gray-800 mb-2">Payment Fee Breakdown</h4>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <div className="flex justify-between">
+                          <span>Base donation:</span>
+                          <span className="font-medium">{donationDetails.currency} {donationDetails.amount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Processing fee:</span>
+                          <span className={coverFees ? "font-medium" : "text-red-500 font-medium"}>
+                            {donationDetails.currency} {feeBreakdown.processingFee.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="h-px bg-gray-200 my-1"></div>
+                        <div className="flex justify-between font-medium">
+                          <span>You pay:</span>
+                          <span>{donationDetails.currency} {feeBreakdown.totalWithFees.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-green-600 font-medium">
+                          <span>Charity receives:</span>
+                          <span>{donationDetails.currency} {feeBreakdown.donationAmount.toFixed(2)}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Cover Fees Option */}
+                      <div className="mt-4 flex items-center">
+                        <div className="flex items-center space-x-2">
+                          <input 
+                            type="checkbox" 
+                            id="cover-fees"
+                            checked={coverFees} 
+                            onChange={(e) => setCoverFees(e.target.checked)}
+                            className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" 
+                          />
+                          <label htmlFor="cover-fees" className="text-sm font-medium cursor-pointer">
+                            {coverFees 
+                              ? "I'll cover the payment processing fees" 
+                              : "I want the charity to pay processing fees"}
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
