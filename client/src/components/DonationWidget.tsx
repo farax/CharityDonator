@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { useDonation } from '@/components/DonationContext';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import CurrencySelector from '@/components/CurrencySelector';
+import CaseSelector from '@/components/CaseSelector';
+import { ChevronRight } from 'lucide-react';
 
 export default function DonationWidget() {
   const { 
@@ -17,7 +20,12 @@ export default function DonationWidget() {
     isCustomAmount, setIsCustomAmount,
     frequency, setFrequency,
     currency, currencySymbol, exchangeRate,
-    convertAmount
+    convertAmount,
+    destinationProject,
+    selectedCase,
+    setSelectedCase,
+    showCaseSelector,
+    setShowCaseSelector
   } = useDonation();
 
   const [, setLocation] = useLocation();
@@ -61,14 +69,21 @@ export default function DonationWidget() {
         return;
       }
 
-      const donationResponse = await apiRequest("POST", "/api/donations", {
+      const donationData: any = {
         type,
         amount: finalAmount,
         currency,
         frequency,
-        status: "pending"
-      });
+        status: "pending",
+        destinationProject
+      };
 
+      // Add case ID if a case was selected
+      if (selectedCase && type === 'zakaat') {
+        donationData.caseId = selectedCase.id;
+      }
+
+      const donationResponse = await apiRequest("POST", "/api/donations", donationData);
       const donation = await donationResponse.json();
 
       // Store the donation ID in sessionStorage for the payment page
@@ -77,7 +92,9 @@ export default function DonationWidget() {
         type,
         amount: finalAmount,
         currency,
-        frequency
+        frequency,
+        destinationProject,
+        caseId: selectedCase?.id
       }));
 
       // Navigate to the payment page
@@ -126,6 +143,45 @@ export default function DonationWidget() {
           
           {/* Donation Form Content */}
           <div className="donation-form-content">
+            {/* Destination Project Section */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Donate For: {destinationProject}</h3>
+                <div className="flex items-center">
+                  <CurrencySelector />
+                </div>
+              </div>
+              
+              {type === 'zakaat' && (
+                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex justify-between items-center">
+                  {selectedCase ? (
+                    <div>
+                      <div className="font-medium text-gray-800">{selectedCase.title}</div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        {formatAmount(selectedCase.amountRequired)} required
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-gray-700">Most deserving case</div>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="text-primary border-primary hover:bg-primary hover:text-white"
+                    onClick={() => setShowCaseSelector(true)}
+                  >
+                    Select a Case <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              
+              {/* Case Selector Dialog */}
+              <CaseSelector 
+                open={showCaseSelector} 
+                onOpenChange={setShowCaseSelector} 
+              />
+            </div>
+            
             {/* Frequency Selection (Only visible for Sadqah) */}
             {type === 'sadqah' && (
               <div className="mb-6">
