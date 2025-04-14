@@ -130,8 +130,7 @@ const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
   // PayPal configuration options
   const paypalOptions = {
     clientId: "test", // In production, this would be your actual PayPal client ID
-    currency: donationDetails.currency.toLowerCase(),
-    intent: "capture"
+    currency: donationDetails.currency.toLowerCase()
   };
 
   // Define success handler for PayPal

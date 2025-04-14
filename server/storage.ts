@@ -16,7 +16,7 @@ export interface IStorage {
   // Donation methods
   createDonation(donation: InsertDonation): Promise<Donation>;
   getDonation(id: number): Promise<Donation | undefined>;
-  updateDonationStatus(id: number, status: string, stripePaymentId?: string): Promise<Donation | undefined>;
+  updateDonationStatus(id: number, status: string, paymentId?: string): Promise<Donation | undefined>;
   getDonations(): Promise<Donation[]>;
   
   // Endorsement methods
@@ -171,15 +171,35 @@ export class MemStorage implements IStorage {
     return this.donations.get(id);
   }
   
-  async updateDonationStatus(id: number, status: string, stripePaymentId?: string): Promise<Donation | undefined> {
+  async updateDonationStatus(id: number, status: string, paymentId?: string): Promise<Donation | undefined> {
     const donation = this.donations.get(id);
     if (!donation) return undefined;
+    
+    // Extract payment method from the ID if not already set
+    let paymentMethod = donation.paymentMethod;
+    if (!paymentMethod && paymentId) {
+      if (paymentId.startsWith('paypal-')) {
+        paymentMethod = 'paypal';
+      } else if (paymentId.startsWith('applepay-')) {
+        paymentMethod = 'apple_pay';
+      } else if (paymentId.startsWith('googlepay-')) {
+        paymentMethod = 'google_pay';
+      } else if (paymentId.startsWith('pi_')) {
+        paymentMethod = 'stripe';
+      }
+    }
     
     const updatedDonation: Donation = {
       ...donation,
       status,
-      ...(stripePaymentId && { stripePaymentId })
+      ...(paymentMethod && { paymentMethod }),
+      ...(paymentId && { stripePaymentId: paymentId })
     };
+    
+    // If this is a completed payment for a case, update the case amount
+    if (status === 'completed' && donation.caseId && donation.status !== 'completed') {
+      await this.updateCaseAmountCollected(donation.caseId, donation.amount);
+    }
     
     this.donations.set(id, updatedDonation);
     return updatedDonation;
