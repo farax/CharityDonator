@@ -4,6 +4,7 @@ import Home from "@/pages/Home";
 import Payment from "@/pages/Payment";
 import Admin from "@/pages/Admin";
 import AdminLogin from "@/pages/AdminLogin";
+import GetInvolved from "@/pages/GetInvolved";
 import { DonationProvider } from "@/components/DonationContext";
 
 function Router() {
@@ -11,6 +12,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/payment" component={Payment} />
+      <Route path="/get-involved" component={GetInvolved} />
       <Route path="/admin/login" component={AdminLogin} />
       {/* Make /admin come after /admin/login to ensure the right route is matched */}
       <Route path="/admin" component={Admin} />
