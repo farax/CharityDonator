@@ -261,53 +261,7 @@ const GooglePayment = ({ donationDetails }: { donationDetails: any }) => {
   );
 };
 
-// Component for Pakistan payment gateway
-const PakistanPayment = ({ donationDetails }: { donationDetails: any }) => {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handlePakistanPaySubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate Pakistan payment gateway processing
-    setTimeout(() => {
-      toast({
-        title: "Pakistan Payment Gateway",
-        description: "Pakistan-specific payment gateway integration would be implemented here.",
-      });
-      setIsLoading(false);
-    }, 1500);
-  };
-
-  return (
-    <form onSubmit={handlePakistanPaySubmit} className="space-y-6">
-      <div className="bg-green-50 border border-green-100 rounded-md p-4 text-center">
-        <p className="text-green-800">
-          Pakistan payment gateway integration will be implemented.
-        </p>
-        <p className="text-sm text-green-600 mt-2">
-          This would connect to local Pakistan payment providers for transactions.
-        </p>
-      </div>
-      
-      <Button 
-        type="submit" 
-        className="w-full py-3 bg-green-600 hover:bg-green-700 text-white" 
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Processing
-          </>
-        ) : (
-          'Pay with Pakistan Gateway'
-        )}
-      </Button>
-    </form>
-  );
-};
 
 export default function Payment() {
   const [clientSecret, setClientSecret] = useState("");
@@ -426,10 +380,6 @@ export default function Payment() {
                 
                 {paymentMethod === 'google_pay' && donationDetails && (
                   <GooglePayment donationDetails={donationDetails} />
-                )}
-                
-                {paymentMethod === 'pakistan_gateway' && donationDetails && (
-                  <PakistanPayment donationDetails={donationDetails} />
                 )}
               </div>
             </CardContent>

@@ -4,12 +4,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { 
   CreditCard, 
-  Apple, 
-  SquareArrowDownRight
+  Apple
 } from 'lucide-react';
 import { SiPaypal, SiGooglepay } from 'react-icons/si';
 
-type PaymentMethodType = 'stripe' | 'apple_pay' | 'paypal' | 'google_pay' | 'pakistan_gateway';
+type PaymentMethodType = 'stripe' | 'apple_pay' | 'paypal' | 'google_pay';
 
 interface PaymentMethodOption {
   id: PaymentMethodType;
@@ -51,14 +50,7 @@ export default function PaymentMethodSelector() {
       icon: <SiGooglepay className="h-6 w-6 text-gray-800" />,
       description: 'Fast checkout with Google Pay',
       available: true, // In a real app, you'd check if Google Pay is available
-    },
-    {
-      id: 'pakistan_gateway',
-      name: 'Pakistan Payment',
-      icon: <SquareArrowDownRight className="h-6 w-6 text-green-600" />,
-      description: 'Local payment options for Pakistan',
-      available: true,
-    },
+    }
   ];
 
   const handlePaymentMethodChange = (value: string) => {
