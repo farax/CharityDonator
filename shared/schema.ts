@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, real, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -15,6 +15,23 @@ export const insertUserSchema = createInsertSchema(users).pick({
 });
 
 // New schemas for the donation application
+export const cases = pgTable("cases", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  imageUrl: text("image_url").notNull(),
+  amountRequired: real("amount_required").notNull(),
+  amountCollected: real("amount_collected").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertCaseSchema = createInsertSchema(cases).omit({
+  id: true,
+  amountCollected: true,
+  createdAt: true,
+});
+
 export const donations = pgTable("donations", {
   id: serial("id").primaryKey(),
   type: text("type").notNull(), // 'zakaat', 'sadqah', 'interest'
@@ -26,6 +43,9 @@ export const donations = pgTable("donations", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   email: text("email"),
   name: text("name"),
+  paymentMethod: text("payment_method"), // 'stripe', 'apple_pay', 'paypal', 'pakistan_gateway'
+  caseId: integer("case_id"), // For case-specific donations
+  destinationProject: text("destination_project"), // For non-case specific donations like 'Clinic Operations' or 'Most deserving case'
 });
 
 export const insertDonationSchema = createInsertSchema(donations).omit({
@@ -68,6 +88,9 @@ export type Endorsement = typeof endorsements.$inferSelect;
 
 export type InsertStats = z.infer<typeof insertStatsSchema>;
 export type Stats = typeof stats.$inferSelect;
+
+export type InsertCase = z.infer<typeof insertCaseSchema>;
+export type Case = typeof cases.$inferSelect;
 
 // Extending schemas with validation
 export const donationFormSchema = insertDonationSchema.extend({
