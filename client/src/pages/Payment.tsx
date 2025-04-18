@@ -12,11 +12,24 @@ import { Loader2 } from 'lucide-react';
 import { useDonation } from '@/components/DonationContext';
 import PaymentMethodSelector from '@/components/PaymentMethodSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { 
   PayPalScriptProvider, 
   PayPalButtons,
   FUNDING
 } from '@paypal/react-paypal-js';
+
+// Form schema for collecting donor information
+const donorFormSchema = z.object({
+  name: z.string().min(2, { message: "Name is required" }),
+  email: z.string().email({ message: "Please enter a valid email address" }),
+});
+
+type DonorFormValues = z.infer<typeof donorFormSchema>;
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
@@ -470,6 +483,76 @@ const GooglePayment = ({ donationDetails }: { donationDetails: any }) => {
 
 
 
+// Donor Information Form Component
+const DonorInfoForm = ({ onSubmit, isLoading }: { onSubmit: (data: DonorFormValues) => void, isLoading: boolean }) => {
+  const form = useForm<DonorFormValues>({
+    resolver: zodResolver(donorFormSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+    },
+  });
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mb-4">
+          <h3 className="font-medium text-blue-800 mb-2">Donor Information</h3>
+          <p className="text-sm text-blue-600">
+            Please provide your contact information for donation receipt.
+          </p>
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Your full name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input placeholder="Your email address" type="email" {...field} />
+              </FormControl>
+              <FormDescription>
+                We'll send your donation receipt to this email address.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <Button 
+          type="submit" 
+          className="w-full py-3" 
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing
+            </>
+          ) : (
+            'Continue to Payment'
+          )}
+        </Button>
+      </form>
+    </Form>
+  );
+};
+
 export default function Payment() {
   const [clientSecret, setClientSecret] = useState("");
   const [, setLocation] = useLocation();
@@ -483,6 +566,8 @@ export default function Payment() {
     calculateFees 
   } = useDonation();
   const [donationDetails, setDonationDetails] = useState<any>(null);
+  const [donorInfo, setDonorInfo] = useState<DonorFormValues | null>(null);
+  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<{
     processingFee: number;
     totalWithFees: number;
@@ -647,34 +732,78 @@ export default function Payment() {
               <PaymentMethodSelector />
               
               <div className="mt-6">
-                {paymentMethod === 'stripe' && (
+                {!donorInfo ? (
+                  // Show donor information form first
+                  <DonorInfoForm 
+                    onSubmit={(data) => {
+                      setIsFormSubmitting(true);
+                      
+                      // Update the donation with donor info
+                      if (donationDetails) {
+                        const updatedDonation = {
+                          ...donationDetails,
+                          email: data.email,
+                          name: data.name
+                        };
+                        
+                        // Update session storage
+                        sessionStorage.setItem('currentDonation', JSON.stringify(updatedDonation));
+                        setDonationDetails(updatedDonation);
+                        
+                        // Update donor in database
+                        apiRequest("POST", "/api/update-donation-donor", {
+                          donationId: donationDetails.id,
+                          email: data.email,
+                          name: data.name
+                        }).then(() => {
+                          setDonorInfo(data);
+                          setIsFormSubmitting(false);
+                        }).catch((error) => {
+                          console.error("Error updating donor info:", error);
+                          // Still proceed even if there's an error updating the database
+                          setDonorInfo(data);
+                          setIsFormSubmitting(false);
+                        });
+                      } else {
+                        setDonorInfo(data);
+                        setIsFormSubmitting(false);
+                      }
+                    }}
+                    isLoading={isFormSubmitting}
+                  />
+                ) : (
+                  // After donor info is collected, show payment options
                   <>
-                    {!clientSecret ? (
-                      <div className="flex items-center justify-center py-10">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      </div>
-                    ) : stripePromise ? (
-                      <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
-                        <CheckoutForm />
-                      </Elements>
-                    ) : (
-                      <div className="text-center py-6 text-red-500">
-                        Stripe payment is not configured. Please contact the administrator.
-                      </div>
+                    {paymentMethod === 'stripe' && (
+                      <>
+                        {!clientSecret ? (
+                          <div className="flex items-center justify-center py-10">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                          </div>
+                        ) : stripePromise ? (
+                          <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
+                            <CheckoutForm />
+                          </Elements>
+                        ) : (
+                          <div className="text-center py-6 text-red-500">
+                            Stripe payment is not configured. Please contact the administrator.
+                          </div>
+                        )}
+                      </>
+                    )}
+                    
+                    {paymentMethod === 'paypal' && donationDetails && (
+                      <PayPalPayment donationDetails={donationDetails} />
+                    )}
+                    
+                    {paymentMethod === 'apple_pay' && donationDetails && (
+                      <ApplePayment donationDetails={donationDetails} />
+                    )}
+                    
+                    {paymentMethod === 'google_pay' && donationDetails && (
+                      <GooglePayment donationDetails={donationDetails} />
                     )}
                   </>
-                )}
-                
-                {paymentMethod === 'paypal' && donationDetails && (
-                  <PayPalPayment donationDetails={donationDetails} />
-                )}
-                
-                {paymentMethod === 'apple_pay' && donationDetails && (
-                  <ApplePayment donationDetails={donationDetails} />
-                )}
-                
-                {paymentMethod === 'google_pay' && donationDetails && (
-                  <GooglePayment donationDetails={donationDetails} />
                 )}
               </div>
             </CardContent>
