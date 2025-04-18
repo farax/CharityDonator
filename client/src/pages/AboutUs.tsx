@@ -118,6 +118,30 @@ export default function AboutUs() {
             </div>
           </section>
 
+          {/* Board of Directors Section */}
+          <section className="mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Board of Directors</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {boardMembers.map((member, index) => (
+                <Card key={index} className="h-full flex flex-col">
+                  <CardHeader className="flex flex-row items-center gap-4 pb-2">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={member.image} alt={member.name} />
+                      <AvatarFallback>{member.initials}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <CardTitle className="text-xl">{member.name}</CardTitle>
+                      <CardDescription>{member.role}</CardDescription>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <p className="text-gray-700">{member.bio}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+
           {/* Medical Staff Section */}
           <section className="mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Medical Staff</h2>
@@ -147,30 +171,6 @@ export default function AboutUs() {
             <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Admin Staff</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {adminStaff.map((member, index) => (
-                <Card key={index} className="h-full flex flex-col">
-                  <CardHeader className="flex flex-row items-center gap-4 pb-2">
-                    <Avatar className="h-16 w-16">
-                      <AvatarImage src={member.image} alt={member.name} />
-                      <AvatarFallback>{member.initials}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <CardTitle className="text-xl">{member.name}</CardTitle>
-                      <CardDescription>{member.role}</CardDescription>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <p className="text-gray-700">{member.bio}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-
-          {/* Board of Directors Section */}
-          <section>
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Board of Directors</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {boardMembers.map((member, index) => (
                 <Card key={index} className="h-full flex flex-col">
                   <CardHeader className="flex flex-row items-center gap-4 pb-2">
                     <Avatar className="h-16 w-16">

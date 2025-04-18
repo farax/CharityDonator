@@ -1,3 +1,6 @@
+// ES module environment requires dynamic import for New Relic
+// We'll initialize it in the async function below instead
+
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes";
