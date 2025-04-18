@@ -1,49 +1,27 @@
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode } from 'react';
 
 interface HeroProps {
   children: ReactNode;
 }
 
 export default function Hero({ children }: HeroProps) {
-  const [currentImage, setCurrentImage] = useState(0);
-  
-  // Define the image URLs with fallback
-  const images = [
-    // Using relative paths to the public directory
-    './attached_assets/WhatsApp Image 2025-04-17 at 11.00.25.jpeg',
-    './attached_assets/WhatsApp Image 2025-04-17 at 11.00.26.jpeg',
-    './attached_assets/b2381923-3686-4c99-a4a2-94c6267fcee0.jpeg'
-  ];
-  
-  useEffect(() => {
-    // Image rotation timer
-    const timer = setInterval(() => {
-      setCurrentImage((prev) => (prev + 1) % images.length);
-    }, 6000);
-    
-    return () => clearInterval(timer);
-  }, []);
-
   return (
     <section className="relative">
-      {/* Background Image Carousel */}
+      {/* Background Image */}
       <div className="relative h-[480px] sm:h-[560px] lg:h-[640px] overflow-hidden bg-gray-900">
-        {/* Transitioning images */}
-        {images.map((image, index) => (
-          <div 
-            key={index}
-            className="absolute inset-0 w-full h-full object-cover bg-cover bg-center transition-opacity duration-1000 ease-in-out"
-            style={{ 
-              backgroundImage: `url(${image})`,
-              backgroundRepeat: 'no-repeat',
-              opacity: currentImage === index ? 0.75 : 0,
-              zIndex: currentImage === index ? 10 : 0
-            }}
-          />
-        ))}
+        {/* Medical hero image */}
+        <div 
+          className="absolute inset-0 w-full h-full bg-cover bg-center opacity-60"
+          style={{ 
+            backgroundImage: 'url(https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80)'
+          }}
+        />
         
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent z-20"></div>
-        <div className="absolute top-0 left-0 w-full pt-8 px-4 md:pt-16 md:px-8 lg:pt-20 max-w-4xl z-30">
+        {/* Gradient overlay to improve text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-900/70 via-gray-900/40 to-gray-900/70"></div>
+        
+        {/* Hero text content */}
+        <div className="absolute top-0 left-0 w-full pt-8 px-4 md:pt-16 md:px-8 lg:pt-20 max-w-4xl">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight">
             Providing Medical Care To Those Who Need It Most
           </h1>
@@ -53,8 +31,10 @@ export default function Hero({ children }: HeroProps) {
         </div>
       </div>
 
-      {/* Render the children (donation widget) */}
-      {children}
+      {/* Render the children (donation widget) with a negative margin to slightly overlap */}
+      <div className="relative z-10 -mt-12 md:-mt-16 lg:-mt-20">
+        {children}
+      </div>
     </section>
   );
 }

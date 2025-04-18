@@ -62,10 +62,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/currency-by-ip", async (req, res) => {
     try {
       const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-      // Use IP-based geolocation service
-      const response = await fetch(`https://ipapi.co/${ip}/json/`);
-      const data = await response.json() as any;
-      res.json({ currency: data.currency || 'USD' });
+      
+      // For testing purposes, randomly select a currency to simulate different regions
+      // In production, you'd use a real geolocation service
+      const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'INR'];
+      const randomCurrency = currencies[Math.floor(Math.random() * currencies.length)];
+      
+      res.json({ currency: randomCurrency });
     } catch (error) {
       // Default to USD if there's an error
       res.json({ currency: 'USD' });
