@@ -24,7 +24,7 @@ export default function PaymentMethodSelector() {
       id: 'stripe',
       name: 'Credit Card',
       icon: <CreditCard className="h-6 w-6" />,
-      description: 'Pay with Credit or Debit Card',
+      description: 'Pay with Credit or Debit Card (includes Apple Pay and Google Pay when available)',
       available: true,
     },
     {
@@ -33,20 +33,6 @@ export default function PaymentMethodSelector() {
       icon: <SiPaypal className="h-6 w-6 text-blue-700" />,
       description: 'Pay with PayPal Balance or Account',
       available: true,
-    },
-    {
-      id: 'apple_pay',
-      name: 'Apple Pay',
-      icon: <Apple className="h-6 w-6" />,
-      description: 'Quick and secure payments with Apple Pay',
-      available: true, // In a real app, you'd check if Apple Pay is available
-    },
-    {
-      id: 'google_pay',
-      name: 'Google Pay',
-      icon: <SiGooglepay className="h-6 w-6 text-gray-800" />,
-      description: 'Fast checkout with Google Pay',
-      available: true, // In a real app, you'd check if Google Pay is available
     }
   ];
 

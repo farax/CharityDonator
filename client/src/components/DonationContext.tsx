@@ -3,7 +3,7 @@ import { Case } from '@shared/schema';
 
 type DonationType = 'zakaat' | 'sadqah' | 'interest';
 type FrequencyType = 'one-off' | 'weekly' | 'monthly';
-type PaymentMethodType = 'stripe' | 'apple_pay' | 'paypal' | 'google_pay';
+type PaymentMethodType = 'stripe' | 'paypal';
 type DestinationProjectType = 'Clinic Operations' | 'Most deserving case';
 
 interface DonationContextType {
@@ -99,58 +99,37 @@ export function DonationProvider({ children }: { children: React.ReactNode }) {
     let feeDescription = "";
     
     // Fee calculation based on payment method
-    // These fee structures are based on published rates from each provider
+    // These fee structures are based on Stripe's Australian rates
     switch (method) {
       case 'stripe':
-        // Stripe fee structure varies by region and currency
-        const isStripeLocalUSD = ['USD'].includes(currency);
-        const isStripeLocalOther = ['CAD', 'EUR', 'GBP'].includes(currency);
+        // Stripe fee structure for Australian account
+        const isAustralianCurrency = ['AUD'].includes(currency);
+        const isInternationalCard = !isAustralianCurrency;
         
-        if (isStripeLocalUSD) {
-          // US cards in USD: 2.9% + $0.30
-          processingFee = baseAmount * 0.029 + 0.30;
-          feeDescription = "Stripe charges 2.9% + $0.30 per successful card charge";
-        } else if (isStripeLocalOther) {
-          // European/Canadian cards: 2.9% + local fixed fee
-          processingFee = baseAmount * 0.029 + 0.30;
-          feeDescription = `Stripe charges 2.9% + ${currencySymbol}0.30 per successful card charge`;
+        if (isAustralianCurrency) {
+          // Domestic Australian cards (AUD): 1.75% + A$0.30
+          processingFee = baseAmount * 0.0175 + 0.30;
+          feeDescription = "Stripe charges 1.75% + A$0.30 for Australian cards";
         } else {
-          // International cards: 3.9% + fixed fee
-          processingFee = baseAmount * 0.039 + 0.30;
-          feeDescription = `Stripe charges 3.9% + ${currencySymbol}0.30 for international transactions`;
+          // International cards: 2.9% + A$0.30 equivalent
+          processingFee = baseAmount * 0.029 + 0.30;
+          feeDescription = `Stripe charges 2.9% + ${currencySymbol}0.30 for international cards`;
         }
         break;
         
       case 'paypal':
-        // PayPal fee structure
-        const isPayPalUS = ['USD'].includes(currency);
-        const isPayPalEurope = ['EUR', 'GBP'].includes(currency);
+        // PayPal fee structure for Australian account
+        const isPayPalAU = ['AUD'].includes(currency);
         
-        if (isPayPalUS) {
-          // US PayPal: 2.9% + $0.30
-          processingFee = baseAmount * 0.029 + 0.30;
-          feeDescription = "PayPal charges 2.9% + $0.30 for domestic transactions";
-        } else if (isPayPalEurope) {
-          // European PayPal: 3.4% + fixed fee
-          processingFee = baseAmount * 0.034 + 0.30;
-          feeDescription = `PayPal charges 3.4% + ${currencySymbol}0.30 for European transactions`;
+        if (isPayPalAU) {
+          // Australian PayPal domestic: 2.6% + A$0.30
+          processingFee = baseAmount * 0.026 + 0.30;
+          feeDescription = "PayPal charges 2.6% + A$0.30 for domestic transactions";
         } else {
-          // International PayPal: 4.4% + fixed fee
-          processingFee = baseAmount * 0.044 + 0.30;
-          feeDescription = `PayPal charges 4.4% + ${currencySymbol}0.30 for international transactions`;
+          // International PayPal: 3.6% + fixed fee (in AUD)
+          processingFee = baseAmount * 0.036 + 0.30;
+          feeDescription = `PayPal charges 3.6% + ${currencySymbol}0.30 for international transactions`;
         }
-        break;
-        
-      case 'apple_pay':
-        // Apple Pay uses the underlying card network fees
-        processingFee = baseAmount * 0.029 + 0.30;
-        feeDescription = "Apple Pay transactions incur standard card processing fees (2.9% + $0.30)";
-        break;
-        
-      case 'google_pay':
-        // Google Pay uses the underlying card network fees
-        processingFee = baseAmount * 0.029 + 0.30;
-        feeDescription = "Google Pay transactions incur standard card processing fees (2.9% + $0.30)";
         break;
         
       default:
