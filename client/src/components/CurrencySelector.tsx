@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { trackEvent } from '@/lib/analytics';
 
 const currencySymbols: Record<string, string> = {
   USD: '$',
@@ -77,6 +78,20 @@ export default function CurrencySelector() {
   }, [exchangeRates, currency, setExchangeRate]);
 
   const handleCurrencyChange = (value: string) => {
+    const previousCurrency = currency;
+    
+    // Track currency change
+    trackEvent({
+      category: 'Donation',
+      action: 'CurrencyChange',
+      label: value,
+      attributes: {
+        previousCurrency,
+        newCurrency: value,
+        exchangeRate: exchangeRates?.rates?.[value] || 1
+      }
+    });
+    
     setCurrency(value);
     setCurrencySymbol(currencySymbols[value] || value);
   };

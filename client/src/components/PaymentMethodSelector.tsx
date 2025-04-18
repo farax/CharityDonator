@@ -4,6 +4,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { CreditCard } from 'lucide-react';
 import { SiPaypal } from 'react-icons/si';
+import { trackEvent } from '@/lib/analytics';
 
 type PaymentMethodType = 'stripe' | 'paypal';
 
@@ -37,7 +38,20 @@ export default function PaymentMethodSelector() {
   ];
 
   const handlePaymentMethodChange = (value: string) => {
-    setPaymentMethod(value as PaymentMethodType);
+    const newMethod = value as PaymentMethodType;
+    
+    // Track payment method selection
+    trackEvent({
+      category: 'Payment',
+      action: 'MethodSelected',
+      label: newMethod,
+      attributes: {
+        previousMethod: paymentMethod,
+        newMethod: newMethod
+      }
+    });
+    
+    setPaymentMethod(newMethod);
   };
 
   return (
