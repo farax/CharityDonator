@@ -627,20 +627,18 @@ export default function Payment() {
                       </div>
                       
                       {/* Cover Fees Option */}
-                      <div className="mt-4 flex items-center">
-                        <div className="flex items-center space-x-2">
-                          <input 
-                            type="checkbox" 
-                            id="cover-fees"
-                            checked={coverFees} 
-                            onChange={(e) => setCoverFees(e.target.checked)}
-                            className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" 
-                          />
-                          <label htmlFor="cover-fees" className="text-sm font-medium cursor-pointer">
+                      <div className="mt-4">
+                        <div className="flex justify-between items-center bg-gray-100 p-2 rounded-lg cursor-pointer" onClick={() => setCoverFees(!coverFees)}>
+                          <span className="text-sm font-medium">
                             {coverFees 
                               ? "I'll cover the payment processing fees" 
-                              : "Payment processor will deduct fees from donation"}
-                          </label>
+                              : "I will not cover the payment processing fees"}
+                          </span>
+                          <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${coverFees ? "bg-primary" : "bg-gray-400"}`}>
+                            <span 
+                              className={`inline-block h-5 w-5 rounded-full bg-white transition-transform ${coverFees ? "translate-x-6" : "translate-x-1"}`}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
