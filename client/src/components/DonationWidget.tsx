@@ -352,9 +352,10 @@ export default function DonationWidget() {
                     <Input 
                       type="text" 
                       className="pl-8 w-full p-3 border border-gray-300 rounded-md bg-white text-gray-900" 
-                      placeholder={`Enter amount in ${currency}`}
+                      placeholder="Enter amount"
                       value={customAmount}
                       onChange={handleCustomAmountChange}
+                      aria-label={`Enter amount in ${currency}`}
                     />
                   </div>
                 </div>
