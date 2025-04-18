@@ -1,5 +1,13 @@
-// ES module environment requires dynamic import for New Relic
-// We'll initialize it in the async function below instead
+// Initialize New Relic at the very beginning of the application
+// This ensures all server-side activity is monitored
+// Set New Relic license key for server-side monitoring
+process.env.NEW_RELIC_LICENSE_KEY = process.env.NEW_RELIC_LICENSE_KEY || 'f871da3e00f4cac36b9c34b7fc5a244cFFFFNRAL';
+process.env.NEW_RELIC_APP_NAME = process.env.NEW_RELIC_APP_NAME || 'Aafiyaa Charity Clinics';
+process.env.NEW_RELIC_NO_CONFIG_FILE = process.env.NEW_RELIC_NO_CONFIG_FILE || 'false';
+process.env.NEW_RELIC_LOG_LEVEL = process.env.NEW_RELIC_LOG_LEVEL || 'info';
+
+// Now import and initialize New Relic
+import newrelic from 'newrelic';
 
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";

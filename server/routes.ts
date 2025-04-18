@@ -1,6 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import session from "express-session";
+import newrelic from 'newrelic';
 
 // Add type declaration for session
 declare module 'express-session' {
