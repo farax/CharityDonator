@@ -2,13 +2,10 @@ import React from 'react';
 import { useDonation } from '@/components/DonationContext';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { 
-  CreditCard, 
-  Apple
-} from 'lucide-react';
-import { SiPaypal, SiGooglepay } from 'react-icons/si';
+import { CreditCard } from 'lucide-react';
+import { SiPaypal } from 'react-icons/si';
 
-type PaymentMethodType = 'stripe' | 'apple_pay' | 'paypal' | 'google_pay';
+type PaymentMethodType = 'stripe' | 'paypal';
 
 interface PaymentMethodOption {
   id: PaymentMethodType;

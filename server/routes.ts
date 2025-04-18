@@ -61,17 +61,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user's currency based on IP
   app.get("/api/currency-by-ip", async (req, res) => {
     try {
-      const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-      
-      // For testing purposes, randomly select a currency to simulate different regions
-      // In production, you'd use a real geolocation service
-      const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'INR'];
-      const randomCurrency = currencies[Math.floor(Math.random() * currencies.length)];
-      
-      res.json({ currency: randomCurrency });
+      // Since Stripe account is registered in Australia, default to AUD
+      // For testing purposes, we'll hardcode this to AUD
+      res.json({ currency: 'AUD' });
     } catch (error) {
-      // Default to USD if there's an error
-      res.json({ currency: 'USD' });
+      // Default to AUD if there's an error
+      res.json({ currency: 'AUD' });
     }
   });
 
