@@ -14,7 +14,12 @@ export default function Footer() {
             Aafiyaa Charity Clinics provides essential medical services to those in need worldwide through your generous donations.
           </p>
           <div className="flex space-x-4">
-            <a href="#" className="text-gray-300 hover:text-white">
+            <a 
+              href="https://www.facebook.com/profile.php?id=61574053173620" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-gray-300 hover:text-white"
+            >
               <Facebook className="h-5 w-5" />
             </a>
             <a href="#" className="text-gray-300 hover:text-white">
@@ -44,8 +49,8 @@ export default function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/our-work" className="text-gray-300 hover:text-white">
-                Our Work
+              <Link href="/active-cases" className="text-gray-300 hover:text-white">
+                Active Cases
               </Link>
             </li>
             <li>

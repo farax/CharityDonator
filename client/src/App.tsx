@@ -7,6 +7,7 @@ import AdminLogin from "@/pages/AdminLogin";
 import GetInvolved from "@/pages/GetInvolved";
 import ActiveCases from "@/pages/ActiveCases";
 import AboutUs from "@/pages/AboutUs";
+import ContactUs from "@/pages/ContactUs";
 import { DonationProvider } from "@/components/DonationContext";
 
 function Router() {
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/active-cases" component={ActiveCases} />
       <Route path="/get-involved" component={GetInvolved} />
       <Route path="/about" component={AboutUs} />
+      <Route path="/contact" component={ContactUs} />
       <Route path="/admin/login" component={AdminLogin} />
       {/* Make /admin come after /admin/login to ensure the right route is matched */}
       <Route path="/admin" component={Admin} />
