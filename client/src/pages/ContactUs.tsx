@@ -23,28 +23,12 @@ export default function ContactUs() {
   // Clinic locations
   const clinics = [
     {
-      name: "Karachi Main Clinic",
-      address: "123 Medical Center Rd, Saddar, Karachi, Pakistan",
-      phone: "+92 21 1234 5678",
-      email: "karachi@aafiyaaclinics.org",
+      name: "Clinic One",
+      address: "Plot 407, Block 4A, Quaid-e-azam colony, Gulshan Iqbal",
+      phone: "03432930028",
+      email: "info@aafiyaa.com",
       hours: "Mon-Sat: 9:00 AM - 5:00 PM",
-      mapUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3620.099427090403!2d67.0315445757053!3d24.86080044689537!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3eb33e70a31f45c9%3A0x2ac3bcf2fa89a353!2sSaddar%2C%20Karachi%2C%20Pakistan!5e0!3m2!1sen!2sus!4v1681922222222!5m2!1sen!2sus"
-    },
-    {
-      name: "Lahore Clinic",
-      address: "456 Healthcare Blvd, Gulberg, Lahore, Pakistan",
-      phone: "+92 42 9876 5432",
-      email: "lahore@aafiyaaclinics.org",
-      hours: "Mon-Sat: 8:30 AM - 4:30 PM",
-      mapUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3406.092635123438!2d74.3538227752142!3d31.505202752223287!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39190483e58107d9%3A0xc23abe6ccc7e2462!2sGulberg%2C%20Lahore%2C%20Punjab%2C%20Pakistan!5e0!3m2!1sen!2sus!4v1681922333333!5m2!1sen!2sus"
-    },
-    {
-      name: "Islamabad Community Health Center",
-      address: "789 Wellness Way, F-7, Islamabad, Pakistan",
-      phone: "+92 51 2468 1357",
-      email: "islamabad@aafiyaaclinics.org",
-      hours: "Mon-Fri: 9:00 AM - 6:00 PM",
-      mapUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3320.5814483224526!2d73.0498835751602!3d33.7157544440795!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x38dfbf4d8bd5c4cd%3A0x11d431fa82bc5d6!2sF-7%2C%20Islamabad%2C%20Pakistan!5e0!3m2!1sen!2sus!4v1681922444444!5m2!1sen!2sus"
+      mapUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3619.145244971144!2d67.09814841443994!3d24.894844984035214!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3eb33903d1f8df9d%3A0xfc1abec5a3e9ba80!2sGulshan-e-Iqbal%20Block%204-A%2C%20Gulshan-e-Iqbal%2C%20Karachi%2C%20Karachi%20City%2C%20Sindh%2C%20Pakistan!5e0!3m2!1sen!2sus!4v1681922222222!5m2!1sen!2sus"
     }
   ];
   
