@@ -40,8 +40,8 @@ export default function Header() {
             <Link href="/about" className="font-medium text-gray-600 hover:text-primary">
               About Us
             </Link>
-            <Link href="/our-work" className="font-medium text-gray-600 hover:text-primary">
-              Our Work
+            <Link href="/active-cases" className="font-medium text-gray-600 hover:text-primary">
+              Active Cases
             </Link>
             <Link href="/get-involved" className="font-medium text-gray-600 hover:text-primary">
               Get Involved
@@ -49,14 +49,7 @@ export default function Header() {
             <Link href="/contact" className="font-medium text-gray-600 hover:text-primary">
               Contact
             </Link>
-            <Link href="/admin" className="font-medium text-gray-600 hover:text-primary">
-              Admin
-            </Link>
-            <Link href="/payment">
-              <Button className="bg-primary text-white hover:bg-teal-600 transition duration-150">
-                Donate
-              </Button>
-            </Link>
+            {/* Admin link removed from navigation, accessible directly via URL */}
           </nav>
         </div>
         
@@ -79,11 +72,11 @@ export default function Header() {
                 About Us
               </Link>
               <Link 
-                href="/our-work" 
+                href="/active-cases" 
                 className="font-medium text-gray-600 hover:text-primary" 
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Our Work
+                Active Cases
               </Link>
               <Link 
                 href="/get-involved" 
@@ -99,21 +92,7 @@ export default function Header() {
               >
                 Contact
               </Link>
-              <Link 
-                href="/admin" 
-                className="font-medium text-gray-600 hover:text-primary" 
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Admin
-              </Link>
-              <Link href="/payment">
-                <Button 
-                  className="w-full bg-primary text-white hover:bg-teal-600 transition duration-150" 
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Donate
-                </Button>
-              </Link>
+              {/* Admin and Donate buttons removed from mobile menu */}
             </div>
           </div>
         )}

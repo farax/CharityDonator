@@ -7,11 +7,11 @@ interface HeroProps {
 export default function Hero({ children }: HeroProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
-  // Images for the carousel (renamed as requested)
+  // Images for the carousel (updated collection)
   const images = [
     '/images/clinic_patient_care.jpeg',
     '/images/medical_team.jpeg',
-    '/images/medical_consultation.jpeg'
+    '/images/charity_clinic.png'
   ];
 
   useEffect(() => {
