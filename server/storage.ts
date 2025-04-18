@@ -5,7 +5,8 @@ import {
   donations, type Donation, type InsertDonation,
   endorsements, type Endorsement, type InsertEndorsement,
   stats, type Stats, type InsertStats,
-  cases, type Case, type InsertCase
+  cases, type Case, type InsertCase,
+  contactMessages, type ContactMessage, type InsertContactMessage
 } from "@shared/schema";
 
 // Define the storage interface with all necessary CRUD methods
@@ -41,6 +42,12 @@ export interface IStorage {
   getCase(id: number): Promise<Case | undefined>;
   createCase(caseData: InsertCase): Promise<Case>;
   updateCaseAmountCollected(id: number, additionalAmount: number): Promise<Case | undefined>;
+  
+  // Contact message methods
+  createContactMessage(message: InsertContactMessage): Promise<ContactMessage>;
+  getContactMessages(): Promise<ContactMessage[]>;
+  getContactMessage(id: number): Promise<ContactMessage | undefined>;
+  markContactMessageAsRead(id: number): Promise<ContactMessage | undefined>;
 }
 
 const MemoryStore = createMemoryStore(session);
@@ -50,6 +57,7 @@ export class MemStorage implements IStorage {
   private donations: Map<number, Donation>;
   private endorsementsList: Map<number, Endorsement>;
   private casesList: Map<number, Case>;
+  private contactMessagesList: Map<number, ContactMessage>;
   private statsData: Stats | undefined;
   
   // Session store for admin authentication
@@ -59,17 +67,20 @@ export class MemStorage implements IStorage {
   private donationCurrentId: number;
   private endorsementCurrentId: number;
   private caseCurrentId: number;
+  private contactMessageCurrentId: number;
 
   constructor() {
     this.users = new Map();
     this.donations = new Map();
     this.endorsementsList = new Map();
     this.casesList = new Map();
+    this.contactMessagesList = new Map();
     
     this.userCurrentId = 1;
     this.donationCurrentId = 1;
     this.endorsementCurrentId = 1;
     this.caseCurrentId = 1;
+    this.contactMessageCurrentId = 1;
     
     // Initialize memory store for session data
     this.sessionStore = new MemoryStore({
@@ -321,6 +332,40 @@ export class MemStorage implements IStorage {
     
     this.casesList.set(id, updatedCase);
     return updatedCase;
+  }
+  
+  // Contact message methods
+  async createContactMessage(message: InsertContactMessage): Promise<ContactMessage> {
+    const id = this.contactMessageCurrentId++;
+    const contactMessage: ContactMessage = {
+      ...message,
+      id,
+      createdAt: new Date(),
+      isRead: false
+    };
+    this.contactMessagesList.set(id, contactMessage);
+    return contactMessage;
+  }
+  
+  async getContactMessages(): Promise<ContactMessage[]> {
+    return Array.from(this.contactMessagesList.values());
+  }
+  
+  async getContactMessage(id: number): Promise<ContactMessage | undefined> {
+    return this.contactMessagesList.get(id);
+  }
+  
+  async markContactMessageAsRead(id: number): Promise<ContactMessage | undefined> {
+    const message = this.contactMessagesList.get(id);
+    if (!message) return undefined;
+    
+    const updatedMessage: ContactMessage = {
+      ...message,
+      isRead: true
+    };
+    
+    this.contactMessagesList.set(id, updatedMessage);
+    return updatedMessage;
   }
 }
 
