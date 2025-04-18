@@ -11,7 +11,7 @@ declare module 'express-session' {
 import { storage } from "./storage";
 import Stripe from "stripe";
 import fetch from "node-fetch";
-import { insertDonationSchema, insertCaseSchema } from "@shared/schema";
+import { insertDonationSchema, insertCaseSchema, contactFormSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
@@ -28,6 +28,14 @@ const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SEC
 const exchangeRateUrl = "https://open.er-api.com/v6/latest/USD";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Admin middleware to check if admin is authenticated
+  const isAdminAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+    if (req.session && req.session.adminAuthenticated === true) {
+      next();
+    } else {
+      res.status(401).json({ message: "Unauthorized" });
+    }
+  };
   // API routes
   app.get("/api/stats", async (req, res) => {
     try {
@@ -55,6 +63,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch exchange rates" });
+    }
+  });
+  
+  // Contact form API endpoints
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const contactData = contactFormSchema.parse(req.body);
+      const savedMessage = await storage.createContactMessage(contactData);
+      
+      // In a production app, you would send an email notification here
+      // using a service like SendGrid or similar
+      console.log('Contact form submission:', savedMessage);
+      
+      res.status(201).json({ 
+        success: true, 
+        messageId: savedMessage.id,
+        message: "Thank you for your message. We'll get back to you soon!" 
+      });
+    } catch (error) {
+      console.error('Contact form error:', error);
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        res.status(400).json({ 
+          success: false, 
+          message: validationError.message 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "Failed to submit contact form" 
+        });
+      }
+    }
+  });
+  
+  // Get all contact messages (protected by admin auth)
+  app.get("/api/contact-messages", isAdminAuthenticated, async (req, res) => {
+    try {
+      const messages = await storage.getContactMessages();
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve contact messages" });
+    }
+  });
+  
+  // Mark contact message as read (protected by admin auth)
+  app.post("/api/contact-messages/:id/read", isAdminAuthenticated, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      const message = await storage.markContactMessageAsRead(messageId);
+      
+      if (!message) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      
+      res.json(message);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to mark message as read" });
     }
   });
 
@@ -200,15 +266,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     req.session.adminAuthenticated = false;
     res.json({ success: true });
   });
-  
-  // Admin middleware to check if admin is authenticated
-  const isAdminAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-    if (req.session && req.session.adminAuthenticated === true) {
-      next();
-    } else {
-      res.status(401).json({ message: "Unauthorized" });
-    }
-  };
   
   // Get payment history (all donations with their status) - protected
   app.get("/api/payment-history", isAdminAuthenticated, async (req, res) => {

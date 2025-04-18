@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { contactFormSchema } from '@shared/schema';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,14 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { MapPin, Phone, Mail, Clock, ExternalLink } from 'lucide-react';
-
-// Form schema
-const contactFormSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
-  email: z.string().email({ message: 'Please enter a valid email address.' }),
-  subject: z.string().min(5, { message: 'Subject must be at least 5 characters.' }),
-  message: z.string().min(10, { message: 'Message must be at least 10 characters.' })
-});
+import { apiRequest } from '@/lib/queryClient';
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;
 
@@ -70,22 +64,25 @@ export default function ContactUs() {
     setIsSubmitting(true);
     
     try {
-      // In a real app, we would send this data to the server
-      console.log("Contact form submission:", data);
+      // Send data to the server
+      const response = await apiRequest('POST', '/api/contact', data);
+      const result = await response.json();
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to submit form');
+      }
       
       toast({
         title: "Message Sent",
-        description: "Thank you for your message. We'll get back to you soon.",
+        description: result.message || "Thank you for your message. We'll get back to you soon.",
       });
       
       form.reset();
     } catch (error) {
+      console.error('Contact form error:', error);
       toast({
         title: "Error",
-        description: "There was a problem sending your message. Please try again.",
+        description: error instanceof Error ? error.message : "There was a problem sending your message. Please try again.",
         variant: "destructive",
       });
     } finally {
