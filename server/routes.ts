@@ -36,6 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(401).json({ message: "Unauthorized" });
     }
   };
+  
   // API routes
   app.get("/api/stats", async (req, res) => {
     try {
