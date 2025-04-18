@@ -1,13 +1,21 @@
-// Initialize New Relic at the very beginning of the application
-// This ensures all server-side activity is monitored
-// Set New Relic license key for server-side monitoring
-process.env.NEW_RELIC_LICENSE_KEY = process.env.NEW_RELIC_LICENSE_KEY || 'f871da3e00f4cac36b9c34b7fc5a244cFFFFNRAL';
-process.env.NEW_RELIC_APP_NAME = process.env.NEW_RELIC_APP_NAME || 'Aafiyaa Charity Clinics';
-process.env.NEW_RELIC_NO_CONFIG_FILE = process.env.NEW_RELIC_NO_CONFIG_FILE || 'false';
-process.env.NEW_RELIC_LOG_LEVEL = process.env.NEW_RELIC_LOG_LEVEL || 'info';
-
-// Now import and initialize New Relic
+// Commented out New Relic server-side initialization due to configuration issues
+// The browser agent is still active and tracking frontend events
+/*
+process.env.NEW_RELIC_LICENSE_KEY = 'f871da3e00f4cac36b9c34b7fc5a244cFFFFNRAL';
+process.env.NEW_RELIC_APP_NAME = 'Aafiyaa Charity Clinics';
+process.env.NEW_RELIC_NO_CONFIG_FILE = 'false';
+process.env.NEW_RELIC_LOG_LEVEL = 'info';
 import newrelic from 'newrelic';
+*/
+
+// Create a mock newrelic implementation to allow the route code to work without errors
+export const newrelic = {
+  setTransactionName: () => {},
+  addCustomAttributes: () => {},
+  addCustomAttribute: () => {},
+  recordCustomEvent: () => {},
+  noticeError: (error: Error) => { console.error('Error tracked:', error.message); }
+};
 
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
