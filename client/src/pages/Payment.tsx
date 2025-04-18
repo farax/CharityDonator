@@ -17,6 +17,7 @@ import {
   PayPalButtons,
   FUNDING
 } from '@paypal/react-paypal-js';
+import { trackButtonClick, trackEvent, trackFormSubmission } from '@/lib/analytics';
 
 // No donor form schema needed since we'll use the payment provider's UI
 

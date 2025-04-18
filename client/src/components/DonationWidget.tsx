@@ -11,6 +11,7 @@ import { apiRequest } from '@/lib/queryClient';
 import CurrencySelector from '@/components/CurrencySelector';
 import CaseSelector from '@/components/CaseSelector';
 import { ChevronRight } from 'lucide-react';
+import { trackButtonClick, trackDonation, trackEvent } from '@/lib/analytics';
 
 export default function DonationWidget() {
   const { 
@@ -39,20 +40,45 @@ export default function DonationWidget() {
   }, [type, setFrequency]);
 
   const handleDonationTypeChange = (newType: string) => {
-    setType(newType as 'zakaat' | 'sadqah' | 'interest');
+    const typedValue = newType as 'zakaat' | 'sadqah' | 'interest';
+    setType(typedValue);
+    
+    // Track donation type selection
+    trackEvent({
+      category: 'Donation',
+      action: 'SelectType',
+      label: typedValue
+    });
   };
 
   const handleAmountClick = (selectedAmount: number | 'custom') => {
     if (selectedAmount === 'custom') {
       setIsCustomAmount(true);
+      
+      // Track custom amount click
+      trackEvent({
+        category: 'Donation',
+        action: 'SelectCustomAmount',
+        label: type
+      });
     } else {
       setIsCustomAmount(false);
       setAmount(selectedAmount);
+      
+      // Track predefined amount selection
+      trackEvent({
+        category: 'Donation',
+        action: 'SelectAmount',
+        label: `${type}-${selectedAmount}`,
+        value: selectedAmount
+      });
     }
   };
 
   const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCustomAmount(e.target.value);
+    
+    // We don't track every keystroke to avoid too many events
   };
 
   const handleDonateClick = async () => {
@@ -66,8 +92,24 @@ export default function DonationWidget() {
           description: "Please enter a valid donation amount",
           variant: "destructive"
         });
+        
+        // Track validation error
+        trackEvent({
+          category: 'Donation',
+          action: 'ValidationError',
+          label: 'InvalidAmount'
+        });
+        
         return;
       }
+
+      // Track the donate button click
+      trackButtonClick('StartDonation', {
+        donationType: type,
+        amount: finalAmount,
+        currency: currency,
+        frequency: frequency
+      });
 
       const donationData: any = {
         type,
@@ -86,6 +128,19 @@ export default function DonationWidget() {
       const donationResponse = await apiRequest("POST", "/api/donations", donationData);
       const donation = await donationResponse.json();
 
+      // Track successful donation initiation
+      trackDonation(
+        type,
+        finalAmount,
+        currency,
+        {
+          frequency: frequency,
+          destinationProject: destinationProject,
+          caseId: selectedCase?.id,
+          donationId: donation.id
+        }
+      );
+
       // Store the donation ID in sessionStorage for the payment page
       sessionStorage.setItem('currentDonation', JSON.stringify({
         id: donation.id,
@@ -100,6 +155,13 @@ export default function DonationWidget() {
       // Navigate to the payment page
       setLocation('/payment');
     } catch (error) {
+      // Track error
+      trackEvent({
+        category: 'Donation',
+        action: 'Error',
+        label: 'APIError'
+      });
+      
       toast({
         title: "Error",
         description: "Failed to process your donation request. Please try again.",

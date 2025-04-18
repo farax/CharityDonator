@@ -1,4 +1,5 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
+import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Payment from "@/pages/Payment";
@@ -9,8 +10,22 @@ import ActiveCases from "@/pages/ActiveCases";
 import AboutUs from "@/pages/AboutUs";
 import ContactUs from "@/pages/ContactUs";
 import { DonationProvider } from "@/components/DonationContext";
+import { initAnalytics, trackPageView, trackTimeOnPage } from "@/lib/analytics";
 
+// Analytics-aware router that tracks page views
 function Router() {
+  const [location] = useLocation();
+
+  // Track page views and time on page
+  useEffect(() => {
+    // Track page view when location changes
+    trackPageView(location);
+    
+    // Track time spent on page when user navigates away
+    const cleanup = trackTimeOnPage();
+    return cleanup;
+  }, [location]);
+
   return (
     <Switch>
       <Route path="/" component={Home} />
@@ -28,6 +43,11 @@ function Router() {
 }
 
 function App() {
+  // Initialize analytics on first render
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
   return (
     <DonationProvider>
       <Router />
