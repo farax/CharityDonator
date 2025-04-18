@@ -107,6 +107,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update donation status" });
     }
   });
+  
+  // Update donor information
+  app.post("/api/update-donation-donor", async (req, res) => {
+    try {
+      const { donationId, name, email } = req.body;
+      
+      if (!donationId || !name || !email) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      const donation = await storage.updateDonationDonor(donationId, name, email);
+      
+      if (!donation) {
+        return res.status(404).json({ message: "Donation not found" });
+      }
+      
+      res.status(200).json({ success: true, donation });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update donor information" });
+    }
+  });
 
   // Stripe payment intent creation
   app.post("/api/create-payment-intent", async (req, res) => {

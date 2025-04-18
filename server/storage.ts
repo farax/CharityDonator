@@ -237,6 +237,22 @@ export class MemStorage implements IStorage {
     return Array.from(this.donations.values());
   }
   
+  async updateDonationDonor(id: number, name: string, email: string): Promise<Donation | undefined> {
+    const donation = this.donations.get(id);
+    if (!donation) return undefined;
+    
+    const updatedDonation: Donation = {
+      ...donation,
+      name,
+      email
+    };
+    
+    // Update the donation in the map
+    this.donations.set(id, updatedDonation);
+    
+    return updatedDonation;
+  }
+  
   // Endorsement methods
   async getEndorsements(): Promise<Endorsement[]> {
     return Array.from(this.endorsementsList.values());
