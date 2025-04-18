@@ -70,12 +70,10 @@ export function DonationProvider({ children }: { children: React.ReactNode }) {
     'SAR', 'MYR', 'RON', 'TRY', 'PKR'  // Added PKR for Pakistan
   ];
   
-  // Initialize with some default values
+  // Initialize with currency based on location (handled by CurrencySelector component)
   useEffect(() => {
-    console.log('Location detection would happen here');
-    // We'd usually detect the user's location and set currency accordingly
-    // For now, just log this and use USD as the default
-    console.log('User currency detected as: USD');
+    // Currency is automatically set based on the user's location via API
+    // This initialization is handled by the CurrencySelector component
   }, []);
 
   // Effect to update destination project based on donation type

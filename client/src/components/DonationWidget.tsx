@@ -108,9 +108,9 @@ export default function DonationWidget() {
     }
   };
 
-  // Format amount with currency conversion
+  // Format amount with currency symbol but no conversion (fixed amounts)
   const formatAmount = (amt: number) => {
-    return `${currencySymbol}${convertAmount(amt)}`;
+    return `${currencySymbol}${amt}`;
   };
 
   return (
@@ -145,12 +145,7 @@ export default function DonationWidget() {
           <div className="donation-form-content">
             {/* Destination Project Section */}
             <div className="mb-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Donate For: {destinationProject}</h3>
-                <div className="flex items-center">
-                  <CurrencySelector />
-                </div>
-              </div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">Donate For: {destinationProject}</h3>
               
               {type === 'zakaat' && (
                 <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex justify-between items-center">
@@ -252,14 +247,14 @@ export default function DonationWidget() {
             
             {/* Amount Selection */}
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">Select Amount</h3>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-sm font-semibold text-gray-700">Select Amount</h3>
+                <div className="flex items-center">
+                  <CurrencySelector />
+                </div>
+              </div>
+              
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <button 
-                  className={`${!isCustomAmount && amount === 5 ? 'bg-blue-100 border-blue-200' : 'bg-blue-50 hover:bg-blue-100 border-blue-100'} text-primary font-semibold py-3 px-4 rounded-md border`}
-                  onClick={() => handleAmountClick(5)}
-                >
-                  {formatAmount(5)}
-                </button>
                 <button 
                   className={`${!isCustomAmount && amount === 10 ? 'bg-blue-100 border-blue-200' : 'bg-blue-50 hover:bg-blue-100 border-blue-100'} text-primary font-semibold py-3 px-4 rounded-md border`}
                   onClick={() => handleAmountClick(10)}
@@ -271,6 +266,12 @@ export default function DonationWidget() {
                   onClick={() => handleAmountClick(50)}
                 >
                   {formatAmount(50)}
+                </button>
+                <button 
+                  className={`${!isCustomAmount && amount === 100 ? 'bg-blue-100 border-blue-200' : 'bg-blue-50 hover:bg-blue-100 border-blue-100'} text-primary font-semibold py-3 px-4 rounded-md border`}
+                  onClick={() => handleAmountClick(100)}
+                >
+                  {formatAmount(100)}
                 </button>
                 <button 
                   className={`${isCustomAmount ? 'bg-gray-200 border-gray-300' : 'bg-gray-100 hover:bg-gray-200 border-gray-200'} text-gray-700 font-semibold py-3 px-4 rounded-md border`}
@@ -286,13 +287,12 @@ export default function DonationWidget() {
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">{currencySymbol}</span>
                     <Input 
                       type="text" 
-                      className="pl-8 w-full p-3 border border-gray-300 rounded-md" 
+                      className="pl-8 w-full p-3 border border-gray-300 rounded-md bg-white text-gray-900" 
                       placeholder="Enter amount"
                       value={customAmount}
                       onChange={handleCustomAmountChange}
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Currency will be adjusted based on your location</p>
                 </div>
               )}
             </div>
