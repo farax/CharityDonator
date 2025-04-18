@@ -129,17 +129,19 @@ export default function DonationWidget() {
       const donation = await donationResponse.json();
 
       // Track successful donation initiation
-      trackDonation(
-        type,
-        finalAmount,
-        currency,
-        {
-          frequency: frequency,
-          destinationProject: destinationProject,
-          caseId: selectedCase?.id,
-          donationId: donation.id
+      trackEvent({
+        category: 'Donation',
+        action: type,
+        value: finalAmount,
+        attributes: {
+          currency,
+          frequency,
+          destinationProject,
+          donationId: donation.id.toString(),
+          // Only add caseId if it exists
+          ...(selectedCase ? { caseId: selectedCase.id.toString() } : {})
         }
-      );
+      });
 
       // Store the donation ID in sessionStorage for the payment page
       sessionStorage.setItem('currentDonation', JSON.stringify({

@@ -56,6 +56,14 @@ const CheckoutForm = () => {
     }
 
     setIsLoading(true);
+    
+    // Track payment form submission
+    trackFormSubmission('StripePaymentForm', {
+      paymentMethod: 'stripe',
+      donationType: donationDetails?.type,
+      amount: donationDetails?.amount,
+      currency: donationDetails?.currency
+    });
 
     const { error } = await stripe.confirmPayment({
       elements,
@@ -65,12 +73,37 @@ const CheckoutForm = () => {
     });
 
     if (error) {
+      // Track payment failure
+      trackEvent({
+        category: 'Payment',
+        action: 'Failed',
+        label: error.message || 'Payment error',
+        attributes: {
+          paymentMethod: 'stripe',
+          errorType: error.type || 'unknown',
+          errorCode: error.code || 'none'
+        }
+      });
+      
       toast({
         title: "Payment Failed",
         description: error.message,
         variant: "destructive",
       });
     } else {
+      // Track payment success
+      trackEvent({
+        category: 'Payment',
+        action: 'Success',
+        label: 'Stripe',
+        value: donationDetails?.amount,
+        attributes: {
+          paymentMethod: 'stripe',
+          donationId: donationDetails?.id?.toString(),
+          frequency: donationDetails?.frequency
+        }
+      });
+      
       toast({
         title: "Payment Successful",
         description: "Thank you for your donation!",
@@ -138,6 +171,20 @@ const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
 
   // Define success handler for PayPal
   const handlePayPalSuccess = (details: any) => {
+    // Track payment success with PayPal
+    trackEvent({
+      category: 'Payment',
+      action: 'Success',
+      label: 'PayPal',
+      value: donationDetails.amount,
+      attributes: {
+        paymentMethod: 'paypal',
+        donationId: donationDetails.id.toString(),
+        frequency: donationDetails.frequency,
+        paypalOrderId: details.id
+      }
+    });
+    
     // Update donation status in the database
     apiRequest("POST", "/api/update-donation-status", {
       donationId: donationDetails.id,
@@ -159,6 +206,17 @@ const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
 
   // Handle errors
   const handlePayPalError = (error: any) => {
+    // Track payment failure
+    trackEvent({
+      category: 'Payment',
+      action: 'Failed',
+      label: 'PayPal',
+      attributes: {
+        paymentMethod: 'paypal',
+        errorMessage: error?.message || 'Unknown PayPal error'
+      }
+    });
+    
     toast({
       title: "Payment Failed",
       description: error?.message || "There was an issue processing your PayPal payment.",
@@ -255,6 +313,14 @@ const ApplePayment = ({ donationDetails }: { donationDetails: any }) => {
     e.preventDefault();
     setIsLoading(true);
     
+    // Track form submission
+    trackFormSubmission('ApplePayForm', {
+      paymentMethod: 'apple_pay',
+      donationType: donationDetails?.type,
+      amount: donationDetails?.amount,
+      currency: donationDetails?.currency
+    });
+    
     try {
       // Set up payment request data
       const paymentData = {
@@ -278,6 +344,19 @@ const ApplePayment = ({ donationDetails }: { donationDetails: any }) => {
         paymentId: `applepay-${Date.now()}`
       });
       
+      // Track successful payment
+      trackEvent({
+        category: 'Payment',
+        action: 'Success',
+        label: 'ApplePay',
+        value: donationDetails.amount,
+        attributes: {
+          paymentMethod: 'apple_pay',
+          donationId: donationDetails.id.toString(),
+          frequency: donationDetails.frequency
+        }
+      });
+      
       toast({
         title: "Payment Successful",
         description: "Thank you for your donation via Apple Pay!",
@@ -289,6 +368,17 @@ const ApplePayment = ({ donationDetails }: { donationDetails: any }) => {
       }, 2000);
       
     } catch (error) {
+      // Track payment failure
+      trackEvent({
+        category: 'Payment',
+        action: 'Failed',
+        label: 'ApplePay',
+        attributes: {
+          paymentMethod: 'apple_pay',
+          errorMessage: 'Apple Pay processing error'
+        }
+      });
+      
       toast({
         title: "Payment Failed",
         description: "There was an issue processing your Apple Pay payment.",
@@ -379,6 +469,14 @@ const GooglePayment = ({ donationDetails }: { donationDetails: any }) => {
     e.preventDefault();
     setIsLoading(true);
     
+    // Track form submission
+    trackFormSubmission('GooglePayForm', {
+      paymentMethod: 'google_pay',
+      donationType: donationDetails?.type,
+      amount: donationDetails?.amount,
+      currency: donationDetails?.currency
+    });
+    
     try {
       // Set up payment request data
       const paymentData = {
@@ -402,6 +500,19 @@ const GooglePayment = ({ donationDetails }: { donationDetails: any }) => {
         paymentId: `googlepay-${Date.now()}`
       });
       
+      // Track successful payment
+      trackEvent({
+        category: 'Payment',
+        action: 'Success',
+        label: 'GooglePay',
+        value: donationDetails.amount,
+        attributes: {
+          paymentMethod: 'google_pay',
+          donationId: donationDetails.id.toString(),
+          frequency: donationDetails.frequency
+        }
+      });
+      
       toast({
         title: "Payment Successful",
         description: "Thank you for your donation via Google Pay!",
@@ -413,6 +524,17 @@ const GooglePayment = ({ donationDetails }: { donationDetails: any }) => {
       }, 2000);
       
     } catch (error) {
+      // Track payment failure
+      trackEvent({
+        category: 'Payment',
+        action: 'Failed',
+        label: 'GooglePay',
+        attributes: {
+          paymentMethod: 'google_pay',
+          errorMessage: 'Google Pay processing error'
+        }
+      });
+      
       toast({
         title: "Payment Failed",
         description: "There was an issue processing your Google Pay payment.",

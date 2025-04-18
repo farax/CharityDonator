@@ -8,7 +8,7 @@ interface AnalyticsEvent {
   action: string;
   label?: string;
   value?: number;
-  attributes?: EventAttributes;
+  attributes?: Record<string, any>;
 }
 
 /**
@@ -28,9 +28,24 @@ export function trackEvent({
     // Format event name
     const eventName = `${category}:${action}`;
     
+    // Clean up attributes to ensure they're valid
+    const cleanAttributes: EventAttributes = {};
+    Object.entries(attributes).forEach(([key, val]) => {
+      if (val !== undefined && val !== null) {
+        // Convert any non-primitive types to strings
+        if (typeof val === 'object') {
+          cleanAttributes[key] = JSON.stringify(val);
+        } else if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
+          cleanAttributes[key] = val;
+        } else {
+          cleanAttributes[key] = String(val);
+        }
+      }
+    });
+    
     // Prepare event attributes
     const eventAttributes: EventAttributes = {
-      ...attributes,
+      ...cleanAttributes,
     };
     
     // Add optional parameters if provided
@@ -123,15 +138,24 @@ export function trackDonation(
   type: string,
   amount: number,
   currency: string,
-  additionalAttributes?: EventAttributes
+  additionalAttributes: Record<string, string | number | boolean | null | undefined> = {}
 ): void {
+  // Filter out undefined and null values
+  const cleanAttributes: Record<string, string | number | boolean> = {};
+  
+  Object.entries(additionalAttributes).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      cleanAttributes[key] = value as string | number | boolean;
+    }
+  });
+  
   trackEvent({
     category: 'Donation',
     action: type,
     value: amount,
     attributes: {
       currency,
-      ...additionalAttributes,
+      ...cleanAttributes,
     },
   });
 }
