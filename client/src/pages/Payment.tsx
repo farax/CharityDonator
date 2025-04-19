@@ -1004,7 +1004,9 @@ export default function Payment() {
                             }
                           }
                         },
-                        loader: 'auto'
+                        loader: 'auto',
+                        // Set payment method creation mode to manual as required by Stripe
+                        paymentMethodCreation: 'manual'
                         // Note: We'll rely on server-side configuration for payment method restriction
                       }}>
                         <CheckoutForm isSubscription={isSubscription} />
