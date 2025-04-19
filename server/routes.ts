@@ -348,6 +348,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Create a SetupIntent for subscription payment method collection
+  app.post('/api/create-setup-intent', async (req, res) => {
+    if (!stripe) {
+      return res.status(500).json({ message: "Stripe is not configured" });
+    }
+    
+    try {
+      const { donationId } = req.body;
+      
+      if (!donationId) {
+        return res.status(400).json({ message: 'Donation ID is required' });
+      }
+      
+      const donation = await storage.getDonation(Number(donationId));
+      if (!donation) {
+        return res.status(404).json({ message: 'Donation not found' });
+      }
+      
+      // Create a SetupIntent to collect payment method for future subscription charges
+      const setupIntent = await stripe.setupIntents.create({
+        usage: 'off_session', // Allow using this payment method for future off-session charges
+        metadata: {
+          donationId: donationId.toString(),
+          isSubscription: 'true'
+        }
+      });
+      
+      res.json({ clientSecret: setupIntent.client_secret });
+    } catch (error: any) {
+      console.error('Error creating setup intent:', error.message);
+      res.status(500).json({ message: `Error creating setup intent: ${error.message}` });
+    }
+  });
+  
   // Create a subscription with Stripe 
   app.post('/api/create-subscription', async (req, res) => {
     if (!stripe) {
