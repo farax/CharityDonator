@@ -164,31 +164,61 @@ export function trackDonation(
  */
 export function initNewRelicBrowserAgent(accountId: string, licenseKey: string, applicationId: string): void {
   if (typeof window !== 'undefined' && !document.getElementById('newrelic-browser-agent')) {
-    // Create a new script element
+    // Create a new script element for the full New Relic Browser agent
     const script = document.createElement('script');
     script.id = 'newrelic-browser-agent';
     script.type = 'text/javascript';
+    script.src = `https://js-agent.newrelic.com/nr-spa-1.237.0.min.js`;
     script.async = true;
     
-    // Set the script content - simple initialization script
-    script.textContent = `
-      window.NREUM||(NREUM={});NREUM.init={privacy:{cookies_enabled:true}};
-      window.NREUM||(NREUM={});NREUM.info={
-        beacon: "bam.nr-data.net",
-        errorBeacon: "bam.nr-data.net",
-        licenseKey: "${licenseKey}",
-        applicationID: "${applicationId}",
-        transactionName: "transaction",
-        applicationTime: 0,
-        queueTime: 0,
-        agent: ""
-      };
-    `;
+    // Setup the initialization configuration with TypeScript type assertions
+    (window as any).NREUM = (window as any).NREUM || {};
+    (window as any).NREUM.init = {
+      distributed_tracing: {enabled: true},
+      privacy: {cookies_enabled: true},
+      ajax: {deny_list: ["bam.nr-data.net"]},
+      session_trace: {enabled: true},
+      session_replay: {enabled: false}
+    };
+    
+    (window as any).NREUM.loader_config = {
+      accountID: accountId,
+      trustKey: accountId,
+      agentID: applicationId,
+      licenseKey: licenseKey,
+      applicationID: applicationId
+    };
+
+    (window as any).NREUM.info = {
+      beacon: "bam.nr-data.net",
+      errorBeacon: "bam.nr-data.net",
+      licenseKey: licenseKey,
+      applicationID: applicationId,
+      sa: 1
+    };
+    
+    // Add debugging to verify data is being sent
+    const origNoticeError = (window as any).NREUM.noticeError || function() {};
+    (window as any).NREUM.noticeError = function(err: Error) {
+      console.log('New Relic tracking error:', err);
+      return origNoticeError.apply(this, arguments);
+    };
     
     // Append the script to the document head
     document.head.appendChild(script);
     
-    console.log("New Relic Browser Agent initialized");
+    console.log("New Relic Browser Agent initialized with", { accountId, applicationId });
+    
+    // Create a test event to verify the connection
+    setTimeout(() => {
+      if ((window as any).newrelic) {
+        (window as any).newrelic.addPageAction('test_event', { 
+          timestamp: new Date().toISOString(),
+          environment: 'replit-webview'
+        });
+        console.log("Test event sent to New Relic");
+      }
+    }, 3000);
   }
 }
 
