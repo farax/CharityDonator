@@ -71,6 +71,12 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
     if (isSubscription) {
       // For subscriptions, we need to collect payment method and then create a subscription
       try {
+        // First submit the Elements form to validate card details
+        const { error: submitError } = await elements.submit();
+        if (submitError) {
+          throw new Error(submitError.message);
+        }
+        
         // 1. Create a payment method from the form elements
         const { error: elementsError, paymentMethod } = await stripe.createPaymentMethod({
           elements
@@ -983,7 +989,9 @@ export default function Payment() {
                     ) : stripePromise ? (
                       <Elements stripe={stripePromise} options={{ 
                         clientSecret, 
-                        appearance: { theme: 'stripe' }
+                        appearance: { theme: 'stripe' },
+                        business: { name: 'Faraz' },
+                        loader: 'auto'
                       }}>
                         <CheckoutForm isSubscription={isSubscription} />
                       </Elements>
