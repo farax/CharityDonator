@@ -6,9 +6,10 @@ import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
+import config, { validateConfig } from "./config";
 
-// Setup session for admin authentication
-const sessionSecret = process.env.SESSION_SECRET || 'aafiyaa-charity-session-secret';
+// Validate configuration on startup
+validateConfig();
 
 const app = express();
 app.use(express.json());
@@ -16,10 +17,13 @@ app.use(express.urlencoded({ extended: false }));
 
 // Session middleware
 app.use(session({
-  secret: sessionSecret,
+  secret: config.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }, // 24 hours
+  cookie: { 
+    secure: config.IS_PRODUCTION, 
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  },
   store: storage.sessionStore
 }));
 
@@ -67,16 +71,15 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
+  if (config.IS_DEVELOPMENT) {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
+  // Get port from config, defaulting to 5000
   // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  const port = config.PORT;
   server.listen({
     port,
     host: "0.0.0.0",

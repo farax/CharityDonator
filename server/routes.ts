@@ -14,32 +14,29 @@ import fetch from "node-fetch";
 import { insertDonationSchema, insertCaseSchema, contactFormSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import config from "./config";
 
 // Initialize Stripe with the secret key
-if (!process.env.STRIPE_SECRET_KEY) {
-  console.warn('Missing required Stripe secret: STRIPE_SECRET_KEY');
-}
-
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-03-31.basil",
-}) : undefined;
+const stripe = config.STRIPE.SECRET_KEY 
+  ? new Stripe(config.STRIPE.SECRET_KEY, {
+      apiVersion: "2025-03-31.basil",
+    }) 
+  : undefined;
 
 // Currency conversion API
 const exchangeRateUrl = "https://open.er-api.com/v6/latest/USD";
 
 // PayPal API configuration
-
-// PayPal API configuration
-const PAYPAL_API_BASE = process.env.NODE_ENV === 'production' 
+const PAYPAL_API_BASE = config.IS_PRODUCTION
   ? 'https://api-m.paypal.com' 
   : 'https://api-m.sandbox.paypal.com';
 
 const getPayPalAccessToken = async () => {
-  if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_SECRET_KEY) {
+  if (!config.PAYPAL.CLIENT_ID || !config.PAYPAL.SECRET_KEY) {
     throw new Error('PayPal credentials are missing');
   }
 
-  const auth = Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_SECRET_KEY}`).toString('base64');
+  const auth = Buffer.from(`${config.PAYPAL.CLIENT_ID}:${config.PAYPAL.SECRET_KEY}`).toString('base64');
   const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
     method: 'POST',
     headers: {
@@ -235,7 +232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields" });
       }
       
-      if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_SECRET_KEY) {
+      if (!config.PAYPAL.CLIENT_ID || !config.PAYPAL.SECRET_KEY) {
         return res.status(500).json({ message: "PayPal is not properly configured" });
       }
       
@@ -521,7 +518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Verify the webhook signature
       // This helps ensure the webhook was sent by Stripe
-      const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      const endpointSecret = config.STRIPE.WEBHOOK_SECRET;
       if (endpointSecret) {
         event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
       } else {
