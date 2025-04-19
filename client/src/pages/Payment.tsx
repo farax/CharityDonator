@@ -106,13 +106,26 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         const subscriptionData = await response.json();
         
         // 3. Handle the result
-        // If we need to do additional confirmation, we would handle it here
+        // Confirm the payment if a client secret is returned
         if (subscriptionData.clientSecret) {
-          const { error: confirmError } = await stripe.confirmCardPayment(subscriptionData.clientSecret);
+          console.log('Confirming payment with client secret:', subscriptionData.clientSecret);
+          
+          // Confirm the payment to complete the subscription
+          const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
+            subscriptionData.clientSecret,
+            { 
+              payment_method: paymentMethod.id
+            }
+          );
           
           if (confirmError) {
+            console.error('Subscription confirmation error:', confirmError);
             throw new Error(confirmError.message);
           }
+          
+          console.log('Subscription payment confirmation successful:', paymentIntent);
+        } else {
+          console.warn('No client secret returned for subscription payment confirmation');
         }
         
         // Track subscription success

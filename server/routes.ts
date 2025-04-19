@@ -534,11 +534,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Get the latest invoice and its payment intent to ensure proper payment completion
+      const invoice = await stripe.invoices.retrieve(subscription.latest_invoice as string, {
+        expand: ['payment_intent']
+      });
+      
+      // For logging purposes, show what we're returning
+      console.log('Subscription created:', {
+        id: subscription.id,
+        status: subscription.status,
+        invoiceId: invoice.id,
+        paymentIntentId: invoice.payment_intent?.id,
+        clientSecret: invoice.payment_intent?.client_secret
+      });
+      
       res.json({
         subscriptionId: subscription.id,
         status: subscription.status,
         nextPaymentDate: new Date(subscription.current_period_end * 1000),
-        clientSecret: subscription.latest_invoice?.payment_intent?.client_secret
+        invoiceId: invoice.id,
+        paymentIntentId: invoice.payment_intent?.id,
+        clientSecret: invoice.payment_intent?.client_secret
       });
     } catch (error: any) {
       console.error('Error creating subscription:', error.message);
