@@ -332,7 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currency: currency.toLowerCase(),
         payment_method_types: ['card'], // Limit to card payments only
         description: 'Donation to Aafiyaa Ltd.', // Set company name in payment authorization text
-        statement_descriptor: 'AAFIYAA DONATION', // Text on credit card statement (max 22 chars)
+        statement_descriptor_suffix: 'DONATION', // Text on credit card statement (max 22 chars)
         metadata: {
           donationId: donationId ? donationId.toString() : undefined
         }
