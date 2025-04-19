@@ -1002,14 +1002,8 @@ export default function Payment() {
                             }
                           }
                         },
-                        loader: 'auto',
-                        // Limit payment methods to just cards - remove Bancontact and other regional methods
-                        paymentMethodTypes: ['card'],
-                        // Custom company name for all forms
-                        payment_intent_data: {
-                          // This will set company name in payment authorization text
-                          description: 'Donation to Aafiyaa Ltd.'
-                        }
+                        loader: 'auto'
+                        // Note: We'll rely on server-side configuration for payment method restriction
                       }}>
                         <CheckoutForm isSubscription={isSubscription} />
                       </Elements>
