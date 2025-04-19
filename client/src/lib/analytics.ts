@@ -21,71 +21,137 @@ export function trackEvent({
   value,
   attributes = {},
 }: AnalyticsEvent): void {
-  // Only track events if New Relic is available
-  if (typeof window !== 'undefined' && (window as any).newrelic) {
-    const nr = (window as any).newrelic;
-    
-    // Format event name
-    const eventName = `${category}:${action}`;
-    
-    // Clean up attributes to ensure they are valid for New Relic
-    const cleanAttributes: EventAttributes = {};
-    
-    // Filter attributes that are non-null and have valid types
-    Object.keys(attributes).forEach((key) => {
-      const value = attributes[key];
-      if (value !== null && value !== undefined) {
-        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-          cleanAttributes[key] = value;
-        } else {
-          try {
-            // Try to convert objects to JSON strings
-            cleanAttributes[key] = JSON.stringify(value);
-          } catch (e) {
-            // Skip attributes that can't be converted
-          }
+  if (typeof window === 'undefined') return;
+  
+  // Format event name
+  const eventName = `${category}:${action}`;
+  
+  // Clean up attributes to ensure they are valid for New Relic
+  const cleanAttributes: EventAttributes = {};
+  
+  // Add timestamp to all events
+  cleanAttributes.timestamp = new Date().toISOString();
+  
+  // Filter attributes that are non-null and have valid types
+  Object.keys(attributes).forEach((key) => {
+    const value = attributes[key];
+    if (value !== null && value !== undefined) {
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        cleanAttributes[key] = value;
+      } else {
+        try {
+          // Try to convert objects to JSON strings
+          cleanAttributes[key] = JSON.stringify(value);
+        } catch (e) {
+          // Skip attributes that can't be converted
         }
       }
-    });
-    
-    // Add label and value if provided
-    if (label) {
-      cleanAttributes.label = label;
     }
-    
-    if (typeof value === 'number') {
-      cleanAttributes.value = value;
-    }
-    
-    // Track the event with New Relic
-    nr.addPageAction(eventName, cleanAttributes);
-    
-    // Also log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Analytics Event:', eventName, cleanAttributes);
-    }
+  });
+  
+  // Add label and value if provided
+  if (label) {
+    cleanAttributes.label = label;
   }
+  
+  if (typeof value === 'number') {
+    cleanAttributes.value = value;
+  }
+  
+  // Always log to console for debugging
+  console.log('Analytics Event:', eventName, cleanAttributes);
+  
+  // Track the event with New Relic if available
+  if ((window as any).newrelic) {
+    try {
+      console.log('Sending to New Relic:', eventName);
+      (window as any).newrelic.addPageAction(eventName, cleanAttributes);
+      console.log('Successfully sent to New Relic');
+    } catch (error) {
+      console.error('Error sending to New Relic:', error);
+    }
+  } else {
+    console.warn('New Relic not available for tracking');
+  }
+  
+  // Create a visible notification on screen for testing (DEVELOPMENT ONLY)
+  const notificationDiv = document.createElement('div');
+  notificationDiv.style.position = 'fixed';
+  notificationDiv.style.bottom = '10px';
+  notificationDiv.style.right = '10px';
+  notificationDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+  notificationDiv.style.color = 'white';
+  notificationDiv.style.padding = '10px';
+  notificationDiv.style.borderRadius = '5px';
+  notificationDiv.style.zIndex = '9999';
+  notificationDiv.style.maxWidth = '300px';
+  notificationDiv.style.fontSize = '12px';
+  notificationDiv.innerHTML = `<strong>Event Tracked:</strong><br/>${category}:${action}${label ? `<br/>${label}` : ''}`;
+  
+  document.body.appendChild(notificationDiv);
+  
+  // Remove notification after 3 seconds
+  setTimeout(() => {
+    if (document.body.contains(notificationDiv)) {
+      document.body.removeChild(notificationDiv);
+    }
+  }, 3000);
 }
 
 /**
  * Track page view
  */
 export function trackPageView(path?: string): void {
-  if (typeof window !== 'undefined' && (window as any).newrelic) {
-    const nr = (window as any).newrelic;
-    const currentPath = path || window.location.pathname;
-    
-    // Set the page name in New Relic
-    nr.setPageViewName(currentPath);
-    
-    // Add custom attributes for the page view
-    nr.setCustomAttribute('routePath', currentPath);
-    
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Page View:', currentPath);
+  if (typeof window === 'undefined') return;
+  
+  const currentPath = path || window.location.pathname;
+  
+  // Always log to console for debugging
+  console.log('Page View:', currentPath);
+  
+  // Track with New Relic if available
+  if ((window as any).newrelic) {
+    try {
+      console.log('Sending page view to New Relic:', currentPath);
+      const nr = (window as any).newrelic;
+      
+      // Set the page name in New Relic
+      nr.setPageViewName(currentPath);
+      
+      // Add custom attributes for the page view
+      nr.setCustomAttribute('routePath', currentPath);
+      nr.setCustomAttribute('timestamp', new Date().toISOString());
+      
+      console.log('Successfully sent page view to New Relic');
+    } catch (error) {
+      console.error('Error sending page view to New Relic:', error);
     }
+  } else {
+    console.warn('New Relic not available for tracking page view');
   }
+  
+  // Create a visible notification on screen for testing (DEVELOPMENT ONLY)
+  const notificationDiv = document.createElement('div');
+  notificationDiv.style.position = 'fixed';
+  notificationDiv.style.bottom = '10px';
+  notificationDiv.style.left = '10px';
+  notificationDiv.style.backgroundColor = 'rgba(0, 100, 0, 0.7)';
+  notificationDiv.style.color = 'white';
+  notificationDiv.style.padding = '10px';
+  notificationDiv.style.borderRadius = '5px';
+  notificationDiv.style.zIndex = '9999';
+  notificationDiv.style.maxWidth = '300px';
+  notificationDiv.style.fontSize = '12px';
+  notificationDiv.innerHTML = `<strong>Page View Tracked:</strong><br/>${currentPath}`;
+  
+  document.body.appendChild(notificationDiv);
+  
+  // Remove notification after 3 seconds
+  setTimeout(() => {
+    if (document.body.contains(notificationDiv)) {
+      document.body.removeChild(notificationDiv);
+    }
+  }, 3000);
 }
 
 /**
