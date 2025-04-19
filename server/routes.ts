@@ -16,9 +16,16 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import config from "./config";
 
-// Initialize Stripe with the secret key
-const stripe = config.STRIPE.SECRET_KEY 
-  ? new Stripe(config.STRIPE.SECRET_KEY, {
+// Initialize Stripe with the secret key with enhanced logging
+let stripe: Stripe | undefined;
+
+try {
+  if (config.STRIPE.SECRET_KEY) {
+    console.log(`[STRIPE-INIT] Initializing Stripe in ${config.NODE_ENV} mode`);
+    console.log(`[STRIPE-INIT] Using key type: ${config.STRIPE.SECRET_KEY.startsWith('sk_test') ? 'TEST' : 'LIVE'}`);
+    console.log(`[STRIPE-INIT] API Version: 2025-03-31.basil`);
+    
+    stripe = new Stripe(config.STRIPE.SECRET_KEY, {
       apiVersion: "2025-03-31.basil",
       appInfo: {
         name: "Aafiyaa Charity Clinics", 
@@ -26,8 +33,17 @@ const stripe = config.STRIPE.SECRET_KEY
         url: "https://aafiyaa.com",
         partner_id: "Aafiyaa Ltd."
       }
-    }) 
-  : undefined;
+    });
+    
+    console.log(`[STRIPE-INIT] Stripe initialized successfully`);
+  } else {
+    console.error(`[STRIPE-ERROR] No Stripe secret key found. Stripe functionality will be disabled.`);
+    stripe = undefined;
+  }
+} catch (error) {
+  console.error(`[STRIPE-ERROR] Failed to initialize Stripe:`, error);
+  stripe = undefined;
+}
 
 // Currency conversion API
 const exchangeRateUrl = "https://open.er-api.com/v6/latest/USD";
@@ -320,12 +336,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Stripe payment intent creation
   app.post("/api/create-payment-intent", async (req, res) => {
+    // Enhanced debug logging
+    console.log(`[STRIPE-DEBUG] Creating payment intent in ${config.NODE_ENV} mode`);
+    console.log(`[STRIPE-DEBUG] Stripe key type: ${config.STRIPE.SECRET_KEY?.startsWith('sk_test') ? 'TEST' : 'LIVE'}`);
+    
     if (!stripe) {
+      console.error("[STRIPE-ERROR] Stripe is not configured");
       return res.status(500).json({ message: "Stripe is not configured" });
     }
 
     try {
       const { amount, currency, donationId } = req.body;
+      console.log(`[STRIPE-DEBUG] Payment request: amount=${amount}, currency=${currency}, donationId=${donationId}`);
       
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
@@ -340,7 +362,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update donation with payment intent ID
       if (donationId) {
-        console.log(`Creating payment intent for donation ${donationId}: ${paymentIntent.id}`);
+        console.log(`[STRIPE-DEBUG] Created payment intent for donation ${donationId}: ${paymentIntent.id}`);
+        console.log(`[STRIPE-DEBUG] Payment intent status: ${paymentIntent.status}`);
         // Store both the payment intent ID and client secret to increase chances of matching
         // in the webhook handler
         await storage.updateDonationStatus(
