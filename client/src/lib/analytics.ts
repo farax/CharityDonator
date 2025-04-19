@@ -1,5 +1,6 @@
 // New Relic browser agent utilities for tracking user actions
 // This assumes the New Relic Browser script has been added to the HTML
+import { isProduction } from "./utils";
 
 type EventAttributes = Record<string, string | number | boolean>;
 
@@ -74,7 +75,30 @@ export function trackEvent({
     console.warn('New Relic not available for tracking');
   }
   
-  // Production mode - event tracking notifications disabled
+  // Show event tracking notifications only in non-production mode
+  if (!isProduction()) {
+    const notificationDiv = document.createElement('div');
+    notificationDiv.style.position = 'fixed';
+    notificationDiv.style.bottom = '10px';
+    notificationDiv.style.right = '10px';
+    notificationDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    notificationDiv.style.color = 'white';
+    notificationDiv.style.padding = '10px';
+    notificationDiv.style.borderRadius = '5px';
+    notificationDiv.style.zIndex = '9999';
+    notificationDiv.style.maxWidth = '300px';
+    notificationDiv.style.fontSize = '12px';
+    notificationDiv.innerHTML = `<strong>Event Tracked:</strong><br/>${category}:${action}${label ? `<br/>${label}` : ''}`;
+    
+    document.body.appendChild(notificationDiv);
+    
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+      if (document.body.contains(notificationDiv)) {
+        document.body.removeChild(notificationDiv);
+      }
+    }, 3000);
+  }
 }
 
 /**
@@ -109,7 +133,30 @@ export function trackPageView(path?: string): void {
     console.warn('New Relic not available for tracking page view');
   }
   
-  // Production mode - no visual notifications
+  // Show page view notifications only in non-production mode
+  if (!isProduction()) {
+    const notificationDiv = document.createElement('div');
+    notificationDiv.style.position = 'fixed';
+    notificationDiv.style.bottom = '10px';
+    notificationDiv.style.left = '10px';
+    notificationDiv.style.backgroundColor = 'rgba(0, 100, 0, 0.7)';
+    notificationDiv.style.color = 'white';
+    notificationDiv.style.padding = '10px';
+    notificationDiv.style.borderRadius = '5px';
+    notificationDiv.style.zIndex = '9999';
+    notificationDiv.style.maxWidth = '300px';
+    notificationDiv.style.fontSize = '12px';
+    notificationDiv.innerHTML = `<strong>Page View Tracked:</strong><br/>${currentPath}`;
+    
+    document.body.appendChild(notificationDiv);
+    
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+      if (document.body.contains(notificationDiv)) {
+        document.body.removeChild(notificationDiv);
+      }
+    }, 3000);
+  }
 }
 
 /**
