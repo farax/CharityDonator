@@ -1,21 +1,5 @@
-// Commented out New Relic server-side initialization due to configuration issues
-// The browser agent is still active and tracking frontend events
-/*
-process.env.NEW_RELIC_LICENSE_KEY = 'f871da3e00f4cac36b9c34b7fc5a244cFFFFNRAL';
-process.env.NEW_RELIC_APP_NAME = 'Aafiyaa Charity Clinics';
-process.env.NEW_RELIC_NO_CONFIG_FILE = 'false';
-process.env.NEW_RELIC_LOG_LEVEL = 'info';
-import newrelic from 'newrelic';
-*/
-
-// Create a mock newrelic implementation to allow the route code to work without errors
-export const newrelic = {
-  setTransactionName: () => {},
-  addCustomAttributes: () => {},
-  addCustomAttribute: () => {},
-  recordCustomEvent: () => {},
-  noticeError: (error: Error) => { console.error('Error tracked:', error.message); }
-};
+// New Relic tracking is active only on the front-end
+// The client-side browser agent handles all analytics tracking
 
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";

@@ -1,7 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import session from "express-session";
-import { newrelic } from "./index"; // Import the mock newrelic implementation
 
 // Add type declaration for session
 declare module 'express-session' {
@@ -140,33 +139,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create a donation
   app.post("/api/donations", async (req, res) => {
-    // Add New Relic transaction naming and custom attributes
-    newrelic.setTransactionName('api-donation-create');
-    newrelic.addCustomAttribute('donationType', req.body.type || 'unknown');
-    newrelic.addCustomAttribute('donationAmount', req.body.amount || 0);
-    newrelic.addCustomAttribute('donationCurrency', req.body.currency || 'unknown');
-
     try {
       const donationData = insertDonationSchema.parse(req.body);
       const donation = await storage.createDonation(donationData);
-      
-      // Record custom event in New Relic
-      newrelic.recordCustomEvent('Donation', {
-        type: donation.type,
-        amount: donation.amount,
-        currency: donation.currency,
-        frequency: donation.frequency,
-        paymentMethod: donation.paymentMethod || 'unspecified',
-      });
-      
       res.status(201).json(donation);
     } catch (error) {
-      // Track errors in New Relic
-      newrelic.noticeError(error as Error, {
-        donationType: req.body.type || 'unknown',
-        donationAmount: req.body.amount || 0,
-      });
-      
       if (error instanceof ZodError) {
         const validationError = fromZodError(error);
         res.status(400).json({ message: validationError.message });
@@ -221,17 +198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Stripe payment intent creation
   app.post("/api/create-payment-intent", async (req, res) => {
-    // Add New Relic transaction naming and tracking
-    newrelic.setTransactionName('api-payment-intent-create');
-    newrelic.addCustomAttributes({
-      paymentGateway: 'stripe',
-      paymentType: 'one-time',
-      amount: req.body.amount || 0,
-      currency: req.body.currency || 'unknown'
-    });
-
     if (!stripe) {
-      newrelic.noticeError(new Error('Stripe not configured'));
       return res.status(500).json({ message: "Stripe is not configured" });
     }
 
@@ -248,24 +215,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateDonationStatus(donationId, "processing", paymentIntent.id);
       }
 
-      // Record successful payment intent creation
-      newrelic.recordCustomEvent('PaymentIntent', {
-        status: 'created',
-        amount: amount,
-        currency: currency,
-        donationId: donationId || 'unknown',
-        paymentIntentId: paymentIntent.id
-      });
-
       res.json({ clientSecret: paymentIntent.client_secret });
     } catch (error: any) {
-      // Track payment processing errors
-      newrelic.noticeError(error, {
-        paymentStep: 'create_intent',
-        errorMessage: error.message,
-        donationId: req.body.donationId || 'unknown'
-      });
-      
       res.status(500).json({ message: `Error creating payment intent: ${error.message}` });
     }
   });
@@ -439,11 +390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Webhook for Stripe events
   app.post("/api/webhook", async (req, res) => {
-    // Name and track the webhook transaction in New Relic
-    newrelic.setTransactionName('api-stripe-webhook');
-    
     if (!stripe) {
-      newrelic.noticeError(new Error('Stripe not configured in webhook handler'));
       return res.status(500).json({ message: "Stripe is not configured" });
     }
 
@@ -462,9 +409,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         event = payload;
       }
 
-      // Record the webhook event type in New Relic
-      newrelic.addCustomAttribute('webhookEventType', event.type);
-
       // Handle the event
       if (event.type === 'payment_intent.succeeded') {
         const paymentIntent = event.data.object;
@@ -479,34 +423,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (donation.caseId) {
             await storage.updateCaseAmountCollected(donation.caseId, donation.amount);
           }
-          
-          // Record successful payment in New Relic
-          newrelic.recordCustomEvent('PaymentCompleted', {
-            paymentGateway: 'stripe',
-            donationId: donation.id,
-            amount: donation.amount,
-            currency: donation.currency,
-            type: donation.type,
-            destinationProject: donation.destinationProject || 'None',
-            caseId: donation.caseId || 'None'
-          });
-        } else {
-          // Record that we couldn't find a matching donation
-          newrelic.recordCustomEvent('WebhookWarning', {
-            issue: 'donation_not_found',
-            paymentIntentId: paymentIntent.id
-          });
         }
       }
 
       res.json({ received: true });
     } catch (error: any) {
-      // Track webhook errors in New Relic
-      newrelic.noticeError(error, {
-        errorSource: 'stripe_webhook',
-        webhookEventType: event?.type || 'unknown'
-      });
-      
       res.status(400).json({ message: `Webhook Error: ${error.message}` });
     }
   });
