@@ -989,12 +989,27 @@ export default function Payment() {
                     ) : stripePromise ? (
                       <Elements stripe={stripePromise} options={{ 
                         clientSecret, 
-                        appearance: { theme: 'stripe' },
+                        appearance: { 
+                          theme: 'stripe',
+                          variables: {
+                            // Customize the font to match our branding
+                            fontFamily: 'system-ui, sans-serif',
+                            colorPrimary: '#10b981', // Emerald-500 - match our primary brand color
+                          },
+                          rules: {
+                            '.Label': {
+                              fontWeight: '500'
+                            }
+                          }
+                        },
                         loader: 'auto',
-                        // @ts-ignore - Stripe types may not include this yet
-                        businessName: 'Aafiyaa Ltd.',
                         // Limit payment methods to just cards - remove Bancontact and other regional methods
-                        paymentMethodOrder: ['card']
+                        paymentMethodTypes: ['card'],
+                        // Custom company name for all forms
+                        payment_intent_data: {
+                          // This will set company name in payment authorization text
+                          description: 'Donation to Aafiyaa Ltd.'
+                        }
                       }}>
                         <CheckoutForm isSubscription={isSubscription} />
                       </Elements>

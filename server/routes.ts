@@ -325,6 +325,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: Math.round(amount * 100), // Convert to cents
         currency: currency.toLowerCase(),
         payment_method_types: ['card'], // Limit to card payments only
+        description: 'Donation to Aafiyaa Ltd.', // Set company name in payment authorization text
+        statement_descriptor: 'AAFIYAA DONATION', // Text on credit card statement (max 22 chars)
         metadata: {
           donationId: donationId ? donationId.toString() : undefined
         }
@@ -479,6 +481,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           payment_method_types: ['card'],
           save_default_payment_method: 'on_subscription'
         },
+        // Show correct company name in payment confirmation
+        payment_behavior: 'default_incomplete',
+        application_fee_percent: 0,
+        description: 'Recurring donation to Aafiyaa Ltd.',
         metadata: {
           donationId: donationId.toString(),
           donationType: donation.type,
