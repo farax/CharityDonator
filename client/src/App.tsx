@@ -23,6 +23,10 @@ function Router() {
     
     // Track time spent on page when user navigates away
     const cleanup = trackTimeOnPage();
+
+    // Scroll to top when location changes
+    window.scrollTo(0, 0);
+    
     return cleanup;
   }, [location]);
 
