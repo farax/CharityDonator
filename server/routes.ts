@@ -482,8 +482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           interval: billingInterval,
         },
         product_data: {
-          name: `${donation.type} Donation (${frequency})`,
-          description: donation.destinationProject || 'Aafiyaa Charity Clinics',
+          name: `${donation.type} Donation (${frequency}) - ${donation.destinationProject || 'Aafiyaa Charity Clinics'}`,
         },
       });
       
