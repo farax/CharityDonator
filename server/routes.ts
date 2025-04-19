@@ -46,6 +46,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch stats" });
     }
   });
+  
+  // Update stats - protected by admin authentication
+  app.post("/api/admin/update-stats", isAdminAuthenticated, async (req, res) => {
+    try {
+      const { totalPatients, monthlyPatients } = req.body;
+      
+      // Simple validation to ensure we have positive numbers
+      if (typeof totalPatients !== 'number' || typeof monthlyPatients !== 'number') {
+        return res.status(400).json({ message: "Patient counts must be numbers" });
+      }
+      
+      if (totalPatients < 0 || monthlyPatients < 0) {
+        return res.status(400).json({ message: "Patient counts cannot be negative" });
+      }
+      
+      const updatedStats = await storage.updateStats({ 
+        totalPatients, 
+        monthlyPatients 
+      });
+      
+      res.json(updatedStats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update stats" });
+    }
+  });
 
   app.get("/api/endorsements", async (req, res) => {
     try {

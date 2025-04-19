@@ -66,6 +66,11 @@ export default function Admin() {
     return new Date().toISOString().split('T')[0]; // Format as YYYY-MM-DD
   });
   
+  // For patient stats management
+  const [totalPatients, setTotalPatients] = useState<string>('');
+  const [monthlyPatients, setMonthlyPatients] = useState<string>('');
+  const [statsUpdateMessage, setStatsUpdateMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  
   // Fetch payment history
   const { 
     data: paymentHistory, 
@@ -84,6 +89,16 @@ export default function Admin() {
   } = useQuery({
     queryKey: ['/api/payment-statistics'],
     refetchInterval: 10000 // Refresh every 10 seconds
+  });
+  
+  // Fetch clinic statistics (for patient counts)
+  const {
+    data: clinicStats,
+    isLoading: isLoadingClinicStats,
+    error: clinicStatsError,
+    refetch: refetchClinicStats
+  } = useQuery({
+    queryKey: ['/api/stats']
   });
   
   // Check for authentication status and redirect if unauthorized
@@ -115,7 +130,76 @@ export default function Admin() {
     checkAdminStatus();
   }, [toast, setLocation]);
   
-  if (isLoadingHistory || isLoadingStats) {
+  // Effect to initialize form fields when clinic stats are loaded
+  useEffect(() => {
+    if (clinicStats) {
+      setTotalPatients(clinicStats.totalPatients.toString());
+      setMonthlyPatients(clinicStats.monthlyPatients.toString());
+    }
+  }, [clinicStats]);
+  
+  // Handler for updating patient stats
+  const handleUpdateStats = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatsUpdateMessage(null);
+    
+    try {
+      const totalPatientsNum = parseInt(totalPatients);
+      const monthlyPatientsNum = parseInt(monthlyPatients);
+      
+      if (isNaN(totalPatientsNum) || isNaN(monthlyPatientsNum)) {
+        setStatsUpdateMessage({
+          type: 'error',
+          message: 'Both fields must be valid numbers'
+        });
+        return;
+      }
+      
+      if (totalPatientsNum < 0 || monthlyPatientsNum < 0) {
+        setStatsUpdateMessage({
+          type: 'error',
+          message: 'Patient counts cannot be negative'
+        });
+        return;
+      }
+      
+      const response = await apiRequest('POST', '/api/admin/update-stats', {
+        totalPatients: totalPatientsNum,
+        monthlyPatients: monthlyPatientsNum
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update statistics');
+      }
+      
+      // Refresh the stats data
+      await refetchClinicStats();
+      
+      setStatsUpdateMessage({
+        type: 'success',
+        message: 'Patient statistics updated successfully'
+      });
+      
+      toast({
+        title: "Statistics Updated",
+        description: "Patient counts have been updated successfully",
+      });
+    } catch (error: any) {
+      setStatsUpdateMessage({
+        type: 'error',
+        message: error.message || 'Failed to update statistics'
+      });
+      
+      toast({
+        title: "Update Failed",
+        description: error.message || 'Failed to update statistics',
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (isLoadingHistory || isLoadingStats || isLoadingClinicStats) {
     return (
       <div className="h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -123,12 +207,12 @@ export default function Admin() {
     );
   }
   
-  if (historyError || statsError) {
+  if (historyError || statsError || clinicStatsError) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-red-600 mb-2">Error Loading Data</h2>
-          <p className="text-gray-600">There was a problem fetching the payment data.</p>
+          <p className="text-gray-600">There was a problem fetching the data.</p>
         </div>
       </div>
     );
@@ -203,6 +287,7 @@ export default function Admin() {
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="transactions">Transactions</TabsTrigger>
               <TabsTrigger value="statistics">Statistics</TabsTrigger>
+              <TabsTrigger value="manage-stats">Manage Stats</TabsTrigger>
             </TabsList>
             
             <TabsContent value="overview" className="space-y-6">
