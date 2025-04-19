@@ -67,6 +67,7 @@ export const endorsements = pgTable("endorsements", {
   name: text("name").notNull(),
   type: text("type").notNull(),
   logoUrl: text("logo_url").notNull(),
+  url: text("url"),
 });
 
 export const insertEndorsementSchema = createInsertSchema(endorsements).omit({

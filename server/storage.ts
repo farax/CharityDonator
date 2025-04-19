@@ -393,7 +393,11 @@ export class MemStorage implements IStorage {
   
   async createEndorsement(insertEndorsement: InsertEndorsement): Promise<Endorsement> {
     const id = this.endorsementCurrentId++;
-    const endorsement: Endorsement = { ...insertEndorsement, id };
+    const endorsement: Endorsement = { 
+      ...insertEndorsement, 
+      id, 
+      url: insertEndorsement.url || null 
+    };
     this.endorsementsList.set(id, endorsement);
     return endorsement;
   }

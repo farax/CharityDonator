@@ -2,7 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Endorsement } from '@shared/schema';
-import { Building2, Stethoscope, Globe, HeartPulse, Baby } from 'lucide-react';
+import { Building2, Stethoscope, Globe, HeartPulse, Baby, BookOpen, Activity } from 'lucide-react';
+
+// Import the partner logos
+import rahbarTrustLogo from '../assets/rahbar-trust-logo.webp';
+import alIhsanLogo from '../assets/al-ihsan-logo.png';
 
 export default function EndorsementsTicker() {
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -57,6 +61,12 @@ export default function EndorsementsTicker() {
         return <Baby className="w-12 h-12 text-blue-500" />;
       case 'gates':
         return <Building2 className="w-12 h-12 text-gray-800" />;
+      case 'rahbar-trust':
+        return <img src={rahbarTrustLogo} alt="Rahbar Trust" className="w-12 h-12 object-contain" />;
+      case 'al-ihsan':
+        return <img src={alIhsanLogo} alt="Al-Ihsan Foundation" className="w-12 h-12 object-contain" />;
+      case 'dwb':
+        return <Activity className="w-12 h-12 text-red-700" />;
       default:
         return <Stethoscope className="w-12 h-12 text-green-600" />;
     }
@@ -80,28 +90,44 @@ export default function EndorsementsTicker() {
             className="ticker-wrapper flex items-center space-x-12"
           >
             {endorsements?.map((endorsement) => (
-              <Card key={endorsement.id} className="flex items-center bg-white rounded-lg shadow-sm min-w-[240px]">
-                <CardContent className="p-4 flex items-center">
-                  {getEndorsementIcon(endorsement.logoUrl)}
-                  <div className="ml-4">
-                    <p className="font-semibold text-gray-800">{endorsement.name}</p>
-                    <p className="text-xs text-gray-500">{endorsement.type}</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <a 
+                href={endorsement.url || '#'} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                key={endorsement.id}
+                className="no-underline"
+              >
+                <Card className="flex items-center bg-white rounded-lg shadow-sm min-w-[240px] hover:shadow-md transition-shadow duration-300">
+                  <CardContent className="p-4 flex items-center">
+                    {getEndorsementIcon(endorsement.logoUrl)}
+                    <div className="ml-4">
+                      <p className="font-semibold text-gray-800">{endorsement.name}</p>
+                      <p className="text-xs text-gray-500">{endorsement.type}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </a>
             ))}
             
             {/* Duplicate items for continuous scrolling */}
             {isDuplicating && endorsements?.map((endorsement) => (
-              <Card key={`dup-${endorsement.id}`} className="flex items-center bg-white rounded-lg shadow-sm min-w-[240px]">
-                <CardContent className="p-4 flex items-center">
-                  {getEndorsementIcon(endorsement.logoUrl)}
-                  <div className="ml-4">
-                    <p className="font-semibold text-gray-800">{endorsement.name}</p>
-                    <p className="text-xs text-gray-500">{endorsement.type}</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <a 
+                href={endorsement.url || '#'} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                key={`dup-${endorsement.id}`}
+                className="no-underline"
+              >
+                <Card className="flex items-center bg-white rounded-lg shadow-sm min-w-[240px] hover:shadow-md transition-shadow duration-300">
+                  <CardContent className="p-4 flex items-center">
+                    {getEndorsementIcon(endorsement.logoUrl)}
+                    <div className="ml-4">
+                      <p className="font-semibold text-gray-800">{endorsement.name}</p>
+                      <p className="text-xs text-gray-500">{endorsement.type}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </a>
             ))}
           </div>
         </div>
