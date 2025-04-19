@@ -40,6 +40,12 @@ interface PaymentStatistics {
   byDestination: Record<string, number>;
 }
 
+interface ClinicStats {
+  id: number;
+  totalPatients: number;
+  monthlyPatients: number;
+}
+
 const statusColors: Record<string, string> = {
   'pending': 'bg-yellow-100 text-yellow-800',
   'processing': 'bg-blue-100 text-blue-800',
@@ -97,7 +103,7 @@ export default function Admin() {
     isLoading: isLoadingClinicStats,
     error: clinicStatsError,
     refetch: refetchClinicStats
-  } = useQuery({
+  } = useQuery<ClinicStats>({
     queryKey: ['/api/stats']
   });
   
@@ -133,8 +139,9 @@ export default function Admin() {
   // Effect to initialize form fields when clinic stats are loaded
   useEffect(() => {
     if (clinicStats) {
-      setTotalPatients(clinicStats.totalPatients.toString());
-      setMonthlyPatients(clinicStats.monthlyPatients.toString());
+      const stats = clinicStats as ClinicStats;
+      setTotalPatients(stats.totalPatients.toString());
+      setMonthlyPatients(stats.monthlyPatients.toString());
     }
   }, [clinicStats]);
   
@@ -220,6 +227,7 @@ export default function Admin() {
   
   const donations = paymentHistory as Donation[];
   const stats = paymentStats as PaymentStatistics;
+  const clinicStatsData = clinicStats as ClinicStats;
   
   // Filter donations based on selected type and date range
   const filteredDonations = donations ? donations.filter(donation => {
@@ -652,6 +660,84 @@ export default function Admin() {
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+            
+            <TabsContent value="manage-stats" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Update Patient Statistics</CardTitle>
+                  <CardDescription>
+                    Use this form to update the patient count displayed on the homepage.
+                    Changes are immediate and do not require a server restart.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleUpdateStats} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Current Values Display */}
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg font-medium">Current Values</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            <div>
+                              <p className="text-sm text-gray-500">Total Patients</p>
+                              <p className="text-xl font-bold">{clinicStatsData?.totalPatients || 'Loading...'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500">Monthly Patients</p>
+                              <p className="text-xl font-bold">{clinicStatsData?.monthlyPatients || 'Loading...'}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      {/* Update Form */}
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="totalPatients">Total Patients</Label>
+                          <Input
+                            id="totalPatients"
+                            type="number"
+                            placeholder="Enter total patients"
+                            value={totalPatients}
+                            onChange={(e) => setTotalPatients(e.target.value)}
+                            required
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="monthlyPatients">Monthly Patients</Label>
+                          <Input
+                            id="monthlyPatients"
+                            type="number"
+                            placeholder="Enter monthly patients"
+                            value={monthlyPatients}
+                            onChange={(e) => setMonthlyPatients(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Status Message */}
+                    {statsUpdateMessage && (
+                      <div className={`p-3 rounded-md ${
+                        statsUpdateMessage.type === 'success' 
+                          ? 'bg-green-50 text-green-700 border border-green-200' 
+                          : 'bg-red-50 text-red-700 border border-red-200'
+                      }`}>
+                        {statsUpdateMessage.message}
+                      </div>
+                    )}
+                    
+                    <Button type="submit">
+                      Update Statistics
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
