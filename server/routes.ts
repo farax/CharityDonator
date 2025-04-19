@@ -324,6 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
         currency: currency.toLowerCase(),
+        payment_method_types: ['card'], // Limit to card payments only
         metadata: {
           donationId: donationId ? donationId.toString() : undefined
         }
@@ -368,6 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create a SetupIntent to collect payment method for future subscription charges
       const setupIntent = await stripe.setupIntents.create({
+        payment_method_types: ['card'], // Limit to card payments only
         usage: 'off_session', // Allow using this payment method for future off-session charges
         metadata: {
           donationId: donationId.toString(),

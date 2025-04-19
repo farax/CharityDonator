@@ -992,7 +992,9 @@ export default function Payment() {
                         appearance: { theme: 'stripe' },
                         loader: 'auto',
                         // @ts-ignore - Stripe types may not include this yet
-                        businessName: 'Aafiyaa Ltd.'
+                        businessName: 'Aafiyaa Ltd.',
+                        // Limit payment methods to just cards - remove Bancontact and other regional methods
+                        paymentMethodOrder: ['card']
                       }}>
                         <CheckoutForm isSubscription={isSubscription} />
                       </Elements>
