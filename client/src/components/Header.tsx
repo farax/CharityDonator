@@ -16,8 +16,9 @@ export default function Header() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <img src={aafiyaaLogo} alt="Aafiyaa Charity Clinics Logo" className="h-14" />
+            <Link href="/" className="flex flex-col items-center">
+              <img src={aafiyaaLogo} alt="Aafiyaa Charity Clinics Logo" className="h-[70px]" /> {/* 25% larger than h-14 (56px) */}
+              <span className="text-primary font-medium text-sm mt-1">Aafiyaa Charity Clinic</span>
             </Link>
           </div>
           

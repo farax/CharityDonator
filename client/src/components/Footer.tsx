@@ -8,8 +8,9 @@ export default function Footer() {
       <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {/* Organization Info */}
         <div>
-          <div className="flex items-center space-x-2 mb-4">
-            <img src={aafiyaaLogo} alt="Aafiyaa Charity Clinics Logo" className="h-16 mb-2 filter brightness-0 invert" />
+          <div className="flex flex-col items-center mb-4">
+            <img src={aafiyaaLogo} alt="Aafiyaa Charity Clinics Logo" className="h-20 mb-2 filter brightness-0 invert" /> {/* 25% larger than h-16 */}
+            <span className="text-white font-medium text-sm">Aafiyaa Charity Clinic</span>
           </div>
           <p className="text-gray-300 mb-4">
             Aafiyaa Charity Clinics provides essential medical services to those in need worldwide through your generous donations.
