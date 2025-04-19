@@ -65,11 +65,10 @@ const CheckoutForm = () => {
       currency: donationDetails?.currency
     });
 
-    const { error } = await stripe.confirmPayment({
+    // Use manual confirmation instead of redirect
+    const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
-      confirmParams: {
-        return_url: window.location.origin,
-      },
+      redirect: 'if_required',
     });
 
     if (error) {
