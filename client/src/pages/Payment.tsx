@@ -164,9 +164,14 @@ const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
 
   // PayPal configuration options
   const paypalOptions = {
-    clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || "test", // Use PayPal client ID from environment
+    clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID, // Use PayPal client ID from environment variables
     currency: donationDetails.currency.toLowerCase()
   };
+  
+  // Warn if PayPal client ID is missing
+  if (!import.meta.env.VITE_PAYPAL_CLIENT_ID) {
+    console.warn('Missing required PayPal key: VITE_PAYPAL_CLIENT_ID');
+  }
 
   // Define success handler for PayPal
   const handlePayPalSuccess = (details: any) => {

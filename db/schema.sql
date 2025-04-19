@@ -1,98 +1,103 @@
 -- Aafiyaa Charity Clinics Database Schema
--- This file contains the DDL (Data Definition Language) scripts for creating the database schema
+-- Generated from Drizzle ORM schema definitions
 
--- Users table for admin authentication
+-- Users table
 CREATE TABLE IF NOT EXISTS "users" (
   "id" SERIAL PRIMARY KEY,
   "username" VARCHAR(255) NOT NULL UNIQUE,
   "password" VARCHAR(255) NOT NULL,
   "email" VARCHAR(255),
   "role" VARCHAR(50) DEFAULT 'user',
-  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  "created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  "stripe_customer_id" VARCHAR(255),
+  "stripe_subscription_id" VARCHAR(255)
 );
 
--- Cases table for charity cases that need funding
+-- Cases table
 CREATE TABLE IF NOT EXISTS "cases" (
   "id" SERIAL PRIMARY KEY,
   "title" VARCHAR(255) NOT NULL,
-  "description" TEXT,
-  "type" VARCHAR(50) DEFAULT 'zakaat',
-  "amount_needed" DECIMAL(10, 2) NOT NULL,
-  "amount_collected" DECIMAL(10, 2) DEFAULT 0,
-  "currency" VARCHAR(3) DEFAULT 'AUD',
-  "is_active" BOOLEAN DEFAULT true,
-  "priority" INTEGER DEFAULT 0,
+  "description" TEXT NOT NULL,
+  "target_amount" DECIMAL(10, 2) NOT NULL,
+  "amount_collected" DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  "status" VARCHAR(50) NOT NULL DEFAULT 'active',
+  "case_type" VARCHAR(50) NOT NULL DEFAULT 'zakaat',
   "image_url" VARCHAR(255),
-  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  "created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Donations table for tracking all donations
+-- Donations table
 CREATE TABLE IF NOT EXISTS "donations" (
   "id" SERIAL PRIMARY KEY,
-  "type" VARCHAR(50) NOT NULL, -- 'zakaat', 'sadqah', or 'interest'
   "amount" DECIMAL(10, 2) NOT NULL,
-  "currency" VARCHAR(3) DEFAULT 'AUD',
+  "currency" VARCHAR(10) NOT NULL DEFAULT 'AUD',
+  "type" VARCHAR(50) NOT NULL,
+  "frequency" VARCHAR(50) NOT NULL DEFAULT 'one-off',
+  "payment_method" VARCHAR(50) NOT NULL,
+  "status" VARCHAR(50) NOT NULL DEFAULT 'pending',
   "donor_name" VARCHAR(255),
   "donor_email" VARCHAR(255),
-  "frequency" VARCHAR(20) DEFAULT 'one-off', -- 'one-off', 'weekly', 'monthly'
-  "payment_method" VARCHAR(50), -- 'stripe', 'paypal', etc.
-  "status" VARCHAR(50) DEFAULT 'pending', -- 'pending', 'processing', 'completed', 'failed'
-  "stripe_payment_id" VARCHAR(255),
-  "paypal_order_id" VARCHAR(255),
   "case_id" INTEGER REFERENCES "cases"("id"),
   "destination_project" VARCHAR(255),
-  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  "cover_fees" BOOLEAN NOT NULL DEFAULT false,
+  "processing_fee" DECIMAL(10, 2) DEFAULT 0.00,
+  "stripe_payment_id" VARCHAR(255),
+  "paypal_order_id" VARCHAR(255),
+  "created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Endorsements table for testimonials and endorsements
+-- Endorsements table
 CREATE TABLE IF NOT EXISTS "endorsements" (
   "id" SERIAL PRIMARY KEY,
   "name" VARCHAR(255) NOT NULL,
-  "organization" VARCHAR(255),
-  "type" VARCHAR(50) DEFAULT 'testimonial',
-  "content" TEXT NOT NULL,
-  "image_url" VARCHAR(255),
-  "is_active" BOOLEAN DEFAULT true,
-  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  "type" VARCHAR(50) NOT NULL,
+  "description" TEXT,
+  "logo_url" VARCHAR(255),
+  "created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Stats table for clinic statistics
 CREATE TABLE IF NOT EXISTS "stats" (
   "id" SERIAL PRIMARY KEY,
-  "total_patients" INTEGER DEFAULT 0,
-  "monthly_patients" INTEGER DEFAULT 0,
-  "total_donations" INTEGER DEFAULT 0,
-  "last_updated" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  "total_patients" INTEGER NOT NULL DEFAULT 0,
+  "monthly_patients" INTEGER NOT NULL DEFAULT 0,
+  "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Contact messages table for storing contact form submissions
+-- Contact messages table
 CREATE TABLE IF NOT EXISTS "contact_messages" (
   "id" SERIAL PRIMARY KEY,
   "name" VARCHAR(255) NOT NULL,
   "email" VARCHAR(255) NOT NULL,
-  "phone" VARCHAR(50),
-  "subject" VARCHAR(255),
+  "subject" VARCHAR(255) NOT NULL,
   "message" TEXT NOT NULL,
-  "is_read" BOOLEAN DEFAULT false,
-  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  "read" BOOLEAN NOT NULL DEFAULT false,
+  "created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create indexes for performance
-CREATE INDEX IF NOT EXISTS "idx_donations_type" ON "donations" ("type");
-CREATE INDEX IF NOT EXISTS "idx_donations_status" ON "donations" ("status");
-CREATE INDEX IF NOT EXISTS "idx_donations_case_id" ON "donations" ("case_id");
-CREATE INDEX IF NOT EXISTS "idx_cases_type" ON "cases" ("type");
-CREATE INDEX IF NOT EXISTS "idx_cases_is_active" ON "cases" ("is_active");
-CREATE INDEX IF NOT EXISTS "idx_contact_messages_is_read" ON "contact_messages" ("is_read");
+-- Session storage table for admin sessions
+CREATE TABLE IF NOT EXISTS "session" (
+  "sid" VARCHAR NOT NULL PRIMARY KEY,
+  "sess" JSON NOT NULL,
+  "expire" TIMESTAMP(6) NOT NULL
+);
 
--- Insert initial admin user (username: admin, password: admin123)
-INSERT INTO "users" ("username", "password", "role")
+-- Create indexes
+CREATE INDEX IF NOT EXISTS "idx_donations_case_id" ON "donations"("case_id");
+CREATE INDEX IF NOT EXISTS "idx_donations_status" ON "donations"("status");
+CREATE INDEX IF NOT EXISTS "idx_donations_type" ON "donations"("type");
+CREATE INDEX IF NOT EXISTS "idx_cases_status" ON "cases"("status");
+CREATE INDEX IF NOT EXISTS "idx_cases_case_type" ON "cases"("case_type");
+CREATE INDEX IF NOT EXISTS "idx_contact_messages_read" ON "contact_messages"("read");
+
+-- Initial data - Admin user
+INSERT INTO "users" ("username", "password", "role") 
 VALUES ('admin', 'admin123', 'admin')
-ON CONFLICT ("username") DO NOTHING;
+ON CONFLICT (username) DO NOTHING;
 
--- Insert initial stats record
-INSERT INTO "stats" ("id", "total_patients", "monthly_patients")
-VALUES (1, 124568, 3210)
-ON CONFLICT ("id") DO NOTHING;
+-- Initial data - Stats
+INSERT INTO "stats" ("id", "total_patients", "monthly_patients") 
+VALUES (1, 124568, 3254)
+ON CONFLICT (id) DO NOTHING;
