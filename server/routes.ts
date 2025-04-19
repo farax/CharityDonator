@@ -20,6 +20,12 @@ import config from "./config";
 const stripe = config.STRIPE.SECRET_KEY 
   ? new Stripe(config.STRIPE.SECRET_KEY, {
       apiVersion: "2025-03-31.basil",
+      appInfo: {
+        name: "Aafiyaa Charity Clinics", 
+        version: "1.0.0",
+        url: "https://aafiyaa.com",
+        partner_id: "Aafiyaa Ltd."
+      }
     }) 
   : undefined;
 
@@ -373,9 +379,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const setupIntent = await stripe.setupIntents.create({
         payment_method_types: ['card'], // Limit to card payments only
         usage: 'off_session', // Allow using this payment method for future off-session charges
+        description: 'Recurring donation to Aafiyaa Ltd.', // Set the company name in authorization text
         metadata: {
           donationId: donationId.toString(),
-          isSubscription: 'true'
+          isSubscription: 'true',
+          company_name: 'Aafiyaa Ltd.'
         }
       });
       
@@ -430,8 +438,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email,
           name,
           payment_method: paymentMethodId,
+          description: 'Aafiyaa Ltd. donor',
           invoice_settings: {
             default_payment_method: paymentMethodId,
+            custom_fields: null,
+            footer: 'Aafiyaa Ltd. - Helping those in need'
+          },
+          metadata: {
+            company_name: 'Aafiyaa Ltd.'
           }
         });
         
