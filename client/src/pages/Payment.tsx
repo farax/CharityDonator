@@ -42,6 +42,85 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   const [name, setName] = useState('');
   const [donationDetails, setDonationDetails] = useState<any>(null);
   
+  // Add DOM manipulation to override the company name in Stripe's iframes
+  useEffect(() => {
+    // Create a MutationObserver to monitor for DOM changes and replace company name
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach(mutation => {
+        // Check if the mutation is text content
+        if (mutation.type === 'characterData' && mutation.target.textContent?.includes('Faraz')) {
+          mutation.target.textContent = mutation.target.textContent.replace(/Faraz/g, 'Aafiyaa Ltd.');
+        }
+        
+        // Check added nodes
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach(node => {
+            if (node.nodeType === Node.TEXT_NODE && node.textContent?.includes('Faraz')) {
+              node.textContent = node.textContent.replace(/Faraz/g, 'Aafiyaa Ltd.');
+            }
+            
+            // If it's an element node, check text content of the element and its children
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const element = node as Element;
+              
+              // Check if this element's text content contains "Faraz"
+              if (element.textContent?.includes('Faraz')) {
+                // Create a walker to get all text nodes inside this element
+                const walker = document.createTreeWalker(
+                  element,
+                  NodeFilter.SHOW_TEXT,
+                  null
+                );
+                
+                let textNode;
+                while (textNode = walker.nextNode() as Text) {
+                  if (textNode.textContent?.includes('Faraz')) {
+                    textNode.textContent = textNode.textContent.replace(/Faraz/g, 'Aafiyaa Ltd.');
+                  }
+                }
+              }
+            }
+          });
+        }
+      });
+    });
+    
+    // Start observing the entire document with all possible options
+    observer.observe(document.body, {
+      childList: true,
+      attributes: true,
+      characterData: true,
+      subtree: true
+    });
+    
+    // Also set a few intervals to scan for Faraz text
+    const intervals = [500, 1000, 2000, 3000, 5000];
+    
+    const scanForFaraz = () => {
+      const walker = document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT,
+        null
+      );
+      
+      let textNode;
+      while (textNode = walker.nextNode() as Text) {
+        if (textNode.textContent?.includes('Faraz')) {
+          textNode.textContent = textNode.textContent.replace(/Faraz/g, 'Aafiyaa Ltd.');
+        }
+      }
+    };
+    
+    intervals.forEach(delay => {
+      setTimeout(scanForFaraz, delay);
+    });
+    
+    // Clean up the observer on component unmount
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+  
   useEffect(() => {
     // Get donation details from session storage
     const stored = sessionStorage.getItem('currentDonation');
