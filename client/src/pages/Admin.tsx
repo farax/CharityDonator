@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Calendar } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import Header from '@/components/Header';
@@ -11,6 +11,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 interface Donation {
   id: number;
@@ -49,6 +52,19 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState('overview');
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  
+  // Filter states
+  const [donationType, setDonationType] = useState('all');
+  const [startDate, setStartDate] = useState(() => {
+    // Default to first day of current month
+    const date = new Date();
+    date.setDate(1); // First day of month
+    return date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+  });
+  const [endDate, setEndDate] = useState(() => {
+    // Default to today
+    return new Date().toISOString().split('T')[0]; // Format as YYYY-MM-DD
+  });
   
   // Fetch payment history
   const { 
@@ -120,6 +136,36 @@ export default function Admin() {
   
   const donations = paymentHistory as Donation[];
   const stats = paymentStats as PaymentStatistics;
+  
+  // Filter donations based on selected type and date range
+  const filteredDonations = donations ? donations.filter(donation => {
+    // Filter by type
+    if (donationType !== 'all' && donation.type !== donationType) {
+      return false;
+    }
+    
+    // Filter by date range
+    const donationDate = new Date(donation.createdAt);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999); // Include the full end date
+    
+    return donationDate >= start && donationDate <= end;
+  }) : [];
+  
+  // Calculate summary for filtered donations
+  const filteredSummary = {
+    count: filteredDonations.length,
+    totalIncoming: filteredDonations
+      .filter(d => d.status === 'completed')
+      .reduce((sum, d) => sum + d.amount, 0),
+    totalOutgoing: 0, // Placeholder for outgoing funds (not in current data model)
+    byType: filteredDonations.reduce((acc, donation) => {
+      const type = donation.type || 'unknown';
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  };
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -264,10 +310,117 @@ export default function Admin() {
             </TabsContent>
             
             <TabsContent value="transactions" className="space-y-6">
+              {/* Filters */}
               <Card>
                 <CardHeader>
-                  <CardTitle>All Transactions</CardTitle>
-                  <CardDescription>Complete history of all donations</CardDescription>
+                  <CardTitle>Filter Transactions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Donation Type Filter */}
+                    <div className="space-y-2">
+                      <Label htmlFor="donationType">Donation Type</Label>
+                      <Select
+                        value={donationType}
+                        onValueChange={setDonationType}
+                      >
+                        <SelectTrigger id="donationType">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Types</SelectItem>
+                          <SelectItem value="zakaat">Zakaat</SelectItem>
+                          <SelectItem value="sadqah">Sadqah</SelectItem>
+                          <SelectItem value="interest">Interest</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Date Range - Start */}
+                    <div className="space-y-2">
+                      <Label htmlFor="startDate">Start Date</Label>
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="h-4 w-4 opacity-50" />
+                        <Input
+                          id="startDate"
+                          type="date"
+                          value={startDate}
+                          onChange={e => setStartDate(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Date Range - End */}
+                    <div className="space-y-2">
+                      <Label htmlFor="endDate">End Date</Label>
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="h-4 w-4 opacity-50" />
+                        <Input
+                          id="endDate"
+                          type="date"
+                          value={endDate}
+                          onChange={e => setEndDate(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Filter Summary */}
+              {filteredDonations.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Filter Summary</CardTitle>
+                    <CardDescription>
+                      Showing {filteredDonations.length} {donationType === 'all' ? '' : donationType} donations from {new Date(startDate).toLocaleDateString()} to {new Date(endDate).toLocaleDateString()}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 mb-1">Total Donations</h3>
+                        <p className="text-2xl font-bold">{filteredSummary.count}</p>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 mb-1">Total Incoming</h3>
+                        <p className="text-2xl font-bold text-green-600">
+                          ${filteredSummary.totalIncoming.toFixed(2)}
+                        </p>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 mb-1">Total Outgoing</h3>
+                        <p className="text-2xl font-bold text-red-600">
+                          ${filteredSummary.totalOutgoing.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {donationType === 'all' && Object.keys(filteredSummary.byType).length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 mb-2">Breakdown by Type</h3>
+                        <div className="flex flex-wrap gap-3">
+                          {Object.entries(filteredSummary.byType).map(([type, count]) => (
+                            <Badge key={type} variant="outline" className="capitalize">
+                              {type}: {count}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+              
+              {/* Transactions Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Filtered Transactions</CardTitle>
+                  <CardDescription>
+                    {filteredDonations.length 
+                      ? `Showing ${filteredDonations.length} ${donationType === 'all' ? '' : donationType} donations` 
+                      : 'No donations match the selected filters'}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="rounded-md border overflow-hidden">
@@ -284,8 +437,8 @@ export default function Admin() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {donations && donations.length > 0 ? (
-                          [...donations]
+                        {filteredDonations.length > 0 ? (
+                          filteredDonations
                             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                             .map((donation) => (
                               <TableRow key={donation.id}>
@@ -308,7 +461,7 @@ export default function Admin() {
                         ) : (
                           <TableRow>
                             <TableCell colSpan={7} className="text-center py-4 text-gray-500">
-                              No transactions found
+                              No transactions found matching the filters
                             </TableCell>
                           </TableRow>
                         )}
