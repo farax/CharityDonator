@@ -2,15 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Override for Stripe's company name text */
+/* Stripe Element styling - default values */
 .StripeElement iframe {
   --stripe-font-family: system-ui, sans-serif;
   --stripe-terms-color: #71717a;
-}
-
-/* Hide the company name text in the Stripe iframe */
-.StripeElement {
-  background: white;
 }
 
 @layer base {
