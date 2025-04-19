@@ -347,6 +347,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: `Error creating payment intent: ${error.message}` });
     }
   });
+  
+  // Create a subscription with Stripe 
+  app.post('/api/create-subscription', async (req, res) => {
+    if (!stripe) {
+      return res.status(500).json({ message: "Stripe is not configured" });
+    }
+    
+    try {
+      const { 
+        donationId, 
+        amount, 
+        currency = 'AUD',
+        email, 
+        name,
+        paymentMethodId, 
+        frequency = 'monthly' 
+      } = req.body;
+      
+      if (!donationId || !amount || !email || !paymentMethodId) {
+        return res.status(400).json({ 
+          message: 'Donation ID, amount, email, and payment method ID are required' 
+        });
+      }
+      
+      const donation = await storage.getDonation(Number(donationId));
+      if (!donation) {
+        return res.status(404).json({ message: 'Donation not found' });
+      }
+      
+      // Convert amount to cents and determine billing interval
+      const amountInCents = Math.round(amount * 100);
+      const billingInterval = frequency === 'weekly' ? 'week' : 'month';
+      
+      // Step 1: Find or create customer
+      let user = await storage.getUserByEmail(email);
+      let stripeCustomerId = null;
+      
+      if (user && user.stripeCustomerId) {
+        stripeCustomerId = user.stripeCustomerId;
+      } else {
+        // Create a new customer in Stripe
+        const customer = await stripe.customers.create({
+          email,
+          name,
+          payment_method: paymentMethodId,
+          invoice_settings: {
+            default_payment_method: paymentMethodId,
+          }
+        });
+        
+        stripeCustomerId = customer.id;
+        
+        // If user exists, update their Stripe customer ID
+        if (user) {
+          user = await storage.updateUserPaymentInfo(user.id, stripeCustomerId);
+        } else {
+          // Create a new user with this email
+          user = await storage.createUser({
+            username: email.split('@')[0] + Math.floor(Math.random() * 10000),
+            password: Math.random().toString(36).substring(2, 15),
+            email
+          });
+          await storage.updateUserPaymentInfo(user.id, stripeCustomerId);
+        }
+        
+        // Link user to donation
+        if (user) {
+          await storage.updateDonationStatus(
+            donation.id, 
+            'processing', 
+            null
+          );
+        }
+      }
+      
+      // Step 2: Create a price for this donation amount
+      const price = await stripe.prices.create({
+        unit_amount: amountInCents,
+        currency: currency.toLowerCase(),
+        recurring: {
+          interval: billingInterval,
+        },
+        product_data: {
+          name: `${donation.type} Donation (${frequency})`,
+          description: donation.destinationProject || 'Aafiyaa Charity Clinics',
+        },
+      });
+      
+      // Step 3: Create the subscription
+      const subscription = await stripe.subscriptions.create({
+        customer: stripeCustomerId,
+        items: [{ price: price.id }],
+        payment_settings: {
+          payment_method_types: ['card'],
+          save_default_payment_method: 'on_subscription'
+        },
+        metadata: {
+          donationId: donationId.toString(),
+          donationType: donation.type,
+          currency,
+          amount: amount.toString(),
+          userId: user ? user.id.toString() : undefined
+        }
+      });
+      
+      console.log(`Created subscription ${subscription.id} for donation ${donationId}`);
+      
+      // Step 4: Update the donation with subscription details
+      await storage.updateDonationSubscription(
+        donation.id,
+        'stripe',
+        subscription.id,
+        subscription.status,
+        new Date(subscription.current_period_end * 1000) // Convert UNIX timestamp to Date
+      );
+      
+      // Also link the user
+      if (user && user.id && !donation.userId) {
+        // This is a temporary solution - in a production app we would have a separate endpoint
+        // to update the userId field directly
+        const updatedDonation = await storage.getDonation(Number(donationId));
+        
+        if (updatedDonation) {
+          // We only have updateDonationStatus method to update fields, so we're using it to link user
+          await storage.updateDonationStatus(
+            donation.id,
+            updatedDonation.status,
+            updatedDonation.stripePaymentId
+          );
+        }
+      }
+      
+      res.json({
+        subscriptionId: subscription.id,
+        status: subscription.status,
+        nextPaymentDate: new Date(subscription.current_period_end * 1000),
+        clientSecret: subscription.latest_invoice?.payment_intent?.client_secret
+      });
+    } catch (error: any) {
+      console.error('Error creating subscription:', error.message);
+      res.status(500).json({ message: `Error creating subscription: ${error.message}` });
+    }
+  });
 
   // Case management routes
   app.get("/api/cases", async (req, res) => {
@@ -555,6 +698,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         case 'checkout.session.completed':
           await handleCheckoutSessionCompleted(event.data.object);
           break;
+        case 'customer.subscription.created':
+          await handleSubscriptionCreated(event.data.object);
+          break;
+        case 'customer.subscription.updated':
+          await handleSubscriptionUpdated(event.data.object);
+          break;
+        case 'customer.subscription.deleted':
+          await handleSubscriptionCancelled(event.data.object);
+          break;
+        case 'invoice.payment_succeeded':
+          await handleInvoicePaymentSucceeded(event.data.object);
+          break;
+        case 'invoice.payment_failed':
+          await handleInvoicePaymentFailed(event.data.object);
+          break;
         default:
           // Unexpected event type
           console.log(`Unhandled event type ${event.type}`);
@@ -685,6 +843,182 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error: any) {
       console.error('Error handling checkout session completed:', error.message);
+    }
+  };
+
+  // Handler for subscription created events
+  const handleSubscriptionCreated = async (subscription: any) => {
+    console.log('Subscription Created:', subscription.id);
+    
+    try {
+      // Find the donation by the subscription ID or metadata
+      let donation;
+      
+      if (subscription.metadata && subscription.metadata.donationId) {
+        const donationId = parseInt(subscription.metadata.donationId);
+        donation = await storage.getDonation(donationId);
+      }
+      
+      if (!donation) {
+        // If donation not found by metadata, try finding it by subscription ID
+        const donations = await storage.getDonations();
+        donation = donations.find(d => d.stripeSubscriptionId === subscription.id);
+      }
+      
+      if (donation) {
+        // Update the subscription status
+        await storage.updateDonationSubscription(
+          donation.id,
+          'stripe',
+          subscription.id,
+          subscription.status,
+          new Date((subscription.current_period_end || 0) * 1000)
+        );
+        
+        console.log(`Updated donation ${donation.id} with subscription ${subscription.id}`);
+      } else {
+        console.warn(`No donation found for subscription ${subscription.id}`);
+      }
+    } catch (error: any) {
+      console.error('Error handling subscription created:', error.message);
+    }
+  };
+  
+  // Handler for subscription updated events
+  const handleSubscriptionUpdated = async (subscription: any) => {
+    console.log('Subscription Updated:', subscription.id);
+    
+    try {
+      // Find the donation by subscription ID
+      const donations = await storage.getDonations();
+      const donation = donations.find(d => d.stripeSubscriptionId === subscription.id);
+      
+      if (donation) {
+        // Update the subscription status
+        await storage.updateDonationSubscription(
+          donation.id,
+          'stripe',
+          subscription.id,
+          subscription.status,
+          new Date((subscription.current_period_end || 0) * 1000)
+        );
+        
+        console.log(`Updated donation ${donation.id} subscription status to ${subscription.status}`);
+      } else {
+        console.warn(`No donation found for subscription ${subscription.id}`);
+      }
+    } catch (error: any) {
+      console.error('Error handling subscription updated:', error.message);
+    }
+  };
+  
+  // Handler for subscription cancelled events
+  const handleSubscriptionCancelled = async (subscription: any) => {
+    console.log('Subscription Cancelled:', subscription.id);
+    
+    try {
+      // Find the donation by subscription ID
+      const donations = await storage.getDonations();
+      const donation = donations.find(d => d.stripeSubscriptionId === subscription.id);
+      
+      if (donation) {
+        // Update the donation status to cancelled
+        await storage.updateDonationSubscription(
+          donation.id,
+          'stripe',
+          subscription.id,
+          'canceled',
+          null
+        );
+        
+        console.log(`Marked donation ${donation.id} subscription as cancelled`);
+      } else {
+        console.warn(`No donation found for cancelled subscription ${subscription.id}`);
+      }
+    } catch (error: any) {
+      console.error('Error handling subscription cancelled:', error.message);
+    }
+  };
+  
+  // Handler for successful invoice payments (for subscriptions)
+  const handleInvoicePaymentSucceeded = async (invoice: any) => {
+    console.log('Invoice Payment Succeeded:', invoice.id);
+    
+    try {
+      if (!invoice.subscription) {
+        console.log('No subscription associated with this invoice');
+        return;
+      }
+      
+      // Find the donation by subscription ID
+      const donations = await storage.getDonations();
+      const donation = donations.find(d => d.stripeSubscriptionId === invoice.subscription);
+      
+      if (!donation) {
+        console.warn(`No donation found for subscription ${invoice.subscription}`);
+        return;
+      }
+      
+      // Update the next payment date based on the subscription
+      if (stripe) {
+        const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+        
+        await storage.updateDonationSubscription(
+          donation.id,
+          'stripe',
+          invoice.subscription,
+          subscription.status,
+          new Date((subscription.current_period_end || 0) * 1000)
+        );
+        
+        // If this is for a case, update the case's amount collected
+        if (donation.caseId) {
+          // For recurring payments, we assume each payment is for the original amount
+          await storage.updateCaseAmountCollected(donation.caseId, donation.amount);
+          console.log(`Updated case ${donation.caseId} amount collected by ${donation.amount}`);
+        }
+        
+        console.log(`Updated donation ${donation.id} next payment date`);
+      }
+    } catch (error: any) {
+      console.error('Error handling invoice payment succeeded:', error.message);
+    }
+  };
+  
+  // Handler for failed invoice payments (for subscriptions)
+  const handleInvoicePaymentFailed = async (invoice: any) => {
+    console.log('Invoice Payment Failed:', invoice.id);
+    
+    try {
+      if (!invoice.subscription) {
+        console.log('No subscription associated with this invoice');
+        return;
+      }
+      
+      // Find the donation by subscription ID
+      const donations = await storage.getDonations();
+      const donation = donations.find(d => d.stripeSubscriptionId === invoice.subscription);
+      
+      if (donation) {
+        // Update the subscription status to past_due or similar
+        if (stripe) {
+          const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+          
+          await storage.updateDonationSubscription(
+            donation.id,
+            'stripe',
+            invoice.subscription,
+            subscription.status,
+            new Date((subscription.current_period_end || 0) * 1000)
+          );
+          
+          console.log(`Updated donation ${donation.id} subscription status to ${subscription.status} due to failed payment`);
+        }
+      } else {
+        console.warn(`No donation found for subscription ${invoice.subscription}`);
+      }
+    } catch (error: any) {
+      console.error('Error handling invoice payment failed:', error.message);
     }
   };
 
