@@ -5,7 +5,7 @@ import { Endorsement } from '@shared/schema';
 import { Building2, Stethoscope, Globe, HeartPulse, Baby, BookOpen, Activity } from 'lucide-react';
 
 // Import the partner logos
-import rahbarTrustLogo from '../assets/rahbar-trust-logo.webp';
+import rahbarLogo from '../assets/rahbar-logo.png';
 import alIhsanLogo from '../assets/al-ihsan-logo.png';
 
 export default function EndorsementsTicker() {
@@ -62,9 +62,9 @@ export default function EndorsementsTicker() {
       case 'gates':
         return <Building2 className="w-12 h-12 text-gray-800" />;
       case 'rahbar-trust':
-        return <img src={rahbarTrustLogo} alt="Rahbar Trust" className="w-12 h-12 object-contain" />;
+        return <img src={rahbarLogo} alt="Rahbar Foundation" className="w-16 h-16 object-contain" />;
       case 'al-ihsan':
-        return <img src={alIhsanLogo} alt="Al-Ihsan Foundation" className="w-12 h-12 object-contain" />;
+        return <img src={alIhsanLogo} alt="Al-Ihsan Institute" className="w-24 h-12 object-contain" />;
       case 'dwb':
         return <Activity className="w-12 h-12 text-red-700" />;
       default:
