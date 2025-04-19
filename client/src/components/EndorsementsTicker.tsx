@@ -64,7 +64,7 @@ export default function EndorsementsTicker() {
       case 'rahbar-trust':
         return <img src={rahbarLogo} alt="Rahbar Foundation" className="w-16 h-16 object-contain" />;
       case 'al-ihsan':
-        return <img src={alIhsanLogo} alt="Al-Ihsan Institute" className="w-24 h-12 object-contain" />;
+        return <img src={alIhsanLogo} alt="Al-Ihsan Institute" className="w-32 h-20 object-contain" />;
       case 'dwb':
         return <Activity className="w-12 h-12 text-red-700" />;
       default:
@@ -97,10 +97,10 @@ export default function EndorsementsTicker() {
                 key={endorsement.id}
                 className="no-underline"
               >
-                <Card className="flex items-center bg-white rounded-lg shadow-sm min-w-[240px] hover:shadow-md transition-shadow duration-300">
+                <Card className="flex items-center bg-white rounded-lg shadow-sm min-w-[280px] hover:shadow-md transition-shadow duration-300">
                   <CardContent className="p-4 flex items-center">
                     {getEndorsementIcon(endorsement.logoUrl)}
-                    <div className="ml-4">
+                    <div className="ml-4 flex-grow">
                       <p className="font-semibold text-gray-800">{endorsement.name}</p>
                       <p className="text-xs text-gray-500">{endorsement.type}</p>
                     </div>
@@ -118,10 +118,10 @@ export default function EndorsementsTicker() {
                 key={`dup-${endorsement.id}`}
                 className="no-underline"
               >
-                <Card className="flex items-center bg-white rounded-lg shadow-sm min-w-[240px] hover:shadow-md transition-shadow duration-300">
+                <Card className="flex items-center bg-white rounded-lg shadow-sm min-w-[280px] hover:shadow-md transition-shadow duration-300">
                   <CardContent className="p-4 flex items-center">
                     {getEndorsementIcon(endorsement.logoUrl)}
-                    <div className="ml-4">
+                    <div className="ml-4 flex-grow">
                       <p className="font-semibold text-gray-800">{endorsement.name}</p>
                       <p className="text-xs text-gray-500">{endorsement.type}</p>
                     </div>
