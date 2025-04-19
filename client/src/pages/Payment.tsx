@@ -90,6 +90,22 @@ const CheckoutForm = () => {
         variant: "destructive",
       });
     } else {
+      // Update donation status manually to ensure it's marked completed
+      try {
+        if (paymentIntent && donationDetails?.id) {
+          await apiRequest("POST", "/api/update-donation-status", {
+            donationId: donationDetails.id,
+            status: "completed",
+            paymentMethod: "stripe",
+            paymentId: paymentIntent.id
+          });
+          console.log("Donation status updated to completed", paymentIntent.id);
+        }
+      } catch (updateError) {
+        console.error("Failed to update donation status:", updateError);
+        // Continue with success path even if status update fails
+      }
+      
       // Track payment success
       trackEvent({
         category: 'Payment',

@@ -324,15 +324,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
         currency: currency.toLowerCase(),
+        metadata: {
+          donationId: donationId ? donationId.toString() : undefined
+        }
       });
 
       // Update donation with payment intent ID
       if (donationId) {
-        await storage.updateDonationStatus(donationId, "processing", paymentIntent.id);
+        console.log(`Creating payment intent for donation ${donationId}: ${paymentIntent.id}`);
+        // Store both the payment intent ID and client secret to increase chances of matching
+        // in the webhook handler
+        await storage.updateDonationStatus(
+          donationId, 
+          "processing", 
+          `${paymentIntent.id}|${paymentIntent.client_secret}`
+        );
       }
 
       res.json({ clientSecret: paymentIntent.client_secret });
     } catch (error: any) {
+      console.error('Error creating payment intent:', error.message);
       res.status(500).json({ message: `Error creating payment intent: ${error.message}` });
     }
   });
@@ -519,34 +530,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verify the webhook signature
       // This helps ensure the webhook was sent by Stripe
       const endpointSecret = config.STRIPE.WEBHOOK_SECRET;
-      if (endpointSecret) {
-        event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
+      if (endpointSecret && sig) {
+        event = stripe.webhooks.constructEvent(
+          payload, 
+          sig, 
+          endpointSecret
+        );
       } else {
+        // In development mode, we might not have a webhook signature
+        console.log('No webhook signature, using payload directly (development mode)');
         event = payload;
       }
 
-      // Handle the event
-      if (event.type === 'payment_intent.succeeded') {
-        const paymentIntent = event.data.object;
-        // Find the donation by Stripe payment ID and update its status
-        const donations = await storage.getDonations();
-        const donation = donations.find(d => d.stripePaymentId === paymentIntent.id);
-        
-        if (donation) {
-          await storage.updateDonationStatus(donation.id, "completed");
-          
-          // If donation is for a specific case, update the case's amount collected
-          if (donation.caseId) {
-            await storage.updateCaseAmountCollected(donation.caseId, donation.amount);
-          }
-        }
+      console.log(`Webhook received: ${event.type}`);
+
+      // Handle different event types
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          await handlePaymentIntentSucceeded(event.data.object);
+          break;
+        case 'payment_intent.payment_failed':
+          await handlePaymentIntentFailed(event.data.object);
+          break;
+        case 'checkout.session.completed':
+          await handleCheckoutSessionCompleted(event.data.object);
+          break;
+        default:
+          // Unexpected event type
+          console.log(`Unhandled event type ${event.type}`);
       }
 
       res.json({ received: true });
     } catch (error: any) {
+      console.error('Webhook Error:', error.message);
       res.status(400).json({ message: `Webhook Error: ${error.message}` });
     }
   });
+
+  // Handler for successful payment intents
+  const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
+    console.log('Payment Intent Succeeded:', paymentIntent.id);
+    
+    try {
+      // Get all donations
+      const donations = await storage.getDonations();
+      
+      // Find donation by multiple possible matching strategies
+      const donation = donations.find(d => {
+        // Direct match on payment intent ID
+        if (d.stripePaymentId === paymentIntent.id) return true;
+        
+        // Match on client secret
+        if (d.stripePaymentId === paymentIntent.client_secret) return true;
+        
+        // Match on combined format that we're now using
+        if (d.stripePaymentId === `${paymentIntent.id}|${paymentIntent.client_secret}`) return true;
+        
+        // Check if payment ID contains the intent ID (partial match)
+        if (d.stripePaymentId && d.stripePaymentId.includes(paymentIntent.id)) return true;
+        
+        // Match via metadata (we store the donation ID in metadata)
+        if (paymentIntent.metadata && paymentIntent.metadata.donationId && 
+            d.id === parseInt(paymentIntent.metadata.donationId)) {
+          return true;
+        }
+        
+        return false;
+      });
+      
+      if (donation) {
+        console.log(`Found donation ID ${donation.id} for payment intent ${paymentIntent.id}`);
+        
+        // Update donation status to completed
+        await storage.updateDonationStatus(donation.id, "completed", paymentIntent.id);
+        
+        // If donation is for a specific case, update the case's amount collected
+        if (donation.caseId) {
+          await storage.updateCaseAmountCollected(donation.caseId, donation.amount);
+        }
+        
+        console.log(`Donation ${donation.id} marked as completed and amount collected updated`);
+      } else {
+        console.warn(`No donation found for payment intent ${paymentIntent.id}`);
+        
+        // Additional diagnostic info
+        console.log('Available donations:', donations.map(d => ({
+          id: d.id,
+          status: d.status,
+          stripePaymentId: d.stripePaymentId
+        })));
+      }
+    } catch (error: any) {
+      console.error('Error handling payment intent succeeded:', error.message);
+    }
+  };
+
+  // Handler for failed payment intents
+  const handlePaymentIntentFailed = async (paymentIntent: any) => {
+    console.log('Payment Intent Failed:', paymentIntent.id);
+    
+    try {
+      // Get all donations
+      const donations = await storage.getDonations();
+      
+      // Find donation by multiple possible matching strategies (same as success handler)
+      const donation = donations.find(d => {
+        // Direct match on payment intent ID
+        if (d.stripePaymentId === paymentIntent.id) return true;
+        
+        // Match on client secret
+        if (d.stripePaymentId === paymentIntent.client_secret) return true;
+        
+        // Match on combined format that we're now using
+        if (d.stripePaymentId === `${paymentIntent.id}|${paymentIntent.client_secret}`) return true;
+        
+        // Check if payment ID contains the intent ID (partial match)
+        if (d.stripePaymentId && d.stripePaymentId.includes(paymentIntent.id)) return true;
+        
+        // Match via metadata (we store the donation ID in metadata)
+        if (paymentIntent.metadata && paymentIntent.metadata.donationId && 
+            d.id === parseInt(paymentIntent.metadata.donationId)) {
+          return true;
+        }
+        
+        return false;
+      });
+      
+      if (donation) {
+        console.log(`Found donation ID ${donation.id} for failed payment intent ${paymentIntent.id}`);
+        // Update donation status to failed
+        await storage.updateDonationStatus(donation.id, "failed", paymentIntent.id);
+        console.log(`Donation ${donation.id} marked as failed`);
+      } else {
+        console.warn(`No donation found for failed payment intent ${paymentIntent.id}`);
+      }
+    } catch (error: any) {
+      console.error('Error handling payment intent failed:', error.message);
+    }
+  };
+
+  // Handler for completed checkout sessions
+  const handleCheckoutSessionCompleted = async (session: any) => {
+    console.log('Checkout Session Completed:', session.id);
+    
+    try {
+      // For checkout sessions, we need to get the payment intent
+      if (session.payment_intent && stripe) {
+        // Use type assertion to handle the stripe is possibly undefined error
+        const stripeInstance = stripe as Stripe;
+        const paymentIntent = await stripeInstance.paymentIntents.retrieve(session.payment_intent);
+        await handlePaymentIntentSucceeded(paymentIntent);
+      } else if (!stripe) {
+        console.error('Stripe is not configured');
+      }
+    } catch (error: any) {
+      console.error('Error handling checkout session completed:', error.message);
+    }
+  };
 
   const httpServer = createServer(app);
 
