@@ -17,7 +17,9 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserPaymentInfo(id: number, stripeCustomerId?: string, paypalCustomerId?: string): Promise<User | undefined>;
   
   // Admin methods
   validateAdminCredentials(username: string, password: string): Promise<boolean>;
@@ -25,8 +27,20 @@ export interface IStorage {
   // Donation methods
   createDonation(donation: InsertDonation): Promise<Donation>;
   getDonation(id: number): Promise<Donation | undefined>;
+  getDonationByStripePaymentId(paymentId: string): Promise<Donation | undefined>;
+  getDonationByStripeSubscriptionId(subscriptionId: string): Promise<Donation | undefined>;
+  getDonationByPaypalSubscriptionId(subscriptionId: string): Promise<Donation | undefined>;
   updateDonationStatus(id: number, status: string, paymentId?: string): Promise<Donation | undefined>;
+  updateDonationSubscription(
+    id: number, 
+    provider: 'stripe' | 'paypal', 
+    subscriptionId: string, 
+    subscriptionStatus: string, 
+    nextPaymentDate?: Date
+  ): Promise<Donation | undefined>;
   getDonations(): Promise<Donation[]>;
+  getDonationsByUserId(userId: number): Promise<Donation[]>;
+  getActiveSubscriptions(): Promise<Donation[]>;
   
   // Endorsement methods
   getEndorsements(): Promise<Endorsement[]>;
@@ -167,12 +181,38 @@ export class MemStorage implements IStorage {
       (user) => user.username === username,
     );
   }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email,
+    );
+  }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userCurrentId++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      email: insertUser.email || null,
+      stripeCustomerId: null,
+      paypalCustomerId: null
+    };
     this.users.set(id, user);
     return user;
+  }
+  
+  async updateUserPaymentInfo(id: number, stripeCustomerId?: string, paypalCustomerId?: string): Promise<User | undefined> {
+    const user = await this.getUser(id);
+    if (!user) return undefined;
+    
+    const updatedUser = {
+      ...user,
+      ...(stripeCustomerId && { stripeCustomerId }),
+      ...(paypalCustomerId && { paypalCustomerId })
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
   
   // Admin methods
@@ -198,6 +238,11 @@ export class MemStorage implements IStorage {
       currency: insertDonation.currency || 'USD',
       frequency: insertDonation.frequency || 'one-off',
       stripePaymentId: insertDonation.stripePaymentId || null,
+      stripeSubscriptionId: insertDonation.stripeSubscriptionId || null,
+      paypalSubscriptionId: insertDonation.paypalSubscriptionId || null,
+      subscriptionStatus: insertDonation.subscriptionStatus || null,
+      nextPaymentDate: insertDonation.nextPaymentDate || null,
+      userId: insertDonation.userId || null,
       paymentMethod: insertDonation.paymentMethod || null,
       caseId: insertDonation.caseId || null,
       destinationProject: insertDonation.destinationProject || null
@@ -208,6 +253,24 @@ export class MemStorage implements IStorage {
   
   async getDonation(id: number): Promise<Donation | undefined> {
     return this.donations.get(id);
+  }
+  
+  async getDonationByStripePaymentId(paymentId: string): Promise<Donation | undefined> {
+    return Array.from(this.donations.values()).find(
+      (donation) => donation.stripePaymentId === paymentId
+    );
+  }
+  
+  async getDonationByStripeSubscriptionId(subscriptionId: string): Promise<Donation | undefined> {
+    return Array.from(this.donations.values()).find(
+      (donation) => donation.stripeSubscriptionId === subscriptionId
+    );
+  }
+  
+  async getDonationByPaypalSubscriptionId(subscriptionId: string): Promise<Donation | undefined> {
+    return Array.from(this.donations.values()).find(
+      (donation) => donation.paypalSubscriptionId === subscriptionId
+    );
   }
   
   async updateDonationStatus(id: number, status: string, paymentId?: string): Promise<Donation | undefined> {
@@ -232,7 +295,12 @@ export class MemStorage implements IStorage {
       ...donation,
       status,
       ...(paymentMethod && { paymentMethod }),
-      ...(paymentId && { stripePaymentId: paymentId })
+      ...(paymentId && { stripePaymentId: paymentId }),
+      stripeSubscriptionId: donation.stripeSubscriptionId || null,
+      paypalSubscriptionId: donation.paypalSubscriptionId || null,
+      subscriptionStatus: donation.subscriptionStatus || null,
+      nextPaymentDate: donation.nextPaymentDate || null,
+      userId: donation.userId || null
     };
     
     // If this is a completed payment for a case, update the case amount
@@ -244,8 +312,60 @@ export class MemStorage implements IStorage {
     return updatedDonation;
   }
   
+  async updateDonationSubscription(
+    id: number, 
+    provider: 'stripe' | 'paypal', 
+    subscriptionId: string, 
+    subscriptionStatus: string, 
+    nextPaymentDate?: Date
+  ): Promise<Donation | undefined> {
+    const donation = this.donations.get(id);
+    if (!donation) return undefined;
+    
+    let status = donation.status;
+    // If subscription is active, mark the donation as active-subscription
+    if (subscriptionStatus === 'active' || subscriptionStatus === 'trialing') {
+      status = 'active-subscription';
+    } 
+    // If subscription is cancelled or other terminal state, mark as subscription-cancelled
+    else if (
+      subscriptionStatus === 'cancelled' || 
+      subscriptionStatus === 'canceled' || 
+      subscriptionStatus === 'expired'
+    ) {
+      status = 'subscription-cancelled';
+    }
+    
+    const updatedDonation: Donation = {
+      ...donation,
+      status,
+      subscriptionStatus,
+      ...(nextPaymentDate && { nextPaymentDate }),
+      ...(provider === 'stripe' ? { stripeSubscriptionId: subscriptionId } : { paypalSubscriptionId: subscriptionId }),
+      stripeSubscriptionId: provider === 'stripe' ? subscriptionId : (donation.stripeSubscriptionId || null),
+      paypalSubscriptionId: provider === 'paypal' ? subscriptionId : (donation.paypalSubscriptionId || null)
+    };
+    
+    this.donations.set(id, updatedDonation);
+    return updatedDonation;
+  }
+  
   async getDonations(): Promise<Donation[]> {
     return Array.from(this.donations.values());
+  }
+  
+  async getDonationsByUserId(userId: number): Promise<Donation[]> {
+    return Array.from(this.donations.values()).filter(
+      (donation) => donation.userId === userId
+    );
+  }
+  
+  async getActiveSubscriptions(): Promise<Donation[]> {
+    return Array.from(this.donations.values()).filter(
+      (donation) => 
+        donation.status === 'active-subscription' && 
+        (donation.stripeSubscriptionId || donation.paypalSubscriptionId)
+    );
   }
   
   async updateDonationDonor(id: number, name: string, email: string): Promise<Donation | undefined> {

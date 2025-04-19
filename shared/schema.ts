@@ -2,11 +2,14 @@ import { pgTable, text, serial, integer, boolean, timestamp, real, json } from "
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users schema from the original file
+// Users schema with payment provider information
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  email: text("email"),
+  stripeCustomerId: text("stripe_customer_id"),
+  paypalCustomerId: text("paypal_customer_id"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -39,13 +42,18 @@ export const donations = pgTable("donations", {
   currency: text("currency").notNull().default("USD"),
   frequency: text("frequency").notNull().default("one-off"), // 'one-off', 'weekly', 'monthly'
   stripePaymentId: text("stripe_payment_id"),
-  status: text("status").notNull().default("pending"), // 'pending', 'completed', 'failed'
+  stripeSubscriptionId: text("stripe_subscription_id"), // For recurring payments
+  paypalSubscriptionId: text("paypal_subscription_id"), // For PayPal recurring payments
+  status: text("status").notNull().default("pending"), // 'pending', 'completed', 'failed', 'active-subscription', 'subscription-cancelled'
+  subscriptionStatus: text("subscription_status"), // 'active', 'past_due', 'cancelled', 'incomplete', etc.
+  nextPaymentDate: timestamp("next_payment_date"), // Next scheduled payment date for subscriptions
   createdAt: timestamp("created_at").notNull().defaultNow(),
   email: text("email"),
   name: text("name"),
-  paymentMethod: text("payment_method"), // 'stripe', 'apple_pay', 'paypal', 'pakistan_gateway'
+  userId: integer("user_id"), // Link to a user for recurring payments
+  paymentMethod: text("payment_method"), // 'stripe', 'apple_pay', 'paypal'
   caseId: integer("case_id"), // For case-specific donations
-  destinationProject: text("destination_project"), // For non-case specific donations like 'Clinic Operations' or 'Most deserving case'
+  destinationProject: text("destination_project"), // For non-case specific donations
 });
 
 export const insertDonationSchema = createInsertSchema(donations).omit({
