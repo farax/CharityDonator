@@ -8,6 +8,9 @@ import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
 import config, { validateConfig } from "./config";
 
+// Log the current environment for debugging
+console.log(`🚀 Starting server in ${config.NODE_ENV} mode`);
+
 // Validate configuration on startup
 validateConfig();
 

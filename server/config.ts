@@ -21,6 +21,11 @@ if (fs.existsSync(envPath)) {
   dotenv.config();
 }
 
+// Log key configuration details but not the actual values
+console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`Stripe configuration: ${process.env.STRIPE_SECRET_KEY ? '✓ Secret key found' : '✗ Missing secret key'}`);
+console.log(`Stripe public key: ${process.env.VITE_STRIPE_PUBLIC_KEY ? '✓ Public key found' : '✗ Missing public key'}`);
+
 // App Configuration
 export const config = {
   // App settings
@@ -36,10 +41,10 @@ export const config = {
     BROWSER_LICENSE_KEY: process.env.VITE_NEW_RELIC_BROWSER_LICENSE_KEY,
   },
   
-  // Payment gateways
+  // Payment gateways - using test keys for both dev and prod for now
   STRIPE: {
-    SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-    PUBLIC_KEY: process.env.VITE_STRIPE_PUBLIC_KEY,
+    SECRET_KEY: process.env.STRIPE_SECRET_KEY, // Always using test key regardless of env
+    PUBLIC_KEY: process.env.VITE_STRIPE_PUBLIC_KEY, // Always using test key regardless of env
     WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   },
   
