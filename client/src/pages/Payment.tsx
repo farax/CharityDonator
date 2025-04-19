@@ -165,7 +165,7 @@ const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
 
   // PayPal configuration options
   const paypalOptions = {
-    clientId: "test", // In production, this would be your actual PayPal client ID
+    clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || "test", // Use PayPal client ID from environment
     currency: donationDetails.currency.toLowerCase()
   };
 

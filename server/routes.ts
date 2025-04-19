@@ -27,6 +27,32 @@ const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SEC
 // Currency conversion API
 const exchangeRateUrl = "https://open.er-api.com/v6/latest/USD";
 
+// PayPal API configuration
+
+// PayPal API configuration
+const PAYPAL_API_BASE = process.env.NODE_ENV === 'production' 
+  ? 'https://api-m.paypal.com' 
+  : 'https://api-m.sandbox.paypal.com';
+
+const getPayPalAccessToken = async () => {
+  if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_SECRET_KEY) {
+    throw new Error('PayPal credentials are missing');
+  }
+
+  const auth = Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_SECRET_KEY}`).toString('base64');
+  const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': `Basic ${auth}`
+    },
+    body: 'grant_type=client_credentials'
+  });
+
+  const data = await response.json() as any;
+  return data.access_token;
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Admin middleware to check if admin is authenticated
   const isAdminAuthenticated = (req: Request, res: Response, next: NextFunction) => {
@@ -197,6 +223,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json({ success: true, donation });
     } catch (error) {
       res.status(500).json({ message: "Failed to update donation status" });
+    }
+  });
+  
+  // PayPal verification endpoint
+  app.post("/api/paypal/verify-payment", async (req, res) => {
+    try {
+      const { orderId, donationId } = req.body;
+      
+      if (!orderId || !donationId) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_SECRET_KEY) {
+        return res.status(500).json({ message: "PayPal is not properly configured" });
+      }
+      
+      try {
+        // Get access token
+        const accessToken = await getPayPalAccessToken();
+        
+        // Verify order with PayPal
+        const response = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+        
+        const orderData = await response.json() as any;
+        
+        // Check order status
+        if (orderData.status === 'COMPLETED') {
+          // Update donation status to completed
+          const donation = await storage.updateDonationStatus(
+            donationId, 
+            "completed", 
+            `paypal_${orderId}`
+          );
+          
+          return res.status(200).json({ 
+            success: true, 
+            verified: true,
+            status: orderData.status,
+            donation 
+          });
+        } else {
+          // Order is not completed
+          return res.status(200).json({ 
+            success: true, 
+            verified: false,
+            status: orderData.status,
+            message: "Payment not completed"
+          });
+        }
+      } catch (error: any) {
+        console.error('PayPal verification error:', error);
+        return res.status(500).json({ 
+          success: false, 
+          message: `PayPal verification failed: ${error.message}` 
+        });
+      }
+    } catch (error: any) {
+      console.error('PayPal API error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: `Failed to verify PayPal payment: ${error.message}` 
+      });
     }
   });
   
