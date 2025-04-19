@@ -537,10 +537,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the latest invoice
       const invoice = await stripe.invoices.retrieve(subscription.latest_invoice as string);
       
-      // Additionally get the payment intent if it exists
+      // For test mode, we need to handle subscriptions differently
+      // Create a payment method and attach it to the customer if we don't have a payment intent
       let paymentIntent;
-      if (invoice.payment_intent) {
-        paymentIntent = await stripe.paymentIntents.retrieve(invoice.payment_intent as string);
+      
+      const paymentIntentId = typeof invoice.payment_intent === 'string' ? invoice.payment_intent : undefined;
+      
+      if (!paymentIntentId) {
+        console.log('No payment intent found - creating one for this invoice specifically');
+        
+        try {
+          // Pay the invoice explicitly to move the subscription to active state
+          const paidInvoice = await stripe.invoices.pay(invoice.id);
+          console.log('Invoice manually paid:', paidInvoice.id, 'Status:', paidInvoice.status);
+          
+          // If invoice payment creates a payment intent, retrieve it
+          const paidInvoicePaymentIntent = paidInvoice.payment_intent;
+          
+          if (paidInvoicePaymentIntent) {
+            const paidPaymentIntentId = typeof paidInvoicePaymentIntent === 'string' 
+              ? paidInvoicePaymentIntent 
+              : paidInvoicePaymentIntent.id;
+              
+            if (paidPaymentIntentId) {
+              console.log('Getting payment intent from paid invoice:', paidPaymentIntentId);
+              paymentIntent = await stripe.paymentIntents.retrieve(paidPaymentIntentId);
+            }
+          }
+        } catch (payError: any) {
+          console.error('Error paying invoice:', payError.message);
+          
+          // If we can't pay the invoice automatically, we'll return without a client secret
+          // and let the frontend handle confirmation
+        }
+      } else {
+        // Get the existing payment intent
+        try {
+          paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        } catch (piError: any) {
+          console.error('Error retrieving payment intent:', piError.message);
+        }
       }
       
       // For logging purposes, show what we're returning
@@ -632,6 +668,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(donations);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch payment history" });
+    }
+  });
+  
+  // Endpoint to manually finalize a subscription (for admin panel)
+  app.post("/api/admin/finalize-subscription", isAdminAuthenticated, async (req, res) => {
+    try {
+      const { subscriptionId } = req.body;
+      
+      if (!subscriptionId) {
+        return res.status(400).json({ message: "Subscription ID is required" });
+      }
+      
+      // Get the subscription from Stripe
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      console.log(`Admin attempting to finalize subscription ${subscriptionId}, current status: ${subscription.status}`);
+      
+      // Only process incomplete subscriptions
+      if (subscription.status !== 'incomplete') {
+        return res.json({ 
+          message: `Subscription is already in ${subscription.status} state, no action needed`,
+          subscription
+        });
+      }
+      
+      // Get the latest invoice
+      const invoice = await stripe.invoices.retrieve(subscription.latest_invoice as string);
+      
+      // Pay the invoice to activate the subscription
+      const paidInvoice = await stripe.invoices.pay(invoice.id);
+      console.log('Invoice manually paid by admin:', paidInvoice.id, 'Status:', paidInvoice.status);
+      
+      // Get the updated subscription
+      const updatedSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+      
+      res.json({
+        message: "Subscription finalized successfully",
+        previousStatus: subscription.status,
+        currentStatus: updatedSubscription.status,
+        invoiceStatus: paidInvoice.status,
+        subscription: updatedSubscription
+      });
+    } catch (error: any) {
+      console.error('Error finalizing subscription:', error.message);
+      res.status(500).json({ message: `Error finalizing subscription: ${error.message}` });
     }
   });
   
