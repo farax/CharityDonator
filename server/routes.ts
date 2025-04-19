@@ -534,27 +534,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Get the latest invoice and its payment intent to ensure proper payment completion
-      const invoice = await stripe.invoices.retrieve(subscription.latest_invoice as string, {
-        expand: ['payment_intent']
-      });
+      // Get the latest invoice
+      const invoice = await stripe.invoices.retrieve(subscription.latest_invoice as string);
+      
+      // Additionally get the payment intent if it exists
+      let paymentIntent;
+      if (invoice.payment_intent) {
+        paymentIntent = await stripe.paymentIntents.retrieve(invoice.payment_intent as string);
+      }
       
       // For logging purposes, show what we're returning
       console.log('Subscription created:', {
         id: subscription.id,
         status: subscription.status,
-        invoiceId: invoice.id,
-        paymentIntentId: invoice.payment_intent?.id,
-        clientSecret: invoice.payment_intent?.client_secret
+        invoiceId: invoice.id
       });
+      
+      // Get the payment intent associated with the subscription
+      if (paymentIntent) {
+        console.log('Payment intent details:', {
+          id: paymentIntent.id,
+          clientSecret: paymentIntent.client_secret,
+          status: paymentIntent.status
+        });
+      } else {
+        console.log('No payment intent found for subscription');
+      }
+      
+      // Get client secret from the PaymentIntent if exists
+      const clientSecret = paymentIntent?.client_secret;
       
       res.json({
         subscriptionId: subscription.id,
         status: subscription.status,
-        nextPaymentDate: new Date(subscription.current_period_end * 1000),
+        nextPaymentDate: new Date(Number(subscription.current_period_end) * 1000),
         invoiceId: invoice.id,
-        paymentIntentId: invoice.payment_intent?.id,
-        clientSecret: invoice.payment_intent?.client_secret
+        paymentIntentId: paymentIntent?.id,
+        clientSecret: clientSecret
       });
     } catch (error: any) {
       console.error('Error creating subscription:', error.message);
