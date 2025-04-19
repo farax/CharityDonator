@@ -990,8 +990,9 @@ export default function Payment() {
                       <Elements stripe={stripePromise} options={{ 
                         clientSecret, 
                         appearance: { theme: 'stripe' },
-                        business: { name: 'Faraz' },
-                        loader: 'auto'
+                        loader: 'auto',
+                        // @ts-ignore - Stripe types may not include this yet
+                        businessName: 'Aafiyaa Ltd.'
                       }}>
                         <CheckoutForm isSubscription={isSubscription} />
                       </Elements>
