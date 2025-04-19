@@ -116,11 +116,13 @@ export class MemStorage implements IStorage {
     
     // Initialize endorsements
     const sampleEndorsements: InsertEndorsement[] = [
-      { name: "World Health Organization", type: "Global Partner", logoUrl: "who" },
-      { name: "Red Cross", type: "Emergency Response", logoUrl: "redcross" },
-      { name: "UNICEF", type: "Children's Health", logoUrl: "unicef" },
-      { name: "Doctors Without Borders", type: "Medical Services", logoUrl: "dwb" },
-      { name: "Gates Foundation", type: "Strategic Partner", logoUrl: "gates" }
+      { name: "World Health Organization", type: "Global Partner", logoUrl: "who", url: "https://www.who.int/" },
+      { name: "Red Cross", type: "Emergency Response", logoUrl: "redcross", url: "https://www.redcross.org/" },
+      { name: "UNICEF", type: "Children's Health", logoUrl: "unicef", url: "https://www.unicef.org/" },
+      { name: "Doctors Without Borders", type: "Medical Services", logoUrl: "dwb", url: "https://www.doctorswithoutborders.org/" },
+      { name: "Gates Foundation", type: "Strategic Partner", logoUrl: "gates", url: "https://www.gatesfoundation.org/" },
+      { name: "Rahbar Trust", type: "Medication supplies", logoUrl: "rahbar-trust", url: "https://rahbartrust.org/" },
+      { name: "Al-Ihsan Foundation", type: "Religious ruling support", logoUrl: "al-ihsan", url: "https://www.al-ihsan.com.au/" }
     ];
     
     sampleEndorsements.forEach(endorsement => {
