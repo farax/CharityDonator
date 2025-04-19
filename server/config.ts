@@ -41,10 +41,17 @@ export const config = {
     BROWSER_LICENSE_KEY: process.env.VITE_NEW_RELIC_BROWSER_LICENSE_KEY,
   },
   
-  // Payment gateways - using test keys for both dev and prod for now
+  // Payment gateways
   STRIPE: {
-    SECRET_KEY: process.env.STRIPE_SECRET_KEY, // Always using test key regardless of env
-    PUBLIC_KEY: process.env.VITE_STRIPE_PUBLIC_KEY, // Always using test key regardless of env
+    // When you're ready to use different keys for different environments,
+    // replace process.env.STRIPE_SECRET_KEY with:
+    // process.env.NODE_ENV === 'production' ? process.env.STRIPE_LIVE_SECRET_KEY : process.env.STRIPE_TEST_SECRET_KEY,
+    SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    
+    // Similarly for the public key:
+    // process.env.NODE_ENV === 'production' ? process.env.VITE_STRIPE_LIVE_PUBLIC_KEY : process.env.VITE_STRIPE_TEST_PUBLIC_KEY,
+    PUBLIC_KEY: process.env.VITE_STRIPE_PUBLIC_KEY,
+    
     WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   },
   
