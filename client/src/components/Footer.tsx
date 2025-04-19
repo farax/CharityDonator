@@ -104,16 +104,12 @@ export default function Footer() {
           <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
           <ul className="space-y-2">
             <li className="flex items-start">
-              <MapPin className="h-5 w-5 mt-1 mr-2 text-gray-400" />
-              <span className="text-gray-300">123 Healing Street, City, Country</span>
-            </li>
-            <li className="flex items-start">
               <Mail className="h-5 w-5 mt-1 mr-2 text-gray-400" />
-              <span className="text-gray-300">info@aafiyaaclinics.org</span>
+              <span className="text-gray-300">info@aafiyaa.com</span>
             </li>
             <li className="flex items-start">
               <Phone className="h-5 w-5 mt-1 mr-2 text-gray-400" />
-              <span className="text-gray-300">+1 (123) 456-7890</span>
+              <span className="text-gray-300">(+92) 343 2930028</span>
             </li>
           </ul>
         </div>
