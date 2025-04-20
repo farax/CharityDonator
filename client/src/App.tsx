@@ -11,6 +11,7 @@ import AboutUs from "@/pages/AboutUs";
 import ContactUs from "@/pages/ContactUs";
 import { DonationProvider } from "@/components/DonationContext";
 import { initAnalytics, trackPageView, trackTimeOnPage } from "@/lib/analytics";
+import FrequencySelectorPreview from "@/components/FrequencySelectorPreview";
 
 // Analytics-aware router that tracks page views
 function Router() {
@@ -41,6 +42,8 @@ function Router() {
       <Route path="/admin/login" component={AdminLogin} />
       {/* Make /admin come after /admin/login to ensure the right route is matched */}
       <Route path="/admin" component={Admin} />
+      {/* Temporary route for UI preview */}
+      <Route path="/ui-preview" component={FrequencySelectorPreview} />
       <Route component={NotFound} />
     </Switch>
   );
