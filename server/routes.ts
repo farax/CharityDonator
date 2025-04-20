@@ -282,6 +282,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             `paypal_${orderId}`
           );
           
+          // Get the full donation record to check if it's for a case
+          const updatedDonation = await storage.getDonation(donationId);
+          
+          // If donation is for a specific case, update the case's amount collected
+          if (updatedDonation && updatedDonation.caseId) {
+            await storage.updateCaseAmountCollected(updatedDonation.caseId, updatedDonation.amount);
+            console.log(`Updated case ${updatedDonation.caseId} amount collected by ${updatedDonation.amount}`);
+          }
+          
           return res.status(200).json({ 
             success: true, 
             verified: true,
