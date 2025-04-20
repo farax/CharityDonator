@@ -360,10 +360,10 @@ export default function DonationWidget() {
               {isCustomAmount && (
                 <div className="mt-4">
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">{currencySymbol}</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">{currencySymbol}</span>
                     <Input 
                       type="text" 
-                      className="pl-8 w-full p-3 border border-gray-300 rounded-md bg-white text-gray-900" 
+                      className="pl-10 w-full p-3 border border-gray-300 rounded-md bg-white text-gray-900" 
                       placeholder="Enter amount"
                       value={customAmount}
                       onChange={handleCustomAmountChange}
