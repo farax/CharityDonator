@@ -207,6 +207,15 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
               paymentId: paymentIntent.id
             });
             console.log("Donation status updated to completed", paymentIntent.id);
+            
+            // Also directly notify about payment success to update case amount
+            if (donationDetails.caseId) {
+              await apiRequest("POST", "/api/stripe-payment-success", {
+                donationId: donationDetails.id,
+                paymentIntentId: paymentIntent.id
+              });
+              console.log("Case amount updated via direct notification", donationDetails.caseId);
+            }
           }
         } catch (updateError) {
           console.error("Failed to update donation status:", updateError);

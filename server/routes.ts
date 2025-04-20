@@ -342,6 +342,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update donor information" });
     }
   });
+  
+  // Direct endpoint for client to notify payment success when webhooks might be delayed
+  app.post("/api/stripe-payment-success", async (req, res) => {
+    try {
+      const { donationId, paymentIntentId } = req.body;
+      
+      if (!donationId) {
+        return res.status(400).json({ message: "Missing donation ID" });
+      }
+      
+      console.log(`[STRIPE-CLIENT] Payment success notification for donation ${donationId}`);
+      
+      // Get the donation record
+      const donation = await storage.getDonation(parseInt(donationId));
+      
+      if (!donation) {
+        console.error(`[STRIPE-CLIENT] Donation not found: ${donationId}`);
+        return res.status(404).json({ message: "Donation not found" });
+      }
+      
+      // Update donation status if not already completed
+      if (donation.status !== 'completed') {
+        await storage.updateDonationStatus(
+          donation.id, 
+          "completed", 
+          paymentIntentId || donation.stripePaymentId
+        );
+        console.log(`[STRIPE-CLIENT] Updated donation ${donation.id} status to completed`);
+      }
+      
+      // If donation is for a specific case, update the case's amount collected
+      if (donation.caseId) {
+        await storage.updateCaseAmountCollected(donation.caseId, donation.amount);
+        console.log(`[STRIPE-CLIENT] Updated case ${donation.caseId} amount collected by ${donation.amount}`);
+      }
+      
+      res.status(200).json({ success: true, message: "Payment success processed" });
+    } catch (error: any) {
+      console.error('[STRIPE-CLIENT] Error processing payment success:', error.message);
+      res.status(500).json({ message: "Failed to process payment success" });
+    }
+  });
 
   // Stripe payment intent creation
   app.post("/api/create-payment-intent", async (req, res) => {
