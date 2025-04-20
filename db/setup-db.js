@@ -34,20 +34,23 @@ exec('which psql', (error) => {
   }
 
   const schemaPath = path.join(__dirname, 'schema.sql');
+  const seedPath = path.join(__dirname, 'seed.sql');
   
   if (!fs.existsSync(schemaPath)) {
     console.error('Error: Schema file not found at', schemaPath);
     process.exit(1);
   }
 
-  console.log('Setting up Aafiyaa Charity Clinics database...');
+  console.log('Setting up Aafiyaa Charity Clinics database schema...');
 
-  // Construct the psql command
-  let psqlCommand;
+  // Construct the base psql command or environment variables
+  let baseCommand;
+  let envVars = '';
+  
   if (useConnectionUrl) {
-    psqlCommand = `psql "${process.env.DATABASE_URL}" -f "${schemaPath}"`;
+    baseCommand = `psql "${process.env.DATABASE_URL}"`;
   } else {
-    const envVars = Object.entries({
+    envVars = Object.entries({
       PGUSER: dbConfig.user,
       PGPASSWORD: dbConfig.password,
       PGDATABASE: dbConfig.database,
@@ -57,18 +60,47 @@ exec('which psql', (error) => {
       .filter(([, value]) => value)
       .map(([key, value]) => `${key}="${value}"`)
       .join(' ');
-
-    psqlCommand = `${envVars} psql -f "${schemaPath}"`;
+      
+    baseCommand = `psql`;
   }
 
-  // Run the command
-  exec(psqlCommand, (err, stdout, stderr) => {
+  // First run the schema SQL
+  const schemaCommand = useConnectionUrl 
+    ? `${baseCommand} -f "${schemaPath}"` 
+    : `${envVars} ${baseCommand} -f "${schemaPath}"`;
+    
+  console.log('Applying database schema...');
+  
+  exec(schemaCommand, (err, stdout, stderr) => {
     if (err) {
-      console.error('Error executing SQL:', stderr);
+      console.error('Error executing schema SQL:', stderr);
       process.exit(1);
     }
 
-    console.log('Database setup complete!');
+    console.log('Database schema setup complete!');
     console.log(stdout);
+    
+    // Check if seed file exists
+    if (fs.existsSync(seedPath)) {
+      console.log('Applying seed data...');
+      
+      // Now run the seed SQL if schema was successful
+      const seedCommand = useConnectionUrl
+        ? `${baseCommand} -f "${seedPath}"`
+        : `${envVars} ${baseCommand} -f "${seedPath}"`;
+        
+      exec(seedCommand, (seedErr, seedStdout, seedStderr) => {
+        if (seedErr) {
+          console.error('Error executing seed SQL:', seedStderr);
+          process.exit(1);
+        }
+        
+        console.log('Seed data applied successfully!');
+        console.log(seedStdout);
+        console.log('Database setup complete!');
+      });
+    } else {
+      console.log('No seed file found. Database setup complete!');
+    }
   });
 });
