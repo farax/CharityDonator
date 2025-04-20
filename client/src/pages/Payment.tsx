@@ -365,7 +365,21 @@ const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
       paymentMethod: "paypal",
       paymentId: details.id,
       subscriptionId: isRecurring ? details.subscriptionID : undefined
-    }).then(() => {
+    }).then(async () => {
+      // Also directly notify about payment success to update case amount if applicable
+      if (donationDetails.caseId) {
+        try {
+          await apiRequest("POST", "/api/stripe-payment-success", {
+            donationId: donationDetails.id,
+            paymentIntentId: details.id
+          });
+          console.log("Case amount updated via direct notification for PayPal payment", donationDetails.caseId);
+        } catch (error) {
+          console.error("Failed to update case amount:", error);
+          // Continue with success path even if case update fails
+        }
+      }
+      
       toast({
         title: isRecurring ? "Subscription Successful" : "Payment Successful",
         description: isRecurring
@@ -548,6 +562,20 @@ const ApplePayment = ({ donationDetails }: { donationDetails: any }) => {
         paymentId: `applepay-${Date.now()}`
       });
       
+      // Also update case amount if applicable
+      if (donationDetails.caseId) {
+        try {
+          await apiRequest("POST", "/api/stripe-payment-success", {
+            donationId: donationDetails.id,
+            paymentIntentId: `applepay-${Date.now()}`
+          });
+          console.log("Case amount updated via direct notification for Apple Pay", donationDetails.caseId);
+        } catch (error) {
+          console.error("Failed to update case amount:", error);
+          // Continue with success path even if case update fails
+        }
+      }
+      
       // Track successful payment
       trackEvent({
         category: 'Payment',
@@ -703,6 +731,20 @@ const GooglePayment = ({ donationDetails }: { donationDetails: any }) => {
         paymentMethod: "google_pay",
         paymentId: `googlepay-${Date.now()}`
       });
+      
+      // Also update case amount if applicable
+      if (donationDetails.caseId) {
+        try {
+          await apiRequest("POST", "/api/stripe-payment-success", {
+            donationId: donationDetails.id,
+            paymentIntentId: `googlepay-${Date.now()}`
+          });
+          console.log("Case amount updated via direct notification for Google Pay", donationDetails.caseId);
+        } catch (error) {
+          console.error("Failed to update case amount:", error);
+          // Continue with success path even if case update fails
+        }
+      }
       
       // Track successful payment
       trackEvent({
