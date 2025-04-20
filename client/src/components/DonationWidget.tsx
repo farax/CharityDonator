@@ -247,65 +247,58 @@ export default function DonationWidget() {
             {type === 'sadqah' && (
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Payment Frequency</h3>
-                <div className="grid grid-cols-3 gap-2">
-                  <div 
-                    className={`flex flex-col items-center justify-center p-3 rounded-lg border cursor-pointer transition-all ${
-                      frequency === 'one-off' 
-                        ? 'bg-blue-50 border-blue-300 shadow-sm' 
-                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                <div className="grid grid-cols-3 gap-3">
+                  <div
+                    className={`rounded-lg border p-3 cursor-pointer text-center transition-all ${
+                      frequency === 'one-off'
+                        ? 'border-primary bg-primary/10 ring-2 ring-primary shadow-md'
+                        : 'border-gray-200 hover:border-primary hover:bg-primary-50'
                     }`}
                     onClick={() => setFrequency('one-off')}
                   >
-                    <div className={`w-8 h-4 rounded-full mb-2 relative ${
-                      frequency === 'one-off' ? 'bg-primary' : 'bg-gray-300'
-                    }`}>
-                      <div 
-                        className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${
-                          frequency === 'one-off' ? 'bg-white right-0.5' : 'bg-white left-0.5'
-                        }`} 
-                      />
+                    <div className="flex justify-center mb-2">
+                      <svg className={`w-6 h-6 ${frequency === 'one-off' ? 'text-primary' : 'text-gray-600'}`} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+                        <path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
                     </div>
-                    <span className="text-sm font-medium">One-off</span>
+                    <span className={`font-medium ${frequency === 'one-off' ? 'text-primary' : 'text-gray-700'}`}>One-off</span>
                   </div>
-
-                  <div 
-                    className={`flex flex-col items-center justify-center p-3 rounded-lg border cursor-pointer transition-all ${
-                      frequency === 'weekly' 
-                        ? 'bg-blue-50 border-blue-300 shadow-sm' 
-                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                  
+                  <div
+                    className={`rounded-lg border p-3 cursor-pointer text-center transition-all ${
+                      frequency === 'weekly'
+                        ? 'border-primary bg-primary/10 ring-2 ring-primary shadow-md'
+                        : 'border-gray-200 hover:border-primary hover:bg-primary-50'
                     }`}
                     onClick={() => setFrequency('weekly')}
                   >
-                    <div className={`w-8 h-4 rounded-full mb-2 relative ${
-                      frequency === 'weekly' ? 'bg-primary' : 'bg-gray-300'
-                    }`}>
-                      <div 
-                        className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${
-                          frequency === 'weekly' ? 'bg-white right-0.5' : 'bg-white left-0.5'
-                        }`} 
-                      />
+                    <div className="flex justify-center mb-2">
+                      <svg className={`w-6 h-6 ${frequency === 'weekly' ? 'text-primary' : 'text-gray-600'}`} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
+                        <path d="M8 2v4M16 2v4M3 10h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        <path d="M7 14h2M11 14h2M15 14h2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
                     </div>
-                    <span className="text-sm font-medium">Weekly</span>
+                    <span className={`font-medium ${frequency === 'weekly' ? 'text-primary' : 'text-gray-700'}`}>Weekly</span>
                   </div>
-
-                  <div 
-                    className={`flex flex-col items-center justify-center p-3 rounded-lg border cursor-pointer transition-all ${
-                      frequency === 'monthly' 
-                        ? 'bg-blue-50 border-blue-300 shadow-sm' 
-                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                  
+                  <div
+                    className={`rounded-lg border p-3 cursor-pointer text-center transition-all ${
+                      frequency === 'monthly'
+                        ? 'border-primary bg-primary/10 ring-2 ring-primary shadow-md'
+                        : 'border-gray-200 hover:border-primary hover:bg-primary-50'
                     }`}
                     onClick={() => setFrequency('monthly')}
                   >
-                    <div className={`w-8 h-4 rounded-full mb-2 relative ${
-                      frequency === 'monthly' ? 'bg-primary' : 'bg-gray-300'
-                    }`}>
-                      <div 
-                        className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${
-                          frequency === 'monthly' ? 'bg-white right-0.5' : 'bg-white left-0.5'
-                        }`} 
-                      />
+                    <div className="flex justify-center mb-2">
+                      <svg className={`w-6 h-6 ${frequency === 'monthly' ? 'text-primary' : 'text-gray-600'}`} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
+                        <path d="M8 2v4M16 2v4M3 10h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        <path d="M8 15h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
                     </div>
-                    <span className="text-sm font-medium">Monthly</span>
+                    <span className={`font-medium ${frequency === 'monthly' ? 'text-primary' : 'text-gray-700'}`}>Monthly</span>
                   </div>
                 </div>
               </div>
