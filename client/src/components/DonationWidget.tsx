@@ -320,25 +320,37 @@ export default function DonationWidget() {
               
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button 
-                  className={`${!isCustomAmount && amount === 10 ? 'bg-blue-100 border-blue-200' : 'bg-blue-50 hover:bg-blue-100 border-blue-100'} text-primary font-semibold py-3 px-4 rounded-md border`}
+                  className={`${!isCustomAmount && amount === 10 
+                    ? 'bg-primary text-white border-primary-600 shadow-md' 
+                    : 'bg-blue-50 hover:bg-blue-100 border-blue-100 text-primary'} 
+                    font-semibold py-3 px-4 rounded-md border transition-all duration-200`}
                   onClick={() => handleAmountClick(10)}
                 >
                   {formatAmount(10)}
                 </button>
                 <button 
-                  className={`${!isCustomAmount && amount === 50 ? 'bg-blue-100 border-blue-200' : 'bg-blue-50 hover:bg-blue-100 border-blue-100'} text-primary font-semibold py-3 px-4 rounded-md border`}
+                  className={`${!isCustomAmount && amount === 50 
+                    ? 'bg-primary text-white border-primary-600 shadow-md' 
+                    : 'bg-blue-50 hover:bg-blue-100 border-blue-100 text-primary'} 
+                    font-semibold py-3 px-4 rounded-md border transition-all duration-200`}
                   onClick={() => handleAmountClick(50)}
                 >
                   {formatAmount(50)}
                 </button>
                 <button 
-                  className={`${!isCustomAmount && amount === 100 ? 'bg-blue-100 border-blue-200' : 'bg-blue-50 hover:bg-blue-100 border-blue-100'} text-primary font-semibold py-3 px-4 rounded-md border`}
+                  className={`${!isCustomAmount && amount === 100 
+                    ? 'bg-primary text-white border-primary-600 shadow-md' 
+                    : 'bg-blue-50 hover:bg-blue-100 border-blue-100 text-primary'} 
+                    font-semibold py-3 px-4 rounded-md border transition-all duration-200`}
                   onClick={() => handleAmountClick(100)}
                 >
                   {formatAmount(100)}
                 </button>
                 <button 
-                  className={`${isCustomAmount ? 'bg-gray-200 border-gray-300' : 'bg-gray-100 hover:bg-gray-200 border-gray-200'} text-gray-700 font-semibold py-3 px-4 rounded-md border`}
+                  className={`${isCustomAmount 
+                    ? 'bg-primary text-white border-primary-600 shadow-md' 
+                    : 'bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-700'} 
+                    font-semibold py-3 px-4 rounded-md border transition-all duration-200`}
                   onClick={() => handleAmountClick('custom')}
                 >
                   Custom
