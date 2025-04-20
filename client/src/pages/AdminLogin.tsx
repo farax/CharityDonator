@@ -56,6 +56,13 @@ export default function AdminLogin() {
       const response = await apiRequest('POST', '/api/admin/login', data);
       
       if (response.ok) {
+        const responseData = await response.json();
+        
+        // Save the auth token to localStorage for persistent auth
+        if (responseData.authToken) {
+          localStorage.setItem('adminAuthToken', responseData.authToken);
+        }
+        
         toast({
           title: 'Login successful',
           description: 'Welcome to the admin dashboard',

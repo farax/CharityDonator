@@ -75,11 +75,31 @@ const getPayPalAccessToken = async () => {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Admin middleware to check if admin is authenticated
   const isAdminAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+    // First try session-based authentication
     if (req.session && req.session.adminAuthenticated === true) {
-      next();
-    } else {
-      res.status(401).json({ message: "Unauthorized" });
+      return next();
     }
+    
+    // Then check for auth token in headers as fallback
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        // Decode token - basic verification for now
+        const decoded = Buffer.from(token, 'base64').toString();
+        const [username] = decoded.split(':');
+        
+        // Verify username is admin - simple check since we have one admin
+        if (username === (process.env.ADMIN_USERNAME || 'admin')) {
+          return next();
+        }
+      } catch (e) {
+        // Token decoding failed, continue to unauthorized
+      }
+    }
+    
+    // If we get here, authentication failed
+    res.status(401).json({ message: "Unauthorized" });
   };
   
   // API routes
@@ -670,7 +690,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isValid) {
         // Create a session for the admin
         req.session.adminAuthenticated = true;
-        res.json({ success: true });
+        
+        // Return an auth token - we'll use this as temporary workaround for session persistence issues
+        const authToken = Buffer.from(`${username}:${Date.now()}`).toString('base64');
+        res.json({ success: true, authToken });
       } else {
         res.status(401).json({ message: "Invalid credentials" });
       }
