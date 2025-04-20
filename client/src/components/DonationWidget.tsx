@@ -76,7 +76,9 @@ export default function DonationWidget() {
   };
 
   const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCustomAmount(e.target.value);
+    // Remove any non-numeric characters and leading zeros
+    const value = e.target.value;
+    setCustomAmount(value);
     
     // We don't track every keystroke to avoid too many events
   };
@@ -359,15 +361,19 @@ export default function DonationWidget() {
               
               {isCustomAmount && (
                 <div className="mt-4">
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">{currencySymbol}</span>
-                    <Input 
-                      type="text" 
-                      className="pl-10 w-full p-3 border border-gray-300 rounded-md bg-white text-gray-900" 
+                  <div className="flex">
+                    <div className="bg-gray-100 flex items-center px-3 rounded-l-md border border-r-0 border-gray-300">
+                      <span className="text-gray-500">{currencySymbol}</span>
+                    </div>
+                    <input 
+                      type="number" 
+                      className="flex-1 p-3 border border-gray-300 rounded-r-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
                       placeholder="Enter amount"
                       value={customAmount}
                       onChange={handleCustomAmountChange}
                       aria-label={`Enter amount in ${currency}`}
+                      min="0.01"
+                      step="0.01"
                     />
                   </div>
                 </div>
