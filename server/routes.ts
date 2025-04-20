@@ -75,9 +75,15 @@ const getPayPalAccessToken = async () => {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Admin middleware to check if admin is authenticated
   const isAdminAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+    console.log("Checking admin authentication...");
+    console.log("Session ID:", req.sessionID);
+    console.log("Session data:", req.session);
+    
     if (req.session && req.session.adminAuthenticated === true) {
+      console.log("Admin is authenticated, proceeding");
       next();
     } else {
+      console.log("Admin is NOT authenticated");
       res.status(401).json({ message: "Unauthorized" });
     }
   };
@@ -721,18 +727,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isValid) {
         // Create a session for the admin
         req.session.adminAuthenticated = true;
-        res.json({ success: true });
+        
+        // Explicitly save the session and wait for it to complete
+        req.session.save((err) => {
+          if (err) {
+            console.error("Error saving session during login:", err);
+            return res.status(500).json({ message: "Session error during login" });
+          }
+          
+          // For debugging
+          console.log("Admin logged in successfully, session ID:", req.sessionID);
+          console.log("Session data:", req.session);
+          
+          res.json({ success: true });
+        });
       } else {
         res.status(401).json({ message: "Invalid credentials" });
       }
     } catch (error) {
+      console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
     }
   });
   
   app.post("/api/admin/logout", (req, res) => {
+    // Clear the admin authentication
     req.session.adminAuthenticated = false;
-    res.json({ success: true });
+    
+    // Regenerate the session to ensure complete cleanup
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error("Error regenerating session during logout:", err);
+      }
+      res.json({ success: true });
+    });
   });
   
   // Get payment history (all donations with their status) - protected

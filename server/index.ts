@@ -22,9 +22,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(session({
   secret: config.SESSION_SECRET,
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true, // Changed to true to ensure session is always saved
   cookie: { 
-    secure: config.IS_PRODUCTION, 
+    secure: false, // Always false to work in the webview regardless of environment
+    httpOnly: true,
+    sameSite: 'lax', // Less restrictive SameSite setting
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   },
   store: storage.sessionStore
