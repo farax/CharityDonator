@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Link } from 'wouter';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link, useLocation } from 'wouter';
 import { Case } from '@shared/schema';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,10 +11,31 @@ import Footer from '@/components/Footer';
 
 export default function ActiveCases() {
   const { setType, setSelectedCase } = useDonation();
+  const queryClient = useQueryClient();
+  const [location] = useLocation();
+  
+  // Check if we returned from a payment page (potential donation complete)
+  useEffect(() => {
+    // If navigating to this page from another page, refresh the case data
+    const refreshCases = async () => {
+      await queryClient.invalidateQueries({ queryKey: ['/api/active-zakaat-cases'] });
+    };
+    
+    refreshCases();
+    
+    // Also set up a refresh interval to periodically check for updates
+    const intervalId = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ['/api/active-zakaat-cases'] });
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(intervalId);
+  }, [queryClient, location]);
   
   // Fetch active zakaat cases
   const { data: cases, isLoading, error } = useQuery<Case[]>({
     queryKey: ['/api/active-zakaat-cases'],
+    staleTime: 10000, // Consider data stale after 10 seconds
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   });
 
   // Handle donate button click for a specific case
