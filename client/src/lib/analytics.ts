@@ -309,7 +309,11 @@ export function initNewRelicBrowserAgent(accountId: string, licenseKey: string, 
       sa: 1
     };
     
-    console.log("New Relic Browser Agent initialized with", { accountId, applicationId });
+    console.log("New Relic Browser Agent initialized with", { 
+      accountId, 
+      licenseKey: licenseKey.substring(0, 8) + "...", // Show just the prefix for security
+      applicationId 
+    });
     
     // Create a test event to verify the connection after a short delay
     setTimeout(() => {
@@ -367,14 +371,27 @@ export function initAnalytics(): void {
     // Track initial page view
     trackPageView();
     
-    // Get New Relic license key and account ID from environment variables
-    const licenseKey = import.meta.env.VITE_NEW_RELIC_BROWSER_LICENSE_KEY;
-    const accountId = import.meta.env.VITE_NEW_RELIC_ACCOUNT_ID;
-    const applicationId = import.meta.env.VITE_NEW_RELIC_APPLICATION_ID;
+    // Hardcoded values for New Relic - use explicit values instead of environment variables
+    // These match what's in the .env file to ensure correct parameters
+    const licenseKey = "NRJS-6e0e2334541eacee14e"; // Browser License Key
+    const accountId = "6619298";                   // Account ID
+    const applicationId = "1103406659";             // Application ID
     
-    // Initialize New Relic if credentials are available
-    if (licenseKey && accountId && applicationId) {
-      initNewRelicBrowserAgent(accountId as string, licenseKey as string, applicationId as string);
-    }
+    // Log what we're using (for debugging)
+    console.log("New Relic configuration:", {
+      accountId,
+      applicationId,
+      licenseKey: licenseKey.substring(0, 8) + "..."
+    });
+    
+    // Initialize New Relic with the correct parameters
+    initNewRelicBrowserAgent(accountId, licenseKey, applicationId);
+    
+    // Store these in window for debugging
+    (window as any).__newRelicConfig = {
+      accountId,
+      applicationId,
+      licenseKey: licenseKey.substring(0, 8) + "..."
+    };
   }
 }
