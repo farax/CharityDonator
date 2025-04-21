@@ -62,8 +62,18 @@ export function trackEvent({
   // Always log to console for debugging
   console.log('Analytics Event:', eventName, cleanAttributes);
   
-  // New Relic functionality is disabled in development due to compatibility issues
-  // Events are still logged locally for development purposes
+  // Try to send to New Relic - don't hide errors, but also don't let them break the app
+  try {
+    if ((window as any).newrelic && typeof (window as any).newrelic.addPageAction === 'function') {
+      console.log('Sending to New Relic:', eventName);
+      (window as any).newrelic.addPageAction(eventName, cleanAttributes);
+      console.log('Successfully sent to New Relic');
+    } else {
+      console.warn('New Relic API not available for tracking');
+    }
+  } catch (error) {
+    console.error('Error sending to New Relic:', error);
+  }
   
   // Show event tracking notifications only in non-production mode
   if (!isProduction()) {
@@ -102,8 +112,27 @@ export function trackPageView(path?: string): void {
   // Always log to console for debugging
   console.log('Page View:', currentPath);
   
-  // New Relic functionality is disabled in development due to compatibility issues
-  // Page views are still logged locally for development purposes
+  // Try to send to New Relic - will show errors if it fails
+  try {
+    if ((window as any).newrelic && typeof (window as any).newrelic.setPageViewName === 'function') {
+      console.log('Sending page view to New Relic:', currentPath);
+      
+      // Set the page name in New Relic
+      (window as any).newrelic.setPageViewName(currentPath);
+      
+      // Add custom attributes for the page view
+      if (typeof (window as any).newrelic.setCustomAttribute === 'function') {
+        (window as any).newrelic.setCustomAttribute('routePath', currentPath);
+        (window as any).newrelic.setCustomAttribute('timestamp', new Date().toISOString());
+      }
+      
+      console.log('Successfully sent page view to New Relic');
+    } else {
+      console.warn('New Relic API not available for page view tracking');
+    }
+  } catch (error) {
+    console.error('Error sending page view to New Relic:', error);
+  }
   
   // Show page view notifications only in non-production mode
   if (!isProduction()) {
