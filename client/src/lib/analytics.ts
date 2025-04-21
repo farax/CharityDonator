@@ -371,27 +371,47 @@ export function initAnalytics(): void {
     // Track initial page view
     trackPageView();
     
-    // Hardcoded values for New Relic - use explicit values instead of environment variables
-    // These match what's in the .env file to ensure correct parameters
-    const licenseKey = "NRJS-6e0e2334541eacee14e"; // Browser License Key
-    const accountId = "6619298";                   // Account ID
-    const applicationId = "1103406659";             // Application ID
+    // Get environment variables
+    let rawLicenseKey = import.meta.env.VITE_NEW_RELIC_BROWSER_LICENSE_KEY as string;
+    let rawAccountId = import.meta.env.VITE_NEW_RELIC_ACCOUNT_ID as string;
+    let rawApplicationId = import.meta.env.VITE_NEW_RELIC_APPLICATION_ID as string;
+
+    // Determine the correct values based on patterns rather than environment variable names
+    // License key starts with NRJS-
+    // Account ID is a shorter numeric string
+    // Application ID is a longer numeric string
+    
+    // Initialize with the expected correct values
+    let licenseKey = "";
+    let accountId = "";
+    let applicationId = "";
+    
+    // Check each value and categorize it correctly
+    [rawLicenseKey, rawAccountId, rawApplicationId].forEach(value => {
+      if (value && value.startsWith("NRJS-")) {
+        licenseKey = value;
+      } else if (value && /^\d+$/.test(value)) {
+        if (value.length < 8) {
+          accountId = value;
+        } else {
+          applicationId = value;
+        }
+      }
+    });
+
+    // If we're still missing values, set defaults based on what we know works
+    if (!licenseKey) licenseKey = "NRJS-6e0e2334541eacee14e";
+    if (!accountId) accountId = "6619298";
+    if (!applicationId) applicationId = "1103406659";
     
     // Log what we're using (for debugging)
-    console.log("New Relic configuration:", {
+    console.log("New Relic configuration (corrected):", {
       accountId,
       applicationId,
       licenseKey: licenseKey.substring(0, 8) + "..."
     });
     
-    // Initialize New Relic with the correct parameters
+    // Initialize New Relic with the corrected parameters
     initNewRelicBrowserAgent(accountId, licenseKey, applicationId);
-    
-    // Store these in window for debugging
-    (window as any).__newRelicConfig = {
-      accountId,
-      applicationId,
-      licenseKey: licenseKey.substring(0, 8) + "..."
-    };
   }
 }
