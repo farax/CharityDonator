@@ -376,11 +376,11 @@ export function initAnalytics(): void {
     const accountId = import.meta.env.VITE_NEW_RELIC_ACCOUNT_ID as string;
     const applicationId = import.meta.env.VITE_NEW_RELIC_APPLICATION_ID as string;
     
-    // Log the configuration we're using (for debugging only)
-    console.log("New Relic configuration:", {
-      accountId,
-      applicationId,
-      licenseKey: licenseKey ? (licenseKey.substring(0, 8) + "...") : "MISSING"
+    // Log the complete env variable names and their first few characters
+    console.log("New Relic debug - full environment variable names:", {
+      "VITE_NEW_RELIC_BROWSER_LICENSE_KEY": licenseKey ? licenseKey.substring(0, 8) + "..." : "MISSING",
+      "VITE_NEW_RELIC_ACCOUNT_ID": accountId ? accountId.substring(0, 4) + "..." : "MISSING",
+      "VITE_NEW_RELIC_APPLICATION_ID": applicationId ? applicationId.substring(0, 4) + "..." : "MISSING",
     });
     
     // Initialize New Relic if all required values are available
