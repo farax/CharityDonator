@@ -296,7 +296,7 @@ export function initNewRelicBrowserAgent(accountId: string, licenseKey: string, 
     (window as any).NREUM.loader_config = {
       accountID: accountId,
       trustKey: accountId,
-      agentID: applicationId,
+      agentID: "browser",
       licenseKey: licenseKey,
       applicationID: applicationId
     };
