@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- New Relic Browser Agent -->
+    <!-- New Relic Browser Agent - Exact script from New Relic portal -->
     <script type="text/javascript">
-      window.NREUM||(NREUM={});
-      NREUM.init={privacy:{cookies_enabled:true},distributed_tracing:{enabled:true},ajax:{deny_list:["bam.nr-data.net"]},spa:{enabled:true}};
-      NREUM.loader_config={accountID:"6619298",trustKey:"6619298",agentID:"1103406659",licenseKey:"NRJS-6e0e2334541eacee14e",applicationID:"1103406659"};
-      NREUM.info={beacon:"bam.nr-data.net",errorBeacon:"bam.nr-data.net",licenseKey:"NRJS-6e0e2334541eacee14e",applicationID:"1103406659",sa:1};
+      ;window.NREUM||(NREUM={});NREUM.init={distributed_tracing:{enabled:true},privacy:{cookies_enabled:true},ajax:{deny_list:["bam.nr-data.net"]}};
+      
+      ;NREUM.loader_config={accountID:"6619298",trustKey:"6619298",agentID:"1103406659",licenseKey:"NRJS-6e0e2334541eacee14e",applicationID:"1103406659"};
+      ;NREUM.info={beacon:"bam.nr-data.net",errorBeacon:"bam.nr-data.net",licenseKey:"NRJS-6e0e2334541eacee14e",applicationID:"1103406659",sa:1};
     </script>
-    <!-- Load the New Relic agent -->
-    <script type="text/javascript" src="https://js-agent.newrelic.com/nr-spa-1.242.0.min.js"></script>
+    <script src="https://js-agent.newrelic.com/nr-spa-1.286.0.min.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
   </head>
