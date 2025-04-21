@@ -66,10 +66,22 @@ export function trackEvent({
   if ((window as any).newrelic) {
     try {
       console.log('Sending to New Relic:', eventName);
+      
+      // Check if addPageAction method exists
+      if (typeof (window as any).newrelic.addPageAction !== 'function') {
+        console.warn('New Relic addPageAction method is not a function');
+        return;
+      }
+      
       (window as any).newrelic.addPageAction(eventName, cleanAttributes);
       console.log('Successfully sent to New Relic');
     } catch (error) {
-      console.error('Error sending to New Relic:', error);
+      // Log detailed error information
+      console.error('Error sending to New Relic:', {
+        errorName: error instanceof Error ? error.name : 'Unknown',
+        errorMessage: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : 'No stack trace available'
+      });
     }
   } else {
     console.warn('New Relic not available for tracking');
@@ -118,6 +130,17 @@ export function trackPageView(path?: string): void {
       console.log('Sending page view to New Relic:', currentPath);
       const nr = (window as any).newrelic;
       
+      // Check if methods exist
+      if (typeof nr.setPageViewName !== 'function') {
+        console.warn('New Relic setPageViewName method is not a function');
+        return;
+      }
+      
+      if (typeof nr.setCustomAttribute !== 'function') {
+        console.warn('New Relic setCustomAttribute method is not a function');
+        return;
+      }
+      
       // Set the page name in New Relic
       nr.setPageViewName(currentPath);
       
@@ -127,7 +150,12 @@ export function trackPageView(path?: string): void {
       
       console.log('Successfully sent page view to New Relic');
     } catch (error) {
-      console.error('Error sending page view to New Relic:', error);
+      // Log detailed error information
+      console.error('Error sending page view to New Relic:', {
+        errorName: error instanceof Error ? error.name : 'Unknown',
+        errorMessage: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : 'No stack trace available'
+      });
     }
   } else {
     console.warn('New Relic not available for tracking page view');
