@@ -4,68 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     
-    <!-- 
-      Note about New Relic integration:
-      The external New Relic script may not load due to cross-origin restrictions (403 Forbidden).
-      This is a common issue with many browser monitoring services in development or iframe environments.
-      
-      Instead of using the external script which is blocked by cross-origin policy (strict-origin-when-cross-origin),
-      we're providing a fallback tracking solution that works in all environments.
-      
-      For advanced tracking needs, run window.initializeNewRelicManually() in the browser console
-      to initialize a mock version of New Relic for testing.
-    -->
-    
-    <!-- New Relic configuration (will be used by our fallback system) -->
+    <!-- New Relic Browser Agent - Simpler version -->
     <script type="text/javascript">
-      // Initialize NREUM object
-      window.NREUM||(NREUM={});
-      
-      // Set SPA mode explicitly
-      NREUM.init = {
-        privacy: {cookies_enabled: true},
-        distributed_tracing: {enabled: true},
-        ajax: {deny_list: ["bam.nr-data.net"]},
-        spa: {enabled: true, har_enabled: true}
-      };
-      
-      // Configuration
-      NREUM.loader_config = {
-        accountID: "6619298",
-        trustKey: "6619298",
-        agentID: "1103406659",
-        licenseKey: "NRJS-6e0e2334541eacee14e",
-        applicationID: "1103406659"
-      };
-      
-      // Info
-      NREUM.info = {
-        beacon: "bam.nr-data.net",
-        errorBeacon: "bam.nr-data.net",
-        licenseKey: "NRJS-6e0e2334541eacee14e",
-        applicationID: "1103406659",
-        sa: 1
-      };
-      
-      // Add a global flag to indicate we're trying to use New Relic
-      window.newRelicInitialized = true;
-      
-      // Store configuration for fallback system
-      window.NREUM_CONFIG = {
-        accountID: "6619298",
-        trustKey: "6619298",
-        agentID: "1103406659", 
-        licenseKey: "NRJS-6e0e2334541eacee14e",
-        applicationID: "1103406659"
-      };
+      window.NREUM||(NREUM={});NREUM.info={"beacon":"bam.nr-data.net","licenseKey":"NRJS-6e0e2334541eacee14e","applicationID":"1103406659","transactionName":"YAFRZhVQCEtTVUAMClgZJ1MTXQhbGXBYCFdQQV0KWlYCXUpMWghFEHVWAWcIa14aVlJHCw==","accountID":"6619298","agentID":"1103406659","trustKey":"6619298","agent":"js-agent.newrelic.com/nr-1242.min.js"};
     </script>
-    
-    <!-- 
-      If this script fails to load due to cross-origin issues,
-      the fallback tracking system in analytics.ts will still work.
-      You can initialize a mock New Relic object with: window.initializeNewRelicManually()
-    -->
-    <script crossorigin="anonymous" referrerpolicy="origin" src="https://js-agent.newrelic.com/nr-spa-1.242.0.min.js"></script>
+    <script src="https://js-agent.newrelic.com/nr-1242.min.js"></script>
   </head>
   <body>
     <div id="root"></div>

@@ -64,28 +64,13 @@ export function trackEvent({
   
   // Try to send to New Relic - don't hide errors, but also don't let them break the app
   try {
-    // Use a fallback tracking mechanism since New Relic doesn't seem to work in Replit
-  if ((window as any).newrelic && typeof (window as any).newrelic.addPageAction === 'function') {
+    if ((window as any).newrelic && typeof (window as any).newrelic.addPageAction === 'function') {
       console.log('Sending to New Relic:', eventName);
       (window as any).newrelic.addPageAction(eventName, cleanAttributes);
       console.log('Successfully sent to New Relic');
-  } else {
-      // Create a fallback tracking log for development
-      if (!isProduction()) {
-        if (!(window as any)._analyticsEvents) {
-          (window as any)._analyticsEvents = [];
-        }
-        (window as any)._analyticsEvents.push({
-          type: 'event',
-          name: eventName,
-          attributes: cleanAttributes,
-          timestamp: new Date().toISOString()
-        });
-        console.log('Event stored in fallback tracker. Access with window._analyticsEvents');
-      } else {
-        console.warn('New Relic API not available for tracking');
-      }
-  }
+    } else {
+      console.warn('New Relic API not available for tracking');
+    }
   } catch (error) {
     console.error('Error sending to New Relic:', error);
   }
@@ -143,18 +128,7 @@ export function trackPageView(path?: string): void {
       
       console.log('Successfully sent page view to New Relic');
     } else {
-      // Create a fallback tracking log for development
-      if (!isProduction()) {
-        if (!(window as any)._analyticsPageViews) {
-          (window as any)._analyticsPageViews = [];
-        }
-        (window as any)._analyticsPageViews.push({
-          path: currentPath,
-          timestamp: new Date().toISOString()
-        });
-      } else {
-        console.warn('New Relic API not available for page view tracking');
-      }
+      console.warn('New Relic API not available for page view tracking');
     }
   } catch (error) {
     console.error('Error sending page view to New Relic:', error);
@@ -432,175 +406,7 @@ export function initNewRelicBrowserAgent(accountId: string, licenseKey: string, 
 export function initAnalytics(): void {
   // Listen for page navigation events
   if (typeof window === 'undefined') return;
-  
-  // Set up fallback analytics storage
-  (window as any)._analyticsEvents = (window as any)._analyticsEvents || [];
-  (window as any)._analyticsPageViews = (window as any)._analyticsPageViews || [];
-  
-  // Flag that we can check to see if we're using the fallback
-  (window as any)._usingAnalyticsFallback = true;
-  
-  // Add utility to examine analytics data
-  (window as any).getAnalyticsData = () => {
-    return {
-      events: (window as any)._analyticsEvents || [],
-      pageViews: (window as any)._analyticsPageViews || [],
-      using: (window as any)._usingAnalyticsFallback ? 'fallback' : 'newrelic'
-    };
-  };
-  
-  // Add a debugging function for analytics
-  (window as any).debugAnalytics = () => {
-    console.log("Analytics Debug Information:");
-    console.log(`Using: ${(window as any)._usingAnalyticsFallback ? 'Fallback storage' : 'New Relic'}`);
-    console.log(`Events tracked: ${(window as any)._analyticsEvents?.length || 0}`);
-    console.log(`Page views tracked: ${(window as any)._analyticsPageViews?.length || 0}`);
-    console.log(`New Relic available: ${!!(window as any).newrelic}`);
-    
-    // Check NREUM state if it exists
-    if ((window as any).NREUM) {
-      console.log('NREUM configuration found:');
-      console.log('- init:', (window as any).NREUM.init ? 'defined' : 'undefined');
-      console.log('- info:', (window as any).NREUM.info ? 'defined' : 'undefined');
-      console.log('- loader_config:', (window as any).NREUM.loader_config ? 'defined' : 'undefined');
-    } else {
-      console.log('NREUM not found in window object');
-    }
-    
-    return {
-      newRelicAvailable: !!(window as any).newrelic,
-      fallbackEnabled: !!(window as any)._usingAnalyticsFallback,
-      eventCount: (window as any)._analyticsEvents?.length || 0,
-      pageViewCount: (window as any)._analyticsPageViews?.length || 0,
-      nreumStatus: (window as any).NREUM ? 'defined' : 'undefined'
-    };
-  };
 
-  // Add a note on referrer policy issue
-  console.log("Note: If you're seeing strict-origin-when-cross-origin errors with New Relic,");
-  console.log("this is likely due to security policies in your hosting environment.");
-  console.log("The application will continue to function with fallback analytics tracking.");
-  
   // Track initial page view
   trackPageView();
-  
-  // Add a way to manually attempt New Relic initialization
-  (window as any).initializeNewRelicManually = () => {
-    console.log("Manually initializing New Relic...");
-    try {
-      // This sets up New Relic with direct configuration rather than loading from an external script
-      const config = {
-        accountID: "6619298",
-        trustKey: "6619298",
-        agentID: "1103406659",
-        licenseKey: "NRJS-6e0e2334541eacee14e",
-        applicationID: "1103406659",
-        beacon: "bam.nr-data.net",
-        errorBeacon: "bam.nr-data.net",
-      };
-      
-      // Set up the NREUM object without loading the external script
-      (window as any).NREUM = (window as any).NREUM || {};
-      const NREUM = (window as any).NREUM;
-      
-      // Configure NREUM as needed
-      NREUM.init = {
-        distributed_tracing: {enabled: true},
-        privacy: {cookies_enabled: true},
-        ajax: {deny_list: ["bam.nr-data.net"]},
-        spa: {enabled: true}
-      };
-      
-      NREUM.loader_config = {
-        accountID: config.accountID,
-        trustKey: config.trustKey,
-        agentID: config.agentID,
-        licenseKey: config.licenseKey,
-        applicationID: config.applicationID
-      };
-      
-      NREUM.info = {
-        beacon: config.beacon,
-        errorBeacon: config.errorBeacon,
-        licenseKey: config.licenseKey,
-        applicationID: config.applicationID,
-        sa: 1
-      };
-      
-      // Set up a minimal mock version of newrelic with core functionality
-      // This won't actually send data to New Relic servers, but can be used for testing
-      (window as any).newrelic = {
-        addPageAction: (name: string, attributes: Record<string, any>) => {
-          console.log(`[Mock New Relic] addPageAction: ${name}`, attributes);
-          return true;
-        },
-        setPageViewName: (name: string) => {
-          console.log(`[Mock New Relic] setPageViewName: ${name}`);
-          return true;
-        },
-        setCustomAttribute: (name: string, value: any) => {
-          console.log(`[Mock New Relic] setCustomAttribute: ${name}=${value}`);
-          return true;
-        },
-        noticeError: (error: Error) => {
-          console.log(`[Mock New Relic] noticeError:`, error);
-          return true;
-        }
-      };
-      
-      (window as any)._usingAnalyticsFallback = false;
-      console.log("Mock New Relic initialized successfully. All analytics events will be logged to console.");
-      return true;
-    } catch (error) {
-      console.error("Failed to initialize mock New Relic:", error);
-      return false;
-    }
-  };
-  
-  // DEBUG: Check if New Relic is available with methods
-  setTimeout(() => {
-    console.log("-------- New Relic Status Check --------");
-    
-    if ((window as any).newrelic) {
-      console.log("✓ New Relic global object exists");
-      (window as any)._usingAnalyticsFallback = false;
-      
-      // Check available methods
-      const availableMethods = Object.keys((window as any).newrelic).filter(key => 
-        typeof (window as any).newrelic[key] === 'function'
-      );
-      
-      if (availableMethods.length > 0) {
-        console.log(`✓ New Relic has ${availableMethods.length} methods available`);
-        console.log(`  Some methods: ${availableMethods.slice(0, 5).join(', ')}${availableMethods.length > 5 ? '...' : ''}`);
-        
-        // Test a New Relic method if addPageAction exists
-        if (availableMethods.includes('addPageAction')) {
-          try {
-            (window as any).newrelic.addPageAction('init_test_event', { 
-              timestamp: new Date().toISOString(),
-              source: 'initialization_check'
-            });
-            console.log("✓ Successfully sent test event to New Relic");
-            (window as any).newRelicReady = true;
-          } catch (error) {
-            console.error("✗ Failed to send test event to New Relic:", error);
-            (window as any)._usingAnalyticsFallback = true;
-          }
-        } else {
-          console.warn("✗ New Relic addPageAction method not available");
-          (window as any)._usingAnalyticsFallback = true;
-        }
-      } else {
-        console.warn("✗ New Relic object exists but has no methods");
-        (window as any)._usingAnalyticsFallback = true;
-      }
-    } else {
-      console.warn("✗ New Relic global object not found");
-      console.log("  This may indicate that the script in index.html failed to load or initialize");
-      (window as any)._usingAnalyticsFallback = true;
-    }
-    
-    console.log("-------------------------------------");
-  }, 2000); // Check after 2 seconds to allow time for initialization
 }
