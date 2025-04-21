@@ -1,0 +1,79 @@
+Thanks for sharing your live Replit URL — I just tested it, and yep, you're right: **New Relic's script still fails to load**, and `window.newrelic` shows the incomplete loader object. Same 403 issue on the agent script.
+
+Let’s get this totally fixed — here’s the cleanest way to solve it in your Replit (React + Vite) environment:
+
+---
+
+## ✅ ✅ Solution: Add the New Relic snippet the right way to Vite
+
+Here’s how you do it **without syntax errors**, and in a way that plays nice with Vite and Replit.
+
+---
+
+### 🛠️ Step-by-step Fix
+
+#### ✅ 1. Open your `vite.config.js`
+
+Add this line under `build` options (if needed), to allow inline scripts:
+```js
+// vite.config.js
+export default {
+  // ... other options
+  build: {
+    // Ensures script tags like New Relic work
+    minify: false,
+  },
+}
+```
+
+#### ✅ 2. Go to `index.html` (in project root)
+
+Paste the **New Relic Pro + SPA snippet** directly inside the `<head>` — here's an example of the **safe format** (use yours, but here’s how it should look):
+
+```html
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>My App</title>
+
+    <!-- ✅ New Relic Snippet (Pro + SPA) -->
+    <script type="text/javascript">
+      window.NREUM||(NREUM={});NREUM.info={"beacon":"bam.nr-data.net","licenseKey":"REPLACE_THIS","applicationID":"REPLACE_THIS","transactionName":"REPLACE_THIS","accountID":"REPLACE_THIS","agentID":"REPLACE_THIS","trustKey":"REPLACE_THIS","agent":"js-agent.newrelic.com/nr-1242.min.js"};
+    </script>
+    <script src="https://js-agent.newrelic.com/nr-1242.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+```
+
+💡 **Important:**
+- Don't minify or transform this snippet.
+- Don’t add it inside React files or JSX.
+
+---
+
+### ✅ 3. Test in a real tab, **not Replit’s preview panel**
+
+Replit’s preview runs your site in an **iframe**. This breaks a lot of observability tools.
+
+- Click **“Open in New Tab”**
+- Open DevTools console
+- Run:
+```js
+console.log(window.newrelic);
+```
+
+You should now see methods like `setCustomAttribute`, `noticeError`, etc.
+
+---
+
+### Still not working?
+
+If you're OK with it, paste your full current `index.html` (redact the keys) and I’ll debug it line-by-line for you — or I can generate a complete working template you can copy/paste into Replit.
+
+Want that?
