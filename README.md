@@ -321,11 +321,11 @@ sudo ufw enable
 #### 12. Monitor and Maintain
 
 ```bash
-# View application logs
-pm2 logs aafiyaa
-
 # Monitor system performance
 htop
+
+# Monitor PM2 processes and stats
+pm2 monit
 
 # Update your application
 cd /var/www/aafiyaa
@@ -334,6 +334,30 @@ npm install
 npm run build
 pm2 restart aafiyaa
 ```
+
+#### Accessing Application Logs
+
+The application generates detailed logs that are useful for monitoring, debugging, and auditing. On a VPS deployment with PM2, logs are stored automatically:
+
+```bash
+# View real-time logs (most useful for debugging)
+pm2 logs aafiyaa
+
+# View only the most recent 100 lines
+pm2 logs aafiyaa --lines 100
+
+# View only error logs
+pm2 logs aafiyaa --err
+
+# Access log files directly
+cat ~/.pm2/logs/aafiyaa-out.log    # Standard output
+cat ~/.pm2/logs/aafiyaa-error.log  # Error output
+
+# Search logs for specific events
+grep "payment" ~/.pm2/logs/aafiyaa-out.log
+```
+
+PM2 handles log rotation automatically to prevent logs from growing too large.
 
 #### 13. Set Up Regular Backups
 
