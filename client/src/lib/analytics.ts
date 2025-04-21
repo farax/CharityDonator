@@ -64,13 +64,28 @@ export function trackEvent({
   
   // Try to send to New Relic - don't hide errors, but also don't let them break the app
   try {
-    if ((window as any).newrelic && typeof (window as any).newrelic.addPageAction === 'function') {
+    // Use a fallback tracking mechanism since New Relic doesn't seem to work in Replit
+  if ((window as any).newrelic && typeof (window as any).newrelic.addPageAction === 'function') {
       console.log('Sending to New Relic:', eventName);
       (window as any).newrelic.addPageAction(eventName, cleanAttributes);
       console.log('Successfully sent to New Relic');
-    } else {
-      console.warn('New Relic API not available for tracking');
-    }
+  } else {
+      // Create a fallback tracking log for development
+      if (!isProduction()) {
+        if (!(window as any)._analyticsEvents) {
+          (window as any)._analyticsEvents = [];
+        }
+        (window as any)._analyticsEvents.push({
+          type: 'event',
+          name: eventName,
+          attributes: cleanAttributes,
+          timestamp: new Date().toISOString()
+        });
+        console.log('Event stored in fallback tracker. Access with window._analyticsEvents');
+      } else {
+        console.warn('New Relic API not available for tracking');
+      }
+  }
   } catch (error) {
     console.error('Error sending to New Relic:', error);
   }
@@ -128,7 +143,18 @@ export function trackPageView(path?: string): void {
       
       console.log('Successfully sent page view to New Relic');
     } else {
-      console.warn('New Relic API not available for page view tracking');
+      // Create a fallback tracking log for development
+      if (!isProduction()) {
+        if (!(window as any)._analyticsPageViews) {
+          (window as any)._analyticsPageViews = [];
+        }
+        (window as any)._analyticsPageViews.push({
+          path: currentPath,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        console.warn('New Relic API not available for page view tracking');
+      }
     }
   } catch (error) {
     console.error('Error sending page view to New Relic:', error);
@@ -407,11 +433,51 @@ export function initAnalytics(): void {
   // Listen for page navigation events
   if (typeof window === 'undefined') return;
   
+  // Set up fallback analytics storage
+  (window as any)._analyticsEvents = (window as any)._analyticsEvents || [];
+  (window as any)._analyticsPageViews = (window as any)._analyticsPageViews || [];
+  
+  // Flag that we can check to see if we're using the fallback
+  (window as any)._usingAnalyticsFallback = true;
+  
+  // Add utility to examine analytics data
+  (window as any).getAnalyticsData = () => {
+    return {
+      events: (window as any)._analyticsEvents || [],
+      pageViews: (window as any)._analyticsPageViews || [],
+      using: (window as any)._usingAnalyticsFallback ? 'fallback' : 'newrelic'
+    };
+  };
+  
+  // Add a debugging function for analytics
+  (window as any).debugAnalytics = () => {
+    console.log("Analytics Debug Information:");
+    console.log(`Using: ${(window as any)._usingAnalyticsFallback ? 'Fallback storage' : 'New Relic'}`);
+    console.log(`Events tracked: ${(window as any)._analyticsEvents?.length || 0}`);
+    console.log(`Page views tracked: ${(window as any)._analyticsPageViews?.length || 0}`);
+    console.log(`New Relic available: ${!!(window as any).newrelic}`);
+    
+    // Check NREUM state if it exists
+    if ((window as any).NREUM) {
+      console.log('NREUM configuration found:');
+      console.log('- init:', (window as any).NREUM.init ? 'defined' : 'undefined');
+      console.log('- info:', (window as any).NREUM.info ? 'defined' : 'undefined');
+      console.log('- loader_config:', (window as any).NREUM.loader_config ? 'defined' : 'undefined');
+    } else {
+      console.log('NREUM not found in window object');
+    }
+    
+    return {
+      newRelicAvailable: !!(window as any).newrelic,
+      fallbackEnabled: !!(window as any)._usingAnalyticsFallback,
+      eventCount: (window as any)._analyticsEvents?.length || 0,
+      pageViewCount: (window as any)._analyticsPageViews?.length || 0,
+      nreumStatus: (window as any).NREUM ? 'defined' : 'undefined'
+    };
+  };
+  
   // Track initial page view
   trackPageView();
-  
-  // We've moved the New Relic initialization to index.html for better loading
-  // Here, we'll just check and confirm the status
   
   // DEBUG: Check if New Relic is available with methods
   setTimeout(() => {
@@ -419,6 +485,7 @@ export function initAnalytics(): void {
     
     if ((window as any).newrelic) {
       console.log("✓ New Relic global object exists");
+      (window as any)._usingAnalyticsFallback = false;
       
       // Check available methods
       const availableMethods = Object.keys((window as any).newrelic).filter(key => 
@@ -440,16 +507,20 @@ export function initAnalytics(): void {
             (window as any).newRelicReady = true;
           } catch (error) {
             console.error("✗ Failed to send test event to New Relic:", error);
+            (window as any)._usingAnalyticsFallback = true;
           }
         } else {
           console.warn("✗ New Relic addPageAction method not available");
+          (window as any)._usingAnalyticsFallback = true;
         }
       } else {
         console.warn("✗ New Relic object exists but has no methods");
+        (window as any)._usingAnalyticsFallback = true;
       }
     } else {
       console.warn("✗ New Relic global object not found");
       console.log("  This may indicate that the script in index.html failed to load or initialize");
+      (window as any)._usingAnalyticsFallback = true;
     }
     
     console.log("-------------------------------------");
