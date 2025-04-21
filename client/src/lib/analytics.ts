@@ -27,7 +27,7 @@ export function trackEvent({
   // Format event name
   const eventName = `${category}:${action}`;
   
-  // Clean up attributes to ensure they are valid for New Relic
+  // Clean up attributes to ensure they are valid
   const cleanAttributes: EventAttributes = {};
   
   // Add timestamp to all events
@@ -62,28 +62,8 @@ export function trackEvent({
   // Always log to console for debugging
   console.log('Analytics Event:', eventName, cleanAttributes);
   
-  // Check for global ready flag (set by our initialization mechanism)
-  if ((window as any).newRelicReady === true) {
-    try {
-      console.log('Sending to New Relic:', eventName);
-      (window as any).newrelic.addPageAction(eventName, cleanAttributes);
-      console.log('Successfully sent to New Relic');
-    } catch (error) {
-      // Log detailed error information
-      console.error('Error sending to New Relic:', {
-        errorName: error instanceof Error ? error.name : 'Unknown',
-        errorMessage: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : 'No stack trace available'
-      });
-    }
-  } else {
-    // Don't warn every time, as this is expected until New Relic is fully loaded
-    if ((window as any).newrelic) {
-      console.debug('New Relic present but not fully initialized for event tracking');
-    } else {
-      console.debug('New Relic not available for event tracking');
-    }
-  }
+  // Send to New Relic if available (but don't attempt it for now)
+  // This effectively disables New Relic analytics but keeps our code ready for when it's fixed
   
   // Show event tracking notifications only in non-production mode
   if (!isProduction()) {
@@ -122,36 +102,8 @@ export function trackPageView(path?: string): void {
   // Always log to console for debugging
   console.log('Page View:', currentPath);
   
-  // Check for global ready flag (set by our initialization mechanism)
-  if ((window as any).newRelicReady === true) {
-    try {
-      console.log('Sending page view to New Relic:', currentPath);
-      const nr = (window as any).newrelic;
-      
-      // Set the page name in New Relic
-      nr.setPageViewName(currentPath);
-      
-      // Add custom attributes for the page view
-      nr.setCustomAttribute('routePath', currentPath);
-      nr.setCustomAttribute('timestamp', new Date().toISOString());
-      
-      console.log('Successfully sent page view to New Relic');
-    } catch (error) {
-      // Log detailed error information
-      console.error('Error sending page view to New Relic:', {
-        errorName: error instanceof Error ? error.name : 'Unknown',
-        errorMessage: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : 'No stack trace available'
-      });
-    }
-  } else {
-    // Don't warn every time, as this is expected until New Relic is fully loaded
-    if ((window as any).newrelic) {
-      console.debug('New Relic present but not fully initialized for page view tracking');
-    } else {
-      console.debug('New Relic not available for page view tracking');
-    }
-  }
+  // Send to New Relic if available (but don't attempt it for now)
+  // This effectively disables New Relic analytics but keeps our code ready for when it's fixed
   
   // Show page view notifications only in non-production mode
   if (!isProduction()) {
@@ -428,23 +380,40 @@ export function initAnalytics(): void {
     // Track initial page view
     trackPageView();
     
-    // Get New Relic configuration from environment variables
+    // For now, let's log that we've disabled New Relic initialization
+    console.log("📊 Analytics system initialized (New Relic integration temporarily disabled)");
+    
+    // DEBUG: Let's check if we already have a New Relic object available
+    if ((window as any).newrelic) {
+      console.log("Existing New Relic object found on window:");
+      
+      // Check available methods
+      const availableMethods = Object.keys((window as any).newrelic).filter(key => 
+        typeof (window as any).newrelic[key] === 'function'
+      );
+      
+      console.log(`New Relic has ${availableMethods.length} available methods:`, 
+        availableMethods.length > 0 
+          ? availableMethods.join(', ') 
+          : 'NONE - New Relic object exists but has no methods'
+      );
+    } else {
+      console.log("No New Relic object found on window at initialization time");
+    }
+    
+    // Get New Relic configuration from environment variables - still log these for debugging
     const licenseKey = import.meta.env.VITE_NEW_RELIC_BROWSER_LICENSE_KEY as string;
     const accountId = import.meta.env.VITE_NEW_RELIC_ACCOUNT_ID as string;
     const applicationId = import.meta.env.VITE_NEW_RELIC_APPLICATION_ID as string;
     
     // Log the complete env variable names and their first few characters
-    console.log("New Relic debug - full environment variable names:", {
+    console.log("New Relic configuration from environment:", {
       "VITE_NEW_RELIC_BROWSER_LICENSE_KEY": licenseKey ? licenseKey.substring(0, 8) + "..." : "MISSING",
       "VITE_NEW_RELIC_ACCOUNT_ID": accountId ? accountId.substring(0, 4) + "..." : "MISSING",
       "VITE_NEW_RELIC_APPLICATION_ID": applicationId ? applicationId.substring(0, 4) + "..." : "MISSING",
     });
     
-    // Initialize New Relic if all required values are available
-    if (licenseKey && accountId && applicationId) {
-      initNewRelicBrowserAgent(accountId, licenseKey, applicationId);
-    } else {
-      console.warn("Some New Relic configuration values are missing - analytics will be limited");
-    }
+    // Mark analytics as ready so event tracking continues to work
+    (window as any).newRelicReady = true;
   }
 }
