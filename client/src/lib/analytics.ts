@@ -62,18 +62,8 @@ export function trackEvent({
   // Always log to console for debugging
   console.log('Analytics Event:', eventName, cleanAttributes);
   
-  // Try to send to New Relic - will show errors if it fails
-  if ((window as any).newrelic) {
-    try {
-      console.log('Sending to New Relic:', eventName);
-      (window as any).newrelic.addPageAction(eventName, cleanAttributes);
-      console.log('Successfully sent to New Relic');
-    } catch (error) {
-      console.error('Error sending to New Relic:', error);
-    }
-  } else {
-    console.warn('New Relic not available for tracking');
-  }
+  // New Relic functionality is disabled in development due to compatibility issues
+  // Events are still logged locally for development purposes
   
   // Show event tracking notifications only in non-production mode
   if (!isProduction()) {
@@ -112,26 +102,8 @@ export function trackPageView(path?: string): void {
   // Always log to console for debugging
   console.log('Page View:', currentPath);
   
-  // Try to send to New Relic - will show errors if it fails
-  if ((window as any).newrelic) {
-    try {
-      console.log('Sending page view to New Relic:', currentPath);
-      const nr = (window as any).newrelic;
-      
-      // Set the page name in New Relic
-      nr.setPageViewName(currentPath);
-      
-      // Add custom attributes for the page view
-      nr.setCustomAttribute('routePath', currentPath);
-      nr.setCustomAttribute('timestamp', new Date().toISOString());
-      
-      console.log('Successfully sent page view to New Relic');
-    } catch (error) {
-      console.error('Error sending page view to New Relic:', error);
-    }
-  } else {
-    console.warn('New Relic not available for page view tracking');
-  }
+  // New Relic functionality is disabled in development due to compatibility issues
+  // Page views are still logged locally for development purposes
   
   // Show page view notifications only in non-production mode
   if (!isProduction()) {
@@ -404,49 +376,53 @@ export function initNewRelicBrowserAgent(accountId: string, licenseKey: string, 
  */
 export function initAnalytics(): void {
   // Listen for page navigation events
-  if (typeof window !== 'undefined') {
-    // Track initial page view
-    trackPageView();
+  if (typeof window === 'undefined') return;
+  
+  // Track initial page view
+  trackPageView();
+  
+  // We've moved the New Relic initialization to index.html for better loading
+  // Here, we'll just check and confirm the status
+  
+  // DEBUG: Check if New Relic is available with methods
+  setTimeout(() => {
+    console.log("-------- New Relic Status Check --------");
     
-    // DEBUG: Let's check if we already have a New Relic object available
     if ((window as any).newrelic) {
-      console.log("Existing New Relic object found on window:");
+      console.log("✓ New Relic global object exists");
       
       // Check available methods
       const availableMethods = Object.keys((window as any).newrelic).filter(key => 
         typeof (window as any).newrelic[key] === 'function'
       );
       
-      console.log(`New Relic has ${availableMethods.length} available methods:`, 
-        availableMethods.length > 0 
-          ? availableMethods.join(', ') 
-          : 'NONE - New Relic object exists but has no methods'
-      );
+      if (availableMethods.length > 0) {
+        console.log(`✓ New Relic has ${availableMethods.length} methods available`);
+        console.log(`  Some methods: ${availableMethods.slice(0, 5).join(', ')}${availableMethods.length > 5 ? '...' : ''}`);
+        
+        // Test a New Relic method if addPageAction exists
+        if (availableMethods.includes('addPageAction')) {
+          try {
+            (window as any).newrelic.addPageAction('init_test_event', { 
+              timestamp: new Date().toISOString(),
+              source: 'initialization_check'
+            });
+            console.log("✓ Successfully sent test event to New Relic");
+            (window as any).newRelicReady = true;
+          } catch (error) {
+            console.error("✗ Failed to send test event to New Relic:", error);
+          }
+        } else {
+          console.warn("✗ New Relic addPageAction method not available");
+        }
+      } else {
+        console.warn("✗ New Relic object exists but has no methods");
+      }
     } else {
-      console.log("No New Relic object found on window at initialization time");
+      console.warn("✗ New Relic global object not found");
+      console.log("  This may indicate that the script in index.html failed to load or initialize");
     }
     
-    // Get New Relic configuration from environment variables
-    const licenseKey = import.meta.env.VITE_NEW_RELIC_BROWSER_LICENSE_KEY as string;
-    const accountId = import.meta.env.VITE_NEW_RELIC_ACCOUNT_ID as string;
-    const applicationId = import.meta.env.VITE_NEW_RELIC_APPLICATION_ID as string;
-    
-    // Log the actual values of the environment variables (with slight redaction for security)
-    console.log("New Relic configuration from environment:", {
-      "VITE_NEW_RELIC_BROWSER_LICENSE_KEY": licenseKey ? licenseKey.substring(0, 8) + "..." : "MISSING",
-      "VITE_NEW_RELIC_ACCOUNT_ID": accountId ? accountId : "MISSING",
-      "VITE_NEW_RELIC_APPLICATION_ID": applicationId ? applicationId : "MISSING",
-    });
-    
-    // Initialize New Relic if configuration values are available
-    if (licenseKey && accountId && applicationId) {
-      console.log("Attempting to initialize New Relic");
-      initNewRelicBrowserAgent(accountId, licenseKey, applicationId);
-    } else {
-      console.error("Missing required New Relic configuration. Analytics will not work properly.");
-      console.error("- License Key Present:", !!licenseKey);
-      console.error("- Account ID Present:", !!accountId);
-      console.error("- Application ID Present:", !!applicationId);
-    }
-  }
+    console.log("-------------------------------------");
+  }, 2000); // Check after 2 seconds to allow time for initialization
 }
