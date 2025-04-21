@@ -371,47 +371,23 @@ export function initAnalytics(): void {
     // Track initial page view
     trackPageView();
     
-    // Get environment variables
-    let rawLicenseKey = import.meta.env.VITE_NEW_RELIC_BROWSER_LICENSE_KEY as string;
-    let rawAccountId = import.meta.env.VITE_NEW_RELIC_ACCOUNT_ID as string;
-    let rawApplicationId = import.meta.env.VITE_NEW_RELIC_APPLICATION_ID as string;
-
-    // Determine the correct values based on patterns rather than environment variable names
-    // License key starts with NRJS-
-    // Account ID is a shorter numeric string
-    // Application ID is a longer numeric string
+    // Get New Relic configuration from environment variables
+    const licenseKey = import.meta.env.VITE_NEW_RELIC_BROWSER_LICENSE_KEY as string;
+    const accountId = import.meta.env.VITE_NEW_RELIC_ACCOUNT_ID as string;
+    const applicationId = import.meta.env.VITE_NEW_RELIC_APPLICATION_ID as string;
     
-    // Initialize with the expected correct values
-    let licenseKey = "";
-    let accountId = "";
-    let applicationId = "";
-    
-    // Check each value and categorize it correctly
-    [rawLicenseKey, rawAccountId, rawApplicationId].forEach(value => {
-      if (value && value.startsWith("NRJS-")) {
-        licenseKey = value;
-      } else if (value && /^\d+$/.test(value)) {
-        if (value.length < 8) {
-          accountId = value;
-        } else {
-          applicationId = value;
-        }
-      }
-    });
-
-    // If we're still missing values, set defaults based on what we know works
-    if (!licenseKey) licenseKey = "NRJS-6e0e2334541eacee14e";
-    if (!accountId) accountId = "6619298";
-    if (!applicationId) applicationId = "1103406659";
-    
-    // Log what we're using (for debugging)
-    console.log("New Relic configuration (corrected):", {
+    // Log the configuration we're using (for debugging only)
+    console.log("New Relic configuration:", {
       accountId,
       applicationId,
-      licenseKey: licenseKey.substring(0, 8) + "..."
+      licenseKey: licenseKey ? (licenseKey.substring(0, 8) + "...") : "MISSING"
     });
     
-    // Initialize New Relic with the corrected parameters
-    initNewRelicBrowserAgent(accountId, licenseKey, applicationId);
+    // Initialize New Relic if all required values are available
+    if (licenseKey && accountId && applicationId) {
+      initNewRelicBrowserAgent(accountId, licenseKey, applicationId);
+    } else {
+      console.warn("Some New Relic configuration values are missing - analytics will be limited");
+    }
   }
 }
