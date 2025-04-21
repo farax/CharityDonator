@@ -62,17 +62,10 @@ export function trackEvent({
   // Always log to console for debugging
   console.log('Analytics Event:', eventName, cleanAttributes);
   
-  // Track the event with New Relic if available
-  if ((window as any).newrelic) {
+  // Check for global ready flag (set by our initialization mechanism)
+  if ((window as any).newRelicReady === true) {
     try {
       console.log('Sending to New Relic:', eventName);
-      
-      // Check if addPageAction method exists
-      if (typeof (window as any).newrelic.addPageAction !== 'function') {
-        console.warn('New Relic addPageAction method is not a function');
-        return;
-      }
-      
       (window as any).newrelic.addPageAction(eventName, cleanAttributes);
       console.log('Successfully sent to New Relic');
     } catch (error) {
@@ -84,7 +77,12 @@ export function trackEvent({
       });
     }
   } else {
-    console.warn('New Relic not available for tracking');
+    // Don't warn every time, as this is expected until New Relic is fully loaded
+    if ((window as any).newrelic) {
+      console.debug('New Relic present but not fully initialized for event tracking');
+    } else {
+      console.debug('New Relic not available for event tracking');
+    }
   }
   
   // Show event tracking notifications only in non-production mode
@@ -124,22 +122,11 @@ export function trackPageView(path?: string): void {
   // Always log to console for debugging
   console.log('Page View:', currentPath);
   
-  // Track with New Relic if available
-  if ((window as any).newrelic) {
+  // Check for global ready flag (set by our initialization mechanism)
+  if ((window as any).newRelicReady === true) {
     try {
       console.log('Sending page view to New Relic:', currentPath);
       const nr = (window as any).newrelic;
-      
-      // Check if methods exist
-      if (typeof nr.setPageViewName !== 'function') {
-        console.warn('New Relic setPageViewName method is not a function');
-        return;
-      }
-      
-      if (typeof nr.setCustomAttribute !== 'function') {
-        console.warn('New Relic setCustomAttribute method is not a function');
-        return;
-      }
       
       // Set the page name in New Relic
       nr.setPageViewName(currentPath);
@@ -158,7 +145,12 @@ export function trackPageView(path?: string): void {
       });
     }
   } else {
-    console.warn('New Relic not available for tracking page view');
+    // Don't warn every time, as this is expected until New Relic is fully loaded
+    if ((window as any).newrelic) {
+      console.debug('New Relic present but not fully initialized for page view tracking');
+    } else {
+      console.debug('New Relic not available for page view tracking');
+    }
   }
   
   // Show page view notifications only in non-production mode
@@ -343,22 +335,59 @@ export function initNewRelicBrowserAgent(accountId: string, licenseKey: string, 
       applicationId 
     });
     
-    // Create a test event to verify the connection after a short delay
-    setTimeout(() => {
-      if ((window as any).newrelic && typeof (window as any).newrelic.addPageAction === 'function') {
-        try {
-          (window as any).newrelic.addPageAction('test_event', { 
-            timestamp: new Date().toISOString(),
-            environment: 'replit-webview'
-          });
-          console.log("Test event sent to New Relic");
-        } catch (err) {
-          console.error("Failed to send test event to New Relic:", err);
+    // Create a retry mechanism to check for New Relic initialization
+    let initAttempts = 0;
+    const maxAttempts = 5;
+    const checkNewRelicInitialization = () => {
+      initAttempts++;
+      console.log(`Checking New Relic initialization (attempt ${initAttempts}/${maxAttempts})...`);
+      
+      if ((window as any).newrelic) {
+        // Check available methods
+        const availableMethods = Object.keys((window as any).newrelic).filter(key => 
+          typeof (window as any).newrelic[key] === 'function'
+        );
+        
+        console.log(`New Relic object available with ${availableMethods.length} methods:`, 
+          availableMethods.slice(0, 5).join(', ') + (availableMethods.length > 5 ? '...' : '')
+        );
+        
+        if (availableMethods.includes('addPageAction')) {
+          try {
+            (window as any).newrelic.addPageAction('test_event', { 
+              timestamp: new Date().toISOString(),
+              environment: 'replit-webview',
+              attempt: initAttempts
+            });
+            console.log("✅ Test event sent to New Relic successfully");
+            
+            // Set global flag to indicate New Relic is ready
+            (window as any).newRelicReady = true;
+            console.log("🎉 New Relic initialized and ready to use!");
+            
+            return; // Success - stop retrying
+          } catch (err) {
+            console.error("Failed to send test event to New Relic:", err);
+          }
+        } else {
+          console.warn("New Relic addPageAction method not available yet");
         }
       } else {
-        console.warn("New Relic agent not fully loaded after initialization");
+        console.warn("New Relic object not available yet");
       }
-    }, 5000); // Wait longer for full initialization
+      
+      // Retry with exponential backoff if not exceeded max attempts
+      if (initAttempts < maxAttempts) {
+        const delay = Math.min(1000 * Math.pow(2, initAttempts), 30000); // exponential backoff with 30s max
+        console.log(`Retrying in ${delay/1000} seconds...`);
+        setTimeout(checkNewRelicInitialization, delay);
+      } else {
+        console.warn(`New Relic failed to initialize properly after ${maxAttempts} attempts. Analytics may be limited.`);
+      }
+    };
+    
+    // Start checking after initial delay
+    setTimeout(checkNewRelicInitialization, 3000);
     
     // Add a global testing function that can be called from the browser console
     (window as any).testNewRelic = () => {
