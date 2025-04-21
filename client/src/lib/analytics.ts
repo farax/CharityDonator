@@ -327,6 +327,33 @@ export function initNewRelicBrowserAgent(accountId: string, licenseKey: string, 
         console.warn("New Relic agent not fully loaded after initialization");
       }
     }, 5000); // Wait longer for full initialization
+    
+    // Add a global testing function that can be called from the browser console
+    (window as any).testNewRelic = () => {
+      console.log("Testing New Relic connection...");
+      if ((window as any).newrelic) {
+        console.log("New Relic object is available in window");
+        try {
+          console.log("Available New Relic methods:", Object.keys((window as any).newrelic));
+          
+          if (typeof (window as any).newrelic.addPageAction === 'function') {
+            (window as any).newrelic.addPageAction('manual_test_event', { 
+              timestamp: new Date().toISOString(),
+              source: 'console_test'
+            });
+            console.log("Manual test event sent to New Relic");
+            return true;
+          } else {
+            console.error("New Relic addPageAction method not available");
+          }
+        } catch (err) {
+          console.error("Error testing New Relic:", err);
+        }
+      } else {
+        console.error("New Relic object not found in window");
+      }
+      return false;
+    };
   }
 }
 
