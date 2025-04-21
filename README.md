@@ -335,58 +335,6 @@ npm run build
 pm2 restart aafiyaa
 ```
 
-#### Application Logging in Production
-
-In a production environment, the application logs important events and errors that can be used for monitoring, debugging, and auditing. To access these logs:
-
-1. **PM2 Logs** - For real-time application logs (recommended for debugging)
-   ```bash
-   # View logs in real-time with streaming
-   pm2 logs aafiyaa --lines 200
-   
-   # View only error logs
-   pm2 logs aafiyaa --err --lines 100
-   ```
-
-2. **Log Files** - PM2 also stores log files on disk
-   ```bash
-   # View log files location
-   pm2 describe aafiyaa | grep log
-   
-   # Typically found in ~/.pm2/logs/
-   cat ~/.pm2/logs/aafiyaa-error.log
-   cat ~/.pm2/logs/aafiyaa-out.log
-   ```
-
-3. **Structured Logging** - For more advanced logging needs, consider adding a structured logging library like Winston or Pino
-
-4. **Log Rotation** - PM2 handles log rotation automatically, but you can configure it:
-   ```bash
-   # Edit PM2 configuration
-   pm2 ecosystem
-   ```
-   Then modify the ecosystem.config.js file to include:
-   ```javascript
-   module.exports = {
-     apps: [{
-       name: "aafiyaa",
-       script: "server/index.js",
-       log_date_format: "YYYY-MM-DD HH:mm:ss",
-       error_file: "logs/err.log",
-       out_file: "logs/out.log",
-       log_file: "logs/combined.log",
-       time: true
-     }]
-   };
-   ```
-
-5. **Important Log Events to Monitor**
-   * Payment processing events (successful/failed payments)
-   * Stripe and PayPal webhook events
-   * Authentication attempts (especially failed admin logins)
-   * API errors
-   * Database connection issues
-
 #### 13. Set Up Regular Backups
 
 ```bash
