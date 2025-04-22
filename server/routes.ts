@@ -215,6 +215,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ currency: 'AUD' });
     }
   });
+  
+  // Email service verification endpoint (admin only)
+  app.get("/api/admin/verify-email-service", isAdminAuthenticated, async (req, res) => {
+    try {
+      const isVerified = await verifyEmailService();
+      res.json({ 
+        success: isVerified,
+        message: isVerified 
+          ? "Email service is configured and ready to send emails" 
+          : "Email service configuration failed or is missing SMTP credentials"
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false, 
+        message: `Email service verification error: ${error.message}` 
+      });
+    }
+  });
 
   // Create a donation
   app.post("/api/donations", async (req, res) => {

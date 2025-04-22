@@ -66,6 +66,16 @@ export const config = {
     API_KEY: process.env.SENDGRID_API_KEY,
   },
   
+  // SMTP Email Configuration
+  EMAIL: {
+    SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
+    SMTP_PORT: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587,
+    SMTP_USER: process.env.SMTP_USER,
+    SMTP_PASS: process.env.SMTP_PASS,
+    FROM: process.env.EMAIL_FROM || 'noreply@aafiyaaclinic.org',
+    TO: process.env.EMAIL_TO || 'admin@aafiyaaclinic.org',
+  },
+  
   // Database
   DATABASE: {
     URL: process.env.DATABASE_URL,
