@@ -15,6 +15,7 @@ import { insertDonationSchema, insertCaseSchema, contactFormSchema } from "@shar
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import config from "./config";
+import { sendContactFormEmail, verifyEmailService } from "./email-service";
 
 // Initialize Stripe with the secret key with enhanced logging
 let stripe: Stripe | undefined;
@@ -149,13 +150,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contactData = contactFormSchema.parse(req.body);
       const savedMessage = await storage.createContactMessage(contactData);
       
-      // In a production app, you would send an email notification here
-      // using a service like SendGrid or similar
+      // Send email notification
+      const emailSent = await sendContactFormEmail(savedMessage);
       console.log('Contact form submission:', savedMessage);
+      console.log('Email notification sent:', emailSent ? 'Yes' : 'No (SMTP not configured)');
       
       res.status(201).json({ 
         success: true, 
         messageId: savedMessage.id,
+        emailSent,
         message: "Thank you for your message. We'll get back to you soon!" 
       });
     } catch (error) {
