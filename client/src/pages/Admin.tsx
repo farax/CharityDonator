@@ -296,7 +296,6 @@ export default function Admin() {
               <TabsTrigger value="transactions">Transactions</TabsTrigger>
               <TabsTrigger value="statistics">Statistics</TabsTrigger>
               <TabsTrigger value="manage-stats">Manage Stats</TabsTrigger>
-              <TabsTrigger value="email-settings">Email Settings</TabsTrigger>
             </TabsList>
             
             <TabsContent value="overview" className="space-y-6">
