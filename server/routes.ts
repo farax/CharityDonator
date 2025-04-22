@@ -11,7 +11,7 @@ declare module 'express-session' {
 import { storage } from "./storage";
 import Stripe from "stripe";
 import fetch from "node-fetch";
-import { insertDonationSchema, insertCaseSchema, contactFormSchema } from "@shared/schema";
+import { insertDonationSchema, insertCaseSchema, contactFormSchema, ContactMessage } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import config from "./config";
@@ -230,6 +230,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         message: `Email service verification error: ${error.message}` 
+      });
+    }
+  });
+  
+  // Test email sending endpoint (admin only)
+  app.post("/api/admin/test-email", isAdminAuthenticated, async (req, res) => {
+    try {
+      const { recipientEmail } = req.body;
+      
+      if (!recipientEmail) {
+        return res.status(400).json({
+          success: false,
+          message: "Recipient email is required"
+        });
+      }
+      
+      // Create a test contact message
+      const testMessage: ContactMessage = {
+        id: 0,
+        name: "Admin Test",
+        email: recipientEmail,
+        subject: "Email System Test",
+        message: "This is a test email to verify that the email system is working correctly.",
+        createdAt: new Date(),
+        isRead: false
+      };
+      
+      // Send the test email
+      const emailSent = await sendContactFormEmail(testMessage);
+      
+      if (emailSent) {
+        res.json({
+          success: true,
+          message: `Test email successfully sent to ${recipientEmail}`
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Failed to send test email. Check SMTP configuration."
+        });
+      }
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: `Error sending test email: ${error.message}`
       });
     }
   });
