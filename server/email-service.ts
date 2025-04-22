@@ -6,15 +6,16 @@ import nodemailer from 'nodemailer';
 import { ContactMessage } from '@shared/schema';
 import config from './config';
 
-// Create a transporter object
+// Create a transporter object - Gmail specific configuration
 const transporter = nodemailer.createTransport({
-  host: config.EMAIL.SMTP_HOST,
-  port: config.EMAIL.SMTP_PORT,
-  secure: config.EMAIL.SMTP_PORT === 465, // true for 465, false for other ports
+  service: 'gmail',  // Use Gmail's predefined settings
   auth: {
     user: config.EMAIL.SMTP_USER,
     pass: config.EMAIL.SMTP_PASS,
   },
+  // Debugging
+  debug: true,
+  logger: true
 });
 
 /**
@@ -28,6 +29,18 @@ export async function sendContactFormEmail(message: ContactMessage): Promise<boo
   }
 
   try {
+    // Verify the connection first
+    const isVerified = await verifyEmailService();
+    if (!isVerified) {
+      console.warn('Email sending skipped: Could not verify connection to SMTP server');
+      return false;
+    }
+
+    // Print credentials for debugging (without showing full password)
+    const passwordLength = config.EMAIL.SMTP_PASS ? config.EMAIL.SMTP_PASS.length : 0;
+    console.log(`Using SMTP user: ${config.EMAIL.SMTP_USER}`);
+    console.log(`Password length: ${passwordLength} chars`);
+
     // Prepare the email content
     const emailContent = {
       from: `"Aafiyaa Charity Clinics" <${config.EMAIL.FROM}>`,
