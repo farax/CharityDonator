@@ -14,12 +14,17 @@ async function createTransporter() {
   if (config.EMAIL.SMTP_USER && config.EMAIL.SMTP_PASS) {
     console.log('Using configured SMTP settings for Gmail');
     
+    // Remove any spaces from the app password (common issue with Gmail app passwords)
+    const password = config.EMAIL.SMTP_PASS.replace(/\s+/g, '');
+    console.log(`Using email: ${config.EMAIL.SMTP_USER}`);
+    console.log(`Password length: ${password.length} characters (spaces removed)`);
+    
     // Create a Gmail-specific transporter
     return nodemailer.createTransport({
-      service: 'gmail',
+      service: 'gmail',  // This uses Gmail's predefined settings
       auth: {
         user: config.EMAIL.SMTP_USER,
-        pass: config.EMAIL.SMTP_PASS,
+        pass: password,  // Using the cleaned password without spaces
       },
       // Debugging for development
       debug: config.IS_DEVELOPMENT,
