@@ -6,41 +6,57 @@ import nodemailer from 'nodemailer';
 import { ContactMessage } from '@shared/schema';
 import config from './config';
 
-// Create a transporter object - Gmail specific configuration
-const transporter = nodemailer.createTransport({
-  service: 'gmail',  // Use Gmail's predefined settings
-  auth: {
-    user: config.EMAIL.SMTP_USER,
-    pass: config.EMAIL.SMTP_PASS,
-  },
-  // Debugging
-  debug: true,
-  logger: true
-});
+// Variable to hold the transporter
+let transporter: nodemailer.Transporter;
+
+// Create a testing account if no SMTP credentials are provided
+async function createTransporter() {
+  if (config.EMAIL.SMTP_USER && config.EMAIL.SMTP_PASS) {
+    console.log('Using configured SMTP settings for Gmail');
+    
+    // Create a Gmail-specific transporter
+    return nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: config.EMAIL.SMTP_USER,
+        pass: config.EMAIL.SMTP_PASS,
+      },
+      // Debugging for development
+      debug: config.IS_DEVELOPMENT,
+      logger: config.IS_DEVELOPMENT
+    });
+  } else {
+    console.log('No SMTP credentials configured, contact form will save messages without sending emails');
+    // Return a placeholder transporter that will fail silently
+    return {
+      sendMail: async () => {
+        console.log('Email sending skipped: No SMTP credentials');
+        return { messageId: 'no-email-sent' };
+      },
+      verify: async () => {
+        return false;
+      }
+    } as any;
+  }
+}
+
+// Initialize the transporter
+(async () => {
+  transporter = await createTransporter();
+})();
 
 /**
  * Send a contact form email
  */
 export async function sendContactFormEmail(message: ContactMessage): Promise<boolean> {
-  // Skip sending if no SMTP credentials are configured
-  if (!config.EMAIL.SMTP_USER || !config.EMAIL.SMTP_PASS) {
-    console.warn('Email sending skipped: SMTP credentials not configured');
-    return false;
-  }
-
   try {
-    // Verify the connection first
-    const isVerified = await verifyEmailService();
-    if (!isVerified) {
-      console.warn('Email sending skipped: Could not verify connection to SMTP server');
-      return false;
+    // Make sure transporter is initialized
+    if (!transporter) {
+      transporter = await createTransporter();
     }
 
-    // Print credentials for debugging (without showing full password)
-    const passwordLength = config.EMAIL.SMTP_PASS ? config.EMAIL.SMTP_PASS.length : 0;
-    console.log(`Using SMTP user: ${config.EMAIL.SMTP_USER}`);
-    console.log(`Password length: ${passwordLength} chars`);
-
+    // Skip verification - if transporter fails, it will be caught in the try/catch
+    
     // Prepare the email content
     const emailContent = {
       from: `"Aafiyaa Charity Clinics" <${config.EMAIL.FROM}>`,
@@ -82,8 +98,13 @@ Submitted on: ${new Date(message.createdAt).toLocaleString()}
  * Useful for checking if the email service is properly configured
  */
 export async function verifyEmailService(): Promise<boolean> {
+  // Make sure transporter is initialized
+  if (!transporter) {
+    transporter = await createTransporter();
+  }
+  
+  // If no credentials, return false but don't log a warning (already logged in createTransporter)
   if (!config.EMAIL.SMTP_USER || !config.EMAIL.SMTP_PASS) {
-    console.warn('Email service verification skipped: SMTP credentials not configured');
     return false;
   }
 

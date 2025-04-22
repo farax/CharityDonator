@@ -150,10 +150,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contactData = contactFormSchema.parse(req.body);
       const savedMessage = await storage.createContactMessage(contactData);
       
-      // Send email notification
-      const emailSent = await sendContactFormEmail(savedMessage);
+      // Send email notification - don't wait for it to complete
+      let emailSent = false;
+      try {
+        emailSent = await sendContactFormEmail(savedMessage);
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+        // Don't fail the request if email fails - we've already saved the message
+      }
+      
       console.log('Contact form submission:', savedMessage);
-      console.log('Email notification sent:', emailSent ? 'Yes' : 'No (SMTP not configured)');
+      console.log('Email notification sent:', emailSent ? 'Yes' : 'No (SMTP not configured or error)');
       
       res.status(201).json({ 
         success: true, 
