@@ -61,12 +61,7 @@ export const config = {
     CLIENT_ID_PUBLIC: process.env.VITE_PAYPAL_CLIENT_ID,
   },
   
-  // Email
-  SENDGRID: {
-    API_KEY: process.env.SENDGRID_API_KEY,
-  },
-  
-  // SMTP Email Configuration
+  // Email Configuration
   EMAIL: {
     SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
     SMTP_PORT: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587,
