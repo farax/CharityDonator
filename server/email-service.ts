@@ -16,18 +16,12 @@ async function createTransporter() {
     
     // Remove any spaces from the app password (common issue with Gmail app passwords)
     const password = config.EMAIL.SMTP_PASS.replace(/\s+/g, '');
-    console.log(`DEBUGGING EMAIL CONFIG:`);
-    console.log(`- SMTP_USER from env: "${process.env.SMTP_USER}"`);
-    console.log(`- SMTP_USER from config: "${config.EMAIL.SMTP_USER}"`);
-    console.log(`- FROM email: "${config.EMAIL.FROM}"`);
-    console.log(`- TO email: "${config.EMAIL.TO}"`);
-    console.log(`- Password length: ${password.length} characters (spaces removed)`);
+    console.log(`Using email: ${config.EMAIL.SMTP_USER}`);
+    console.log(`Password length: ${password.length} characters (spaces removed)`);
     
-    // Create a Gmail-specific transporter with more explicit settings
+    // Create a Gmail-specific transporter
     return nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,  // use SSL
+      service: 'gmail',  // This uses Gmail's predefined settings
       auth: {
         user: config.EMAIL.SMTP_USER,
         pass: password,  // Using the cleaned password without spaces
@@ -68,9 +62,9 @@ export async function sendContactFormEmail(message: ContactMessage): Promise<boo
 
     // Skip verification - if transporter fails, it will be caught in the try/catch
     
-    // Prepare the email content - use the same email for from/to with Gmail
+    // Prepare the email content
     const emailContent = {
-      from: config.EMAIL.SMTP_USER,  // Gmail requires the from address to match the authenticated user
+      from: `"Aafiyaa Charity Clinics" <${config.EMAIL.FROM}>`,
       to: config.EMAIL.TO,
       subject: `New Contact Form Message: ${message.subject}`,
       text: `

@@ -5,6 +5,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { runMigrations, isDatabaseAvailable } from "./db";
 import { storage } from "./storage";
 import config, { validateConfig } from "./config";
 
@@ -13,6 +14,19 @@ console.log(`🚀 Starting server in ${config.NODE_ENV} mode`);
 
 // Validate configuration on startup
 validateConfig();
+
+// Run database migrations if PostgreSQL is available
+if (isDatabaseAvailable()) {
+  runMigrations().then(success => {
+    if (success) {
+      console.log('Database initialized successfully');
+    } else {
+      console.warn('Database initialization failed, continuing with in-memory storage');
+    }
+  }).catch(error => {
+    console.error('Error during database initialization:', error);
+  });
+}
 
 const app = express();
 app.use(express.json());

@@ -1,5 +1,6 @@
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import connectPg from "connect-pg-simple";
 import { 
   users, type User, type InsertUser, 
   donations, type Donation, type InsertDonation,
@@ -8,6 +9,8 @@ import {
   cases, type Case, type InsertCase,
   contactMessages, type ContactMessage, type InsertContactMessage
 } from "@shared/schema";
+import { db, pool, isDatabaseAvailable } from './db';
+import { eq, and, asc, desc, gt } from 'drizzle-orm';
 
 // Define the storage interface with all necessary CRUD methods
 export interface IStorage {
@@ -490,4 +493,386 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Implementation of the IStorage interface using PostgreSQL
+export class DatabaseStorage implements IStorage {
+  public sessionStore: session.Store;
+  
+  constructor() {
+    if (!pool) {
+      throw new Error('Cannot initialize DatabaseStorage without a database connection pool');
+    }
+    
+    // Create a PostgreSQL session store
+    const PostgresStore = connectPg(session);
+    this.sessionStore = new PostgresStore({
+      pool,
+      tableName: 'session',
+      createTableIfMissing: true
+    });
+    
+    console.log('Using PostgreSQL for data storage and session management');
+  }
+  
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    if (!db) return undefined;
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    if (!db) return undefined;
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!db) return undefined;
+    if (!email) return undefined;
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    if (!db) throw new Error('Database not available');
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+  
+  async updateUserPaymentInfo(id: number, stripeCustomerId?: string, paypalCustomerId?: string): Promise<User | undefined> {
+    if (!db) return undefined;
+    
+    const updateData: Partial<User> = {};
+    if (stripeCustomerId) updateData.stripeCustomerId = stripeCustomerId;
+    if (paypalCustomerId) updateData.paypalCustomerId = paypalCustomerId;
+    
+    if (Object.keys(updateData).length === 0) return this.getUser(id);
+    
+    const [updatedUser] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+      
+    return updatedUser;
+  }
+  
+  // Admin methods
+  async validateAdminCredentials(username: string, password: string): Promise<boolean> {
+    // In a real app, you would use proper password hashing
+    // This is a simplified version for demonstration purposes
+    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    
+    return username === adminUsername && password === adminPassword;
+  }
+  
+  // Donation methods
+  async createDonation(insertDonation: InsertDonation): Promise<Donation> {
+    if (!db) throw new Error('Database not available');
+    const [donation] = await db.insert(donations).values(insertDonation).returning();
+    
+    // If this is a completed payment for a case, update the case amount
+    if (donation.status === 'completed' && donation.caseId) {
+      await this.updateCaseAmountCollected(donation.caseId, donation.amount);
+    }
+    
+    return donation;
+  }
+  
+  async getDonation(id: number): Promise<Donation | undefined> {
+    if (!db) return undefined;
+    const [donation] = await db.select().from(donations).where(eq(donations.id, id));
+    return donation;
+  }
+  
+  async getDonationByStripePaymentId(paymentId: string): Promise<Donation | undefined> {
+    if (!db) return undefined;
+    const [donation] = await db
+      .select()
+      .from(donations)
+      .where(eq(donations.stripePaymentId, paymentId));
+    return donation;
+  }
+  
+  async getDonationByStripeSubscriptionId(subscriptionId: string): Promise<Donation | undefined> {
+    if (!db) return undefined;
+    const [donation] = await db
+      .select()
+      .from(donations)
+      .where(eq(donations.stripeSubscriptionId, subscriptionId));
+    return donation;
+  }
+  
+  async getDonationByPaypalSubscriptionId(subscriptionId: string): Promise<Donation | undefined> {
+    if (!db) return undefined;
+    const [donation] = await db
+      .select()
+      .from(donations)
+      .where(eq(donations.paypalSubscriptionId, subscriptionId));
+    return donation;
+  }
+  
+  async updateDonationStatus(id: number, status: string, paymentId?: string): Promise<Donation | undefined> {
+    if (!db) return undefined;
+    
+    // First get the donation to determine if we need to update a case
+    const donation = await this.getDonation(id);
+    if (!donation) return undefined;
+    
+    // Extract payment method from the ID if not already set
+    let paymentMethod = donation.paymentMethod;
+    if (!paymentMethod && paymentId) {
+      if (paymentId.startsWith('paypal-')) {
+        paymentMethod = 'paypal';
+      } else if (paymentId.startsWith('applepay-')) {
+        paymentMethod = 'apple_pay';
+      } else if (paymentId.startsWith('googlepay-')) {
+        paymentMethod = 'google_pay';
+      } else if (paymentId.startsWith('pi_')) {
+        paymentMethod = 'stripe';
+      }
+    }
+    
+    const updateData: Partial<Donation> = {
+      status,
+      ...(paymentMethod && { paymentMethod }),
+      ...(paymentId && { stripePaymentId: paymentId })
+    };
+    
+    const [updatedDonation] = await db
+      .update(donations)
+      .set(updateData)
+      .where(eq(donations.id, id))
+      .returning();
+    
+    // If this is a completed payment for a case, update the case amount
+    if (status === 'completed' && donation.caseId && donation.status !== 'completed') {
+      await this.updateCaseAmountCollected(donation.caseId, donation.amount);
+    }
+    
+    return updatedDonation;
+  }
+  
+  async updateDonationSubscription(
+    id: number, 
+    provider: 'stripe' | 'paypal', 
+    subscriptionId: string, 
+    subscriptionStatus: string, 
+    nextPaymentDate?: Date
+  ): Promise<Donation | undefined> {
+    if (!db) return undefined;
+    
+    // First get the donation
+    const donation = await this.getDonation(id);
+    if (!donation) return undefined;
+    
+    let status = donation.status;
+    // If subscription is active, mark the donation as active-subscription
+    if (subscriptionStatus === 'active' || subscriptionStatus === 'trialing') {
+      status = 'active-subscription';
+    } 
+    // If subscription is cancelled or other terminal state, mark as subscription-cancelled
+    else if (
+      subscriptionStatus === 'cancelled' || 
+      subscriptionStatus === 'canceled' || 
+      subscriptionStatus === 'expired'
+    ) {
+      status = 'subscription-cancelled';
+    }
+    
+    const updateData: Partial<Donation> = {
+      status,
+      subscriptionStatus,
+      ...(nextPaymentDate && { nextPaymentDate }),
+      ...(provider === 'stripe' 
+        ? { stripeSubscriptionId: subscriptionId } 
+        : { paypalSubscriptionId: subscriptionId })
+    };
+    
+    const [updatedDonation] = await db
+      .update(donations)
+      .set(updateData)
+      .where(eq(donations.id, id))
+      .returning();
+      
+    return updatedDonation;
+  }
+  
+  async getDonations(): Promise<Donation[]> {
+    if (!db) return [];
+    return await db.select().from(donations).orderBy(desc(donations.createdAt));
+  }
+  
+  async getDonationsByUserId(userId: number): Promise<Donation[]> {
+    if (!db) return [];
+    return await db
+      .select()
+      .from(donations)
+      .where(eq(donations.userId, userId))
+      .orderBy(desc(donations.createdAt));
+  }
+  
+  async getActiveSubscriptions(): Promise<Donation[]> {
+    if (!db) return [];
+    return await db
+      .select()
+      .from(donations)
+      .where(eq(donations.status, 'active-subscription'))
+      .orderBy(desc(donations.createdAt));
+  }
+  
+  // Endorsement methods
+  async getEndorsements(): Promise<Endorsement[]> {
+    if (!db) return [];
+    return await db.select().from(endorsements);
+  }
+  
+  async createEndorsement(insertEndorsement: InsertEndorsement): Promise<Endorsement> {
+    if (!db) throw new Error('Database not available');
+    const [endorsement] = await db.insert(endorsements).values(insertEndorsement).returning();
+    return endorsement;
+  }
+  
+  // Stats methods
+  async getStats(): Promise<Stats | undefined> {
+    if (!db) return undefined;
+    const [statsData] = await db.select().from(stats).limit(1);
+    return statsData;
+  }
+  
+  async updateStats(statsData: Partial<InsertStats>): Promise<Stats | undefined> {
+    if (!db) return undefined;
+    
+    // Check if stats exists
+    const currentStats = await this.getStats();
+    
+    if (currentStats) {
+      // Update existing stats
+      const [updatedStats] = await db
+        .update(stats)
+        .set({
+          ...statsData,
+          lastUpdated: new Date()
+        })
+        .where(eq(stats.id, currentStats.id))
+        .returning();
+        
+      return updatedStats;
+    } else {
+      // Create new stats
+      const [newStats] = await db
+        .insert(stats)
+        .values({
+          totalPatients: statsData.totalPatients || 0,
+          monthlyPatients: statsData.monthlyPatients || 0
+        })
+        .returning();
+        
+      return newStats;
+    }
+  }
+  
+  // Case methods
+  async getCases(): Promise<Case[]> {
+    if (!db) return [];
+    return await db.select().from(cases);
+  }
+  
+  async getActiveZakaatCases(): Promise<Case[]> {
+    if (!db) return [];
+    return await db
+      .select()
+      .from(cases)
+      .where(
+        and(
+          eq(cases.active, true),
+          gt(cases.amountRequired, cases.amountCollected)
+        )
+      );
+  }
+  
+  async getCase(id: number): Promise<Case | undefined> {
+    if (!db) return undefined;
+    const [caseItem] = await db.select().from(cases).where(eq(cases.id, id));
+    return caseItem;
+  }
+  
+  async createCase(insertCase: InsertCase): Promise<Case> {
+    if (!db) throw new Error('Database not available');
+    const [newCase] = await db.insert(cases).values({
+      ...insertCase,
+      amountCollected: 0
+    }).returning();
+    return newCase;
+  }
+  
+  async updateCaseAmountCollected(id: number, additionalAmount: number): Promise<Case | undefined> {
+    if (!db) return undefined;
+    
+    // First get the current case
+    const caseItem = await this.getCase(id);
+    if (!caseItem) return undefined;
+    
+    // Calculate new amount collected
+    const newAmountCollected = caseItem.amountCollected + additionalAmount;
+    
+    // Update the case
+    const [updatedCase] = await db
+      .update(cases)
+      .set({ amountCollected: newAmountCollected })
+      .where(eq(cases.id, id))
+      .returning();
+      
+    return updatedCase;
+  }
+  
+  // Contact message methods
+  async createContactMessage(message: InsertContactMessage): Promise<ContactMessage> {
+    if (!db) throw new Error('Database not available');
+    const [contactMessage] = await db
+      .insert(contactMessages)
+      .values({
+        ...message,
+        isRead: false
+      })
+      .returning();
+      
+    return contactMessage;
+  }
+  
+  async getContactMessages(): Promise<ContactMessage[]> {
+    if (!db) return [];
+    return await db
+      .select()
+      .from(contactMessages)
+      .orderBy(desc(contactMessages.createdAt));
+  }
+  
+  async getContactMessage(id: number): Promise<ContactMessage | undefined> {
+    if (!db) return undefined;
+    const [message] = await db
+      .select()
+      .from(contactMessages)
+      .where(eq(contactMessages.id, id));
+      
+    return message;
+  }
+  
+  async markContactMessageAsRead(id: number): Promise<ContactMessage | undefined> {
+    if (!db) return undefined;
+    
+    const [updatedMessage] = await db
+      .update(contactMessages)
+      .set({ isRead: true })
+      .where(eq(contactMessages.id, id))
+      .returning();
+      
+    return updatedMessage;
+  }
+}
+
+// Choose the appropriate storage implementation based on database availability
+export const storage = isDatabaseAvailable() 
+  ? new DatabaseStorage() 
+  : new MemStorage();
