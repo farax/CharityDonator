@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import { Link } from 'wouter';
-import { Menu, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import aafiyaaLogo from '@assets/aafiyaa-logo.png';
+import { useState } from "react";
+import { Link } from "wouter";
+import { Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import aafiyaaLogo from "@assets/aafiyaa-logo.png";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleMenu = () => {
-    setMobileMenuOpen(prev => !prev);
+    setMobileMenuOpen((prev) => !prev);
   };
 
   return (
@@ -17,10 +17,15 @@ export default function Header() {
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <img src={aafiyaaLogo} alt="Aafiyaa Charity Clinics Logo" className="h-[70px]" /> {/* 25% larger than h-14 (56px) */}
+              <img
+                src={aafiyaaLogo}
+                alt="Aafiyaa Charity Clinics Logo"
+                className="h-[70px]"
+              />{" "}
+              {/* 25% larger than h-14 (56px) */}
             </Link>
           </div>
-          
+
           {/* Mobile menu button */}
           <div className="md:hidden">
             <Button
@@ -29,66 +34,85 @@ export default function Header() {
               onClick={toggleMenu}
               aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {mobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </Button>
           </div>
-          
+
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
-            <Link href="/" className="font-medium text-gray-800 hover:text-primary">
+            <Link
+              href="/"
+              className="font-medium text-gray-800 hover:text-primary"
+            >
               Home
             </Link>
-            <Link href="/about" className="font-medium text-gray-600 hover:text-primary">
+            <Link
+              href="/about"
+              className="font-medium text-gray-600 hover:text-primary"
+            >
               About Us
             </Link>
-            <Link href="/active-cases" className="font-medium text-gray-600 hover:text-primary">
+            <Link
+              href="/active-cases"
+              className="font-medium text-gray-600 hover:text-primary"
+            >
               Active Cases
             </Link>
-            <Link href="/get-involved" className="font-medium text-gray-600 hover:text-primary">
+            <Link
+              href="/get-involved"
+              className="font-medium text-gray-600 hover:text-primary"
+            >
               Get Involved
             </Link>
-            <Link href="/contact" className="font-medium text-gray-600 hover:text-primary">
-              Contact
+            <Link
+              href="/contact"
+              className="font-medium text-gray-600 hover:text-primary"
+            >
+              Contact Us
             </Link>
             {/* Admin link removed from navigation, accessible directly via URL */}
           </nav>
         </div>
-        
+
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden pb-4">
             <div className="flex flex-col space-y-3">
-              <Link 
-                href="/" 
-                className="font-medium text-gray-800 hover:text-primary" 
+              <Link
+                href="/"
+                className="font-medium text-gray-800 hover:text-primary"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Home
               </Link>
-              <Link 
-                href="/about" 
-                className="font-medium text-gray-600 hover:text-primary" 
+              <Link
+                href="/about"
+                className="font-medium text-gray-600 hover:text-primary"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 About Us
               </Link>
-              <Link 
-                href="/active-cases" 
-                className="font-medium text-gray-600 hover:text-primary" 
+              <Link
+                href="/active-cases"
+                className="font-medium text-gray-600 hover:text-primary"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Active Cases
               </Link>
-              <Link 
-                href="/get-involved" 
-                className="font-medium text-gray-600 hover:text-primary" 
+              <Link
+                href="/get-involved"
+                className="font-medium text-gray-600 hover:text-primary"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Get Involved
               </Link>
-              <Link 
-                href="/contact" 
-                className="font-medium text-gray-600 hover:text-primary" 
+              <Link
+                href="/contact"
+                className="font-medium text-gray-600 hover:text-primary"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Contact
