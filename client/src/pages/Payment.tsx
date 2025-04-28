@@ -237,7 +237,8 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         
         toast({
           title: "Payment Successful",
-          description: "Thank you for your donation!",
+          description: "Thank you for your generous donation!",
+          variant: "success",
         });
         
         // Redirect to homepage after successful payment
@@ -384,7 +385,8 @@ const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
         title: isRecurring ? "Subscription Successful" : "Payment Successful",
         description: isRecurring
           ? `Thank you for your recurring donation via PayPal! You'll be charged ${donationDetails.currency} ${donationDetails.amount} ${donationDetails.frequency}.`
-          : "Thank you for your donation via PayPal!",
+          : "Thank you for your generous donation via PayPal!",
+        variant: "success"
       });
       
       // Redirect to homepage after successful payment
@@ -494,7 +496,7 @@ const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
             toast({
               title: "Payment Cancelled",
               description: "Your PayPal payment was cancelled.",
-              variant: "default",
+              variant: "info",
             });
           }}
         />
@@ -592,6 +594,7 @@ const ApplePayment = ({ donationDetails }: { donationDetails: any }) => {
       toast({
         title: "Payment Successful",
         description: "Thank you for your donation via Apple Pay!",
+        variant: "success"
       });
       
       // Redirect to homepage after successful payment
@@ -762,6 +765,7 @@ const GooglePayment = ({ donationDetails }: { donationDetails: any }) => {
       toast({
         title: "Payment Successful",
         description: "Thank you for your donation via Google Pay!",
+        variant: "success"
       });
       
       // Redirect to homepage after successful payment
