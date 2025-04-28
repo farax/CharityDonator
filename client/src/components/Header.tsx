@@ -47,12 +47,16 @@ export default function Header() {
   return (
     <header className={cn(
       "bg-white shadow-md sticky top-0 z-50 transition-all duration-300",
+=
       scrolled ? "py-0" : "py-1" // Smaller padding for header
+
     )}>
       <div className="container mx-auto px-0 sm:px-1 lg:px-2"> {/* Reduced container padding */}
         <div className={cn(
           "flex justify-between items-center transition-all duration-300",
+
           scrolled ? "py-1" : "py-2" // Smaller padding for content
+
         )}>
           <div className={cn(
             "flex items-center transition-all duration-500 ease-in-out",
@@ -65,7 +69,7 @@ export default function Header() {
                 alt="Aafiyaa Charity Clinics Logo" 
                 className={cn(
                   "transition-all duration-300 transform",
-                  scrolled ? "h-[90px]" : "h-[105px]" // 50% bigger (from 70px to 105px)
+                  scrolled ? "h-[135px]" : "h-[158px]" // Additional 50% bigger (from 90/105px to 135/158px)
                 )} 
               />
               <div className="ml-3">
