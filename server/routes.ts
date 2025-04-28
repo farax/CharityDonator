@@ -577,7 +577,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Convert amount to cents and determine billing interval
       const amountInCents = Math.round(amount * 100);
-      const billingInterval = frequency === 'weekly' ? 'week' : 'month';
+      
+      // Convert frequency to valid Stripe intervals
+      let interval, intervalCount;
+      
+      if (frequency === 'weekly') {
+        interval = 'week';
+        intervalCount = 1;
+      } else if (frequency === 'monthly') {
+        interval = 'month';
+        intervalCount = 1;
+      } else if (frequency === 'quarterly') {
+        interval = 'month';
+        intervalCount = 3;
+      } else {
+        // Default to monthly if an unknown frequency is provided
+        interval = 'month';
+        intervalCount = 1;
+      }
+      
+      console.log(`Setting up subscription with interval: ${interval}, count: ${intervalCount}, frequency: ${frequency}`);
       
       // Step 1: Find or create customer
       let user = await storage.getUserByEmail(email);
