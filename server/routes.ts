@@ -695,12 +695,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Created subscription ${subscription.id} for donation ${donationId}`);
       
       // Step 4: Update the donation with subscription details
+      let nextPaymentDate = null;
+      
+      // Safely extract the current_period_end timestamp (if it exists)
+      if (subscription && typeof subscription === 'object' && 'current_period_end' in subscription) {
+        const periodEnd = subscription.current_period_end;
+        if (periodEnd && typeof periodEnd === 'number') {
+          nextPaymentDate = new Date(periodEnd * 1000); // Convert UNIX timestamp to Date
+          console.log('Next payment date set to:', nextPaymentDate);
+        } else {
+          console.log('current_period_end is not a valid number:', periodEnd);
+        }
+      } else {
+        console.log('Subscription has no current_period_end property');
+      }
+      
       await storage.updateDonationSubscription(
         donation.id,
         'stripe',
         subscription.id,
         subscription.status,
-        new Date(subscription.current_period_end * 1000) // Convert UNIX timestamp to Date
+        nextPaymentDate
       );
       
       // Also link the user
@@ -785,10 +800,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get client secret from the PaymentIntent if exists
       const clientSecret = paymentIntent?.client_secret;
       
+      // Safely prepare response data
+      let responseNextPaymentDate = null;
+      
+      // Use the same nextPaymentDate we calculated earlier
+      if (nextPaymentDate instanceof Date) {
+        responseNextPaymentDate = nextPaymentDate;
+      }
+      
       res.json({
         subscriptionId: subscription.id,
         status: subscription.status,
-        nextPaymentDate: new Date(Number(subscription.current_period_end) * 1000),
+        nextPaymentDate: responseNextPaymentDate,
         invoiceId: invoice.id,
         paymentIntentId: paymentIntent?.id,
         clientSecret: clientSecret
