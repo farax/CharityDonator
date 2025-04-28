@@ -578,8 +578,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Convert amount to cents and determine billing interval
       const amountInCents = Math.round(amount * 100);
       
-      // Convert frequency to valid Stripe intervals
-      let interval, intervalCount;
+      // Convert frequency to valid Stripe intervals - must be 'day', 'week', 'month' or 'year'
+      let interval: 'day' | 'week' | 'month' | 'year';
+      let intervalCount: number;
       
       if (frequency === 'weekly') {
         interval = 'week';
@@ -590,6 +591,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (frequency === 'quarterly') {
         interval = 'month';
         intervalCount = 3;
+      } else if (frequency === 'yearly') {
+        interval = 'year';
+        intervalCount = 1;
       } else {
         // Default to monthly if an unknown frequency is provided
         interval = 'month';
@@ -647,11 +651,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Step 2: Create a price for this donation amount
+      // Log data for debugging
+      console.log('Creating price with the following data:');
+      console.log('- Amount in cents:', amountInCents);
+      console.log('- Currency:', currency.toLowerCase());
+      console.log('- Interval:', interval);
+      console.log('- Interval count:', intervalCount);
+      
+      // Note: We need to cast interval to any to avoid TypeScript error due to Stripe types
       const price = await stripe.prices.create({
         unit_amount: amountInCents,
         currency: currency.toLowerCase(),
         recurring: {
-          interval: interval,
+          interval: interval as any,
           interval_count: intervalCount,
         },
         product_data: {
