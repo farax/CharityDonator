@@ -10,6 +10,7 @@ import ActiveCases from "@/pages/ActiveCases";
 import AboutUs from "@/pages/AboutUs";
 import ContactUs from "@/pages/ContactUs";
 import { DonationProvider } from "@/components/DonationContext";
+import { Toaster } from "@/components/ui/toaster";
 import { 
   initAnalytics, 
   trackPageView, 
@@ -60,6 +61,7 @@ function App() {
   return (
     <DonationProvider>
       <Router />
+      <Toaster />
     </DonationProvider>
   );
 }
