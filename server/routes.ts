@@ -651,7 +651,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         unit_amount: amountInCents,
         currency: currency.toLowerCase(),
         recurring: {
-          interval: billingInterval,
+          interval: interval,
+          interval_count: intervalCount,
         },
         product_data: {
           name: `${donation.type} Donation (${frequency}) - ${donation.destinationProject || 'Aafiyaa Charity Clinics'}`,
