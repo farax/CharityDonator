@@ -137,7 +137,7 @@ export default function Header() {
               href="/contact"
               className="font-medium text-gray-600 hover:text-primary transition-colors duration-300 relative hover:after:scale-x-100 after:content-[''] after:block after:w-full after:h-0.5 after:bg-primary after:absolute after:-bottom-1 after:scale-x-0 after:transition-transform"
             >
-              Contact
+              Contact Us
             </Link>
             {/* Admin link removed from navigation, accessible directly via URL */}
           </nav>
@@ -180,7 +180,7 @@ export default function Header() {
                 className="font-medium text-gray-600 hover:text-primary"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Contact Us
+                Contact
               </Link>
               {/* Admin and Donate buttons removed from mobile menu */}
             </div>
