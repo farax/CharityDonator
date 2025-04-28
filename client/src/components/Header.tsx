@@ -47,12 +47,12 @@ export default function Header() {
   return (
     <header className={cn(
       "bg-white shadow-md sticky top-0 z-50 transition-all duration-300",
-      scrolled ? "py-0" : "py-1" // Reduced padding to accommodate bigger logo
+      scrolled ? "py-1" : "py-2" // Original header padding
     )}>
       <div className="container mx-auto px-0 sm:px-1 lg:px-2"> {/* Reduced container padding */}
         <div className={cn(
           "flex justify-between items-center transition-all duration-300",
-          scrolled ? "py-1" : "py-2" // Reduced padding to accommodate bigger logo
+          scrolled ? "py-2" : "py-3" // Original header padding
         )}>
           <div className={cn(
             "flex items-center transition-all duration-500 ease-in-out",
@@ -90,11 +90,11 @@ export default function Header() {
           {/* Desktop Navigation */}
 
           <nav className={cn(
-            "hidden md:flex space-x-8 transition-all duration-500 ease-in-out",
+            "hidden md:flex space-x-8 transition-all duration-500 ease-in-out", // Original spacing and font size
             isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-[-10px]" // Fade in from top
           )}>
             <Link href="/" className={cn(
-              "font-medium hover:text-primary relative transition-all duration-300",
+              "font-medium hover:text-primary relative transition-all duration-300", // Original font size
               isOnHomePage ? "text-primary" : "text-gray-800",
               {
                 "after:content-[''] after:block after:w-full after:h-0.5 after:bg-primary after:absolute after:-bottom-1 after:scale-x-100 after:transition-transform": isOnHomePage
