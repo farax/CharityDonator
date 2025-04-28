@@ -47,16 +47,16 @@ export default function Header() {
   return (
     <header className={cn(
       "bg-white shadow-md sticky top-0 z-50 transition-all duration-300",
-      scrolled ? "py-0" : "py-1" // 25% smaller padding
+      scrolled ? "py-1" : "py-2" // Original header padding
     )}>
       <div className="container mx-auto px-0 sm:px-1 lg:px-2"> {/* Reduced container padding */}
         <div className={cn(
-          "flex items-center justify-between max-w-7xl mx-auto transition-all duration-300", 
-          scrolled ? "py-1" : "py-2" // 25% smaller padding
+          "flex justify-between items-center transition-all duration-300",
+          scrolled ? "py-2" : "py-3" // Original header padding
         )}>
           <div className={cn(
             "flex items-center transition-all duration-500 ease-in-out",
-            isLoaded ? "-ml-3" : "-ml-[50px] opacity-0", // Small negative margin
+            isLoaded ? "-ml-5" : "-ml-[50px] opacity-0", // More negative margin to position further left
             scrolled ? "scale-95" : "scale-100" // Subtle scaling effect on scroll
           )}>
             <Link href="/" className="flex items-center">
@@ -65,7 +65,7 @@ export default function Header() {
                 alt="Aafiyaa Charity Clinics Logo" 
                 className={cn(
                   "transition-all duration-300 transform",
-                  scrolled ? "h-[105px]" : "h-[120px]" // Decreased size to better fit header
+                  scrolled ? "h-[90px]" : "h-[105px]" // 50% bigger (from 70px to 105px)
                 )} 
               />
             </Link>
@@ -88,8 +88,9 @@ export default function Header() {
           </div>
 
           {/* Desktop Navigation */}
+
           <nav className={cn(
-            "hidden md:flex items-center space-x-6 transition-all duration-500 ease-in-out", // Standard layout
+            "hidden md:flex space-x-8 transition-all duration-500 ease-in-out", // Original spacing and font size
             isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-[-10px]" // Fade in from top
           )}>
             <Link href="/" className={cn(
