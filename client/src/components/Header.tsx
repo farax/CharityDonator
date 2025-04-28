@@ -51,12 +51,12 @@ export default function Header() {
     )}>
       <div className="container mx-auto px-0 sm:px-1 lg:px-2"> {/* Reduced container padding */}
         <div className={cn(
-          "grid grid-cols-12 items-center transition-all duration-300", // Changed to grid for better control
+          "flex items-center justify-between max-w-7xl mx-auto transition-all duration-300", 
           scrolled ? "py-1" : "py-2" // 25% smaller padding
         )}>
           <div className={cn(
-            "col-span-7 md:col-span-8 flex items-center transition-all duration-500 ease-in-out", // Increased column span
-            isLoaded ? "-ml-5" : "-ml-[50px] opacity-0", // More negative margin to position further left
+            "flex items-center transition-all duration-500 ease-in-out",
+            isLoaded ? "-ml-3" : "-ml-[50px] opacity-0", // Small negative margin
             scrolled ? "scale-95" : "scale-100" // Subtle scaling effect on scroll
           )}>
             <Link href="/" className="flex items-center">
@@ -65,14 +65,14 @@ export default function Header() {
                 alt="Aafiyaa Charity Clinics Logo" 
                 className={cn(
                   "transition-all duration-300 transform",
-                  scrolled ? "h-[135px]" : "h-[158px]" // Additional 50% bigger (from 90/105px to 135/158px)
+                  scrolled ? "h-[105px]" : "h-[120px]" // Decreased size to better fit header
                 )} 
               />
             </Link>
           </div>
 
           {/* Mobile menu button */}
-          <div className="col-span-5 md:col-span-4 flex justify-end md:hidden">
+          <div className="md:hidden">
             <Button
               variant="ghost"
               size="icon"
@@ -89,7 +89,7 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className={cn(
-            "hidden col-span-5 md:col-span-4 md:flex justify-end space-x-4 transition-all duration-500 ease-in-out", // Adjusted column span and spacing
+            "hidden md:flex items-center space-x-6 transition-all duration-500 ease-in-out", // Standard layout
             isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-[-10px]" // Fade in from top
           )}>
             <Link href="/" className={cn(
