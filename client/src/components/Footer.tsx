@@ -1,9 +1,11 @@
 import { Link } from 'wouter';
+import { useState } from 'react';
 import { Heart, MapPin, Mail, Phone, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 import aafiyaaLogo from '@assets/aafiyaa-logo.png';
 import acncLogo from '@assets/ACNC-Registered-Charity-Logo_RGB.png';
 
 export default function Footer() {
+  const [isExpanded, setIsExpanded] = useState(false);
   return (
     <footer className="bg-gray-800 text-white pt-12 pb-6">
       <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
@@ -118,19 +120,62 @@ export default function Footer() {
         {/* ACNC Registration */}
         <div>
           <h3 className="text-lg font-semibold mb-4">Registered Charity</h3>
-          <a 
-            href="https://www.acnc.gov.au/charity/register" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-block bg-white p-2 rounded-lg hover:shadow-md transition-shadow duration-300"
-            aria-label="Registered with the Australian Charities and Not-for-profits Commission"
-          >
-            <img 
-              src={acncLogo} 
-              alt="ACNC Registered Charity" 
-              className="h-20 md:h-24" 
-            />
-          </a>
+          <div className="relative">
+            <button 
+              onClick={() => setIsExpanded(!isExpanded)}
+              className={`inline-block bg-white p-2 rounded-lg hover:shadow-lg transition-all duration-500 ${isExpanded ? 'shadow-xl ring-2 ring-teal-500' : ''}`}
+              aria-label="Registered with the Australian Charities and Not-for-profits Commission"
+            >
+              <div 
+                className={`overflow-hidden transition-all duration-500 ease-in-out transform ${
+                  isExpanded ? 'scale-[2.5] origin-center my-16 mx-5' : 'scale-100'
+                }`}
+              >
+                <img 
+                  src={acncLogo} 
+                  alt="ACNC Registered Charity" 
+                  className="h-20 md:h-24" 
+                />
+              </div>
+              <div className={`mt-2 text-center text-sm text-gray-700 transition-opacity duration-500 ${isExpanded ? 'opacity-0' : 'opacity-100'}`}>
+                Click to expand
+              </div>
+            </button>
+            
+            {isExpanded && (
+              <div 
+                className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center"
+                onClick={() => setIsExpanded(false)}
+              >
+                <div 
+                  className="bg-white p-4 rounded-lg relative transform transition-all duration-500 ease-in-out"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button 
+                    onClick={() => setIsExpanded(false)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                  >
+                    ✕
+                  </button>
+                  <a 
+                    href="https://www.acnc.gov.au/charity/register" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    <img 
+                      src={acncLogo} 
+                      alt="ACNC Registered Charity" 
+                      className="h-60" 
+                    />
+                    <p className="mt-4 text-sm text-center text-gray-700">
+                      View the charity on the ACNC Charity Register
+                    </p>
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       
