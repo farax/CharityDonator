@@ -329,88 +329,109 @@ const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
   const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Create the donation in our system first
+  const createDonationRecord = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/donations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: donationDetails.type,
+          amount: donationDetails.amount,
+          currency: donationDetails.currency,
+          frequency: donationDetails.frequency,
+          paymentMethod: 'paypal',
+          donorName: 'PayPal Customer',
+          donorEmail: '',
+          caseId: donationDetails.caseId,
+          giftAid: donationDetails.giftAid || false
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create donation record');
+      }
+      
+      const donation = await response.json();
+      console.log('Donation record created:', donation);
+      
+      // Now redirect to PayPal
+      toast({
+        title: "Redirecting to PayPal",
+        description: "Processing your donation securely with PayPal.",
+        variant: "info"
+      });
+      
+      // Track analytics
+      trackEvent({
+        category: 'Donation',
+        action: 'PayPalRedirect',
+        label: donation.id.toString(),
+        value: donationDetails.amount
+      });
+      
+      // Redirect to PayPal directly
+      const paypalURL = new URL('https://www.sandbox.paypal.com/cgi-bin/webscr');
+      paypalURL.searchParams.append('cmd', '_donations');
+      paypalURL.searchParams.append('business', 'sb-dnxnt28574747@business.example.com');
+      paypalURL.searchParams.append('lc', 'AU');
+      paypalURL.searchParams.append('item_name', `${donationDetails.type} donation for Aafiyaa Charity Clinics`);
+      paypalURL.searchParams.append('amount', donationDetails.amount.toString());
+      paypalURL.searchParams.append('currency_code', donationDetails.currency.toUpperCase());
+      paypalURL.searchParams.append('no_note', '0');
+      paypalURL.searchParams.append('return', `${window.location.origin}/donation-success`);
+      paypalURL.searchParams.append('cancel_return', `${window.location.origin}/donation-cancelled`);
+      paypalURL.searchParams.append('bn', 'PP-DonationsBF:btn_donateCC_LG.gif:NonHostedGuest');
+      paypalURL.searchParams.append('custom', donation.id.toString());
+      
+      // Open PayPal in a new window
+      window.open(paypalURL.toString(), '_blank');
+      
+      return donation;
+    } catch (error) {
+      console.error("PayPal donation error:", error);
+      toast({
+        title: "PayPal Error",
+        description: "Could not process PayPal donation. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="w-full">
-        <form 
-          action="https://www.sandbox.paypal.com/cgi-bin/webscr" 
-          method="post" 
-          target="_top"
-          className="w-full"
-          onSubmit={() => {
-            // Track button click
-            trackButtonClick('PayPalDonationButton', {
-              donationType: donationDetails.type,
-              amount: donationDetails.amount,
-              currency: donationDetails.currency,
-              frequency: donationDetails.frequency
-            });
-            
-            // Create donation in database
-            apiRequest('POST', '/api/donations', {
-              type: donationDetails.type,
-              amount: donationDetails.amount,
-              currency: donationDetails.currency,
-              frequency: donationDetails.frequency,
-              paymentMethod: 'paypal',
-              donorName: 'PayPal Customer',
-              donorEmail: '',
-              caseId: donationDetails.caseId,
-              giftAid: donationDetails.giftAid || false
-            })
-            .then(response => {
-              if (!response.ok) {
-                throw new Error('Failed to create donation record');
-              }
-              return response.json();
-            })
-            .then(donation => {
-              // Track analytics
-              trackEvent({
-                category: 'Donation',
-                action: 'PayPalRedirect',
-                label: donation.id.toString(),
-                value: donationDetails.amount
-              });
-              
-              toast({
-                title: "Redirecting to PayPal",
-                description: "Processing your donation securely with PayPal.",
-                variant: "info"
-              });
-            })
-            .catch(error => {
-              console.error("PayPal donation error:", error);
-              toast({
-                title: "PayPal Error",
-                description: "Could not process PayPal donation. Please try again later.",
-                variant: "destructive"
-              });
-            });
-          }}
+        {/* Debug info */}
+        <div className="mb-4 p-3 bg-gray-50 rounded-md text-xs text-gray-600">
+          <p><strong>Debug Info:</strong> Using direct PayPal redirection</p>
+          <p><strong>PayPal URL:</strong> https://www.sandbox.paypal.com/cgi-bin/webscr</p>
+          <p><strong>Business Email:</strong> sb-dnxnt28574747@business.example.com</p>
+        </div>
+        
+        {/* Direct PayPal button */}
+        <button 
+          type="button"
+          onClick={createDonationRecord}
+          disabled={isLoading}
+          className="w-full flex items-center justify-center py-4 bg-[#0070ba] hover:bg-[#003087] text-white font-medium rounded-md transition-colors"
         >
-          {/* PayPal required fields */}
-          <input type="hidden" name="cmd" value="_donations" />
-          <input type="hidden" name="business" value="aafiyaa.main@gmail.com" />
-          <input type="hidden" name="lc" value="AU" />
-          <input type="hidden" name="item_name" value={`${donationDetails.type} donation for Aafiyaa Charity Clinics`} />
-          <input type="hidden" name="amount" value={donationDetails.amount.toString()} />
-          <input type="hidden" name="currency_code" value={donationDetails.currency.toUpperCase()} />
-          <input type="hidden" name="no_note" value="0" />
-          <input type="hidden" name="return" value={`${window.location.origin}/donation-success`} />
-          <input type="hidden" name="cancel_return" value={`${window.location.origin}/donation-cancelled`} />
-          <input type="hidden" name="bn" value="PP-DonationsBF:btn_donateCC_LG.gif:NonHostedGuest" />
-          
-          <button 
-            type="submit"
-            className="w-full flex items-center justify-center py-4 bg-[#0070ba] hover:bg-[#003087] text-white font-medium rounded-md transition-colors"
-          >
-            <SiPaypal className="mr-2 h-5 w-5" />
-            <span className="flex items-center justify-center">
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            <>
+              <SiPaypal className="mr-2 h-5 w-5" />
               Pay with PayPal
-            </span>
-          </button>
-        </form>
+            </>
+          )}
+        </button>
         
         {/* Implementation note */}
         <div className="mt-4 text-xs text-gray-500 italic">
