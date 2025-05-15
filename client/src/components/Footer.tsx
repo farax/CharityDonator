@@ -116,30 +116,43 @@ export default function Footer() {
         </div>
       </div>
       
-      {/* ACNC Registered Charity Badge - Conspicuous placement */}
-      <div className="container mx-auto px-4 mt-8 flex justify-center">
-        <a 
-          href="https://www.acnc.gov.au/charity/register" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="inline-block p-2 rounded-lg bg-white transform hover:scale-105 transition-transform duration-300 relative border-2 border-teal-500 shadow-lg"
-          aria-label="Registered with the Australian Charities and Not-for-profits Commission"
-        >
-          <img 
-            src={acncLogo} 
-            alt="ACNC Registered Charity" 
-            className="h-20 md:h-28" 
-          />
-          <div className="absolute -top-3 -right-3 bg-teal-500 text-white text-xs px-2 py-1 rounded-full">
-            Official
-          </div>
-        </a>
-      </div>
-      
       <div className="container mx-auto px-4 mt-8 pt-6 border-t border-gray-700">
         <div className="flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-400 text-sm">© {new Date().getFullYear()} Aafiyaa Charity Clinics. All rights reserved.</p>
-          <div className="mt-4 md:mt-0">
+          <div className="flex items-center">
+            <p className="text-gray-400 text-sm mr-4">© {new Date().getFullYear()} Aafiyaa Charity Clinics. All rights reserved.</p>
+            
+            {/* ACNC Registered Charity Badge - Alongside copyright */}
+            <a 
+              href="https://www.acnc.gov.au/charity/register" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hidden md:block bg-white p-1 rounded-lg hover:shadow-md transition-shadow duration-300"
+              aria-label="Registered with the Australian Charities and Not-for-profits Commission"
+            >
+              <img 
+                src={acncLogo} 
+                alt="ACNC Registered Charity" 
+                className="h-10" 
+              />
+            </a>
+          </div>
+          
+          <div className="mt-4 md:mt-0 flex flex-col items-center md:flex-row">
+            {/* Mobile view ACNC logo */}
+            <a 
+              href="https://www.acnc.gov.au/charity/register" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block md:hidden bg-white p-1 rounded-lg mb-3"
+              aria-label="Registered with the Australian Charities and Not-for-profits Commission"
+            >
+              <img 
+                src={acncLogo} 
+                alt="ACNC Registered Charity" 
+                className="h-12" 
+              />
+            </a>
+            
             <ul className="flex space-x-4 text-sm">
               <li>
                 <Link href="/privacy" className="text-gray-400 hover:text-white">
