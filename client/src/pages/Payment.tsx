@@ -435,7 +435,7 @@ const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
       
       <div>
         <form
-          action="https://www.paypal.com/cgi-bin/webscr"
+          action="https://www.sandbox.paypal.com/cgi-bin/webscr"
           method="post"
           target="_blank"
           onSubmit={() => {
