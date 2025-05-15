@@ -116,6 +116,26 @@ export default function Footer() {
         </div>
       </div>
       
+      {/* ACNC Registered Charity Badge - Conspicuous placement */}
+      <div className="container mx-auto px-4 mt-8 flex justify-center">
+        <a 
+          href="https://www.acnc.gov.au/charity/register" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="inline-block p-2 rounded-lg bg-white transform hover:scale-105 transition-transform duration-300 relative border-2 border-teal-500 shadow-lg"
+          aria-label="Registered with the Australian Charities and Not-for-profits Commission"
+        >
+          <img 
+            src={acncLogo} 
+            alt="ACNC Registered Charity" 
+            className="h-20 md:h-28" 
+          />
+          <div className="absolute -top-3 -right-3 bg-teal-500 text-white text-xs px-2 py-1 rounded-full">
+            Official
+          </div>
+        </a>
+      </div>
+      
       <div className="container mx-auto px-4 mt-8 pt-6 border-t border-gray-700">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400 text-sm">© {new Date().getFullYear()} Aafiyaa Charity Clinics. All rights reserved.</p>
