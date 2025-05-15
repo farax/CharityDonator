@@ -324,7 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // PayPal verification endpoint
+  // PayPal verification endpoint (legacy)
   app.post("/api/paypal/verify-payment", async (req, res) => {
     try {
       const { orderId, donationId } = req.body;
@@ -398,6 +398,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false, 
         message: `Failed to verify PayPal payment: ${error.message}` 
       });
+    }
+  });
+  
+  // PayPal SDK integration - Create order endpoint
+  app.post("/api/paypal/create-order", async (req, res) => {
+    try {
+      const { amount, currency, donationId } = req.body;
+      
+      if (!amount || !currency) {
+        return res.status(400).json({ error: "Missing required parameters" });
+      }
+      
+      if (!config.PAYPAL.CLIENT_ID || !config.PAYPAL.SECRET_KEY) {
+        return res.status(500).json({ error: "PayPal configuration is missing" });
+      }
+      
+      console.log(`[PAYPAL] Creating order for ${currency} ${amount}`);
+      
+      try {
+        // Get access token
+        const accessToken = await getPayPalAccessToken();
+        
+        // Create order with PayPal
+        const orderResponse = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({
+            intent: 'CAPTURE',
+            purchase_units: [
+              {
+                amount: {
+                  currency_code: currency.toUpperCase(),
+                  value: amount.toString()
+                },
+                description: 'Donation to Aafiyaa Charity Clinics'
+              }
+            ],
+            application_context: {
+              brand_name: 'Aafiyaa Charity Clinics',
+              landing_page: 'BILLING',
+              shipping_preference: 'NO_SHIPPING',
+              user_action: 'PAY_NOW'
+            }
+          })
+        });
+        
+        if (!orderResponse.ok) {
+          const errorData = await orderResponse.json();
+          console.error('[PAYPAL] Error creating order:', errorData);
+          return res.status(500).json({ error: "Failed to create PayPal order" });
+        }
+        
+        const orderData = await orderResponse.json();
+        console.log('[PAYPAL] Order created:', orderData.id);
+        
+        // If donationId was provided, update the donation record with PayPal order ID
+        if (donationId) {
+          await storage.updateDonationStatus(donationId, 'pending', orderData.id);
+          console.log(`[PAYPAL] Updated donation ${donationId} with payment ID ${orderData.id}`);
+        }
+        
+        res.status(200).json(orderData);
+      } catch (error: any) {
+        console.error('[PAYPAL] Error in create-order endpoint:', error);
+        res.status(500).json({ error: `PayPal API error: ${error.message}` });
+      }
+    } catch (error: any) {
+      console.error('[PAYPAL] Error processing request:', error);
+      res.status(500).json({ error: `Server error: ${error.message}` });
+    }
+  });
+  
+  // PayPal SDK integration - Capture order endpoint
+  app.post("/api/paypal/capture-order/:orderId", async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      
+      if (!orderId) {
+        return res.status(400).json({ error: "Order ID is required" });
+      }
+      
+      if (!config.PAYPAL.CLIENT_ID || !config.PAYPAL.SECRET_KEY) {
+        return res.status(500).json({ error: "PayPal configuration is missing" });
+      }
+      
+      console.log(`[PAYPAL] Capturing order ${orderId}`);
+      
+      try {
+        // Get access token
+        const accessToken = await getPayPalAccessToken();
+        
+        // Capture the order
+        const captureResponse = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}/capture`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+        
+        if (!captureResponse.ok) {
+          const errorData = await captureResponse.json();
+          console.error('[PAYPAL] Error capturing order:', errorData);
+          return res.status(500).json({ error: "Failed to capture PayPal order" });
+        }
+        
+        const captureData = await captureResponse.json();
+        console.log('[PAYPAL] Order captured successfully:', captureData.id);
+        
+        // Find the donation associated with this order ID
+        const donations = await storage.getDonations();
+        const donation = donations.find(d => d.paymentId === orderId);
+        
+        if (donation) {
+          console.log(`[PAYPAL] Found donation ${donation.id} for order ${orderId}`);
+          
+          // Update donation status to completed
+          await storage.updateDonationStatus(donation.id, 'completed');
+          
+          // If donation has a caseId, update the case's amount collected
+          if (donation.caseId) {
+            await storage.updateCaseAmountCollected(donation.caseId, donation.amount);
+            console.log(`[PAYPAL] Updated case ${donation.caseId} amount collected by ${donation.amount}`);
+          }
+        } else {
+          console.log(`[PAYPAL] No donation found for order ${orderId}`);
+        }
+        
+        res.status(200).json(captureData);
+      } catch (error: any) {
+        console.error('[PAYPAL] Error in capture-order endpoint:', error);
+        res.status(500).json({ error: `PayPal API error: ${error.message}` });
+      }
+    } catch (error: any) {
+      console.error('[PAYPAL] Error processing request:', error);
+      res.status(500).json({ error: `Server error: ${error.message}` });
     }
   });
   
