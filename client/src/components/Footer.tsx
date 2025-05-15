@@ -6,7 +6,7 @@ import acncLogo from '@assets/ACNC-Registered-Charity-Logo_RGB.png';
 export default function Footer() {
   return (
     <footer className="bg-gray-800 text-white pt-12 pb-6">
-      <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
         {/* Organization Info */}
         <div>
           <div className="flex items-center mb-4">
@@ -114,45 +114,30 @@ export default function Footer() {
             </li>
           </ul>
         </div>
+        
+        {/* ACNC Registration */}
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Registered Charity</h3>
+          <a 
+            href="https://www.acnc.gov.au/charity/register" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-block bg-white p-2 rounded-lg hover:shadow-md transition-shadow duration-300"
+            aria-label="Registered with the Australian Charities and Not-for-profits Commission"
+          >
+            <img 
+              src={acncLogo} 
+              alt="ACNC Registered Charity" 
+              className="h-20 md:h-24" 
+            />
+          </a>
+        </div>
       </div>
       
       <div className="container mx-auto px-4 mt-8 pt-6 border-t border-gray-700">
         <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="flex items-center">
-            <p className="text-gray-400 text-sm mr-4">© {new Date().getFullYear()} Aafiyaa Charity Clinics. All rights reserved.</p>
-            
-            {/* ACNC Registered Charity Badge - Alongside copyright */}
-            <a 
-              href="https://www.acnc.gov.au/charity/register" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="hidden md:block bg-white p-1 rounded-lg hover:shadow-md transition-shadow duration-300"
-              aria-label="Registered with the Australian Charities and Not-for-profits Commission"
-            >
-              <img 
-                src={acncLogo} 
-                alt="ACNC Registered Charity" 
-                className="h-10" 
-              />
-            </a>
-          </div>
-          
-          <div className="mt-4 md:mt-0 flex flex-col items-center md:flex-row">
-            {/* Mobile view ACNC logo */}
-            <a 
-              href="https://www.acnc.gov.au/charity/register" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="block md:hidden bg-white p-1 rounded-lg mb-3"
-              aria-label="Registered with the Australian Charities and Not-for-profits Commission"
-            >
-              <img 
-                src={acncLogo} 
-                alt="ACNC Registered Charity" 
-                className="h-12" 
-              />
-            </a>
-            
+          <p className="text-gray-400 text-sm">© {new Date().getFullYear()} Aafiyaa Charity Clinics. All rights reserved.</p>
+          <div className="mt-4 md:mt-0">
             <ul className="flex space-x-4 text-sm">
               <li>
                 <Link href="/privacy" className="text-gray-400 hover:text-white">
