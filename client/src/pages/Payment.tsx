@@ -439,117 +439,102 @@ const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
       </div>
       
       <div>
-        {/* Simple PayPal button implementation */}
-        <div className="px-4 py-6 rounded-lg border border-blue-100 bg-blue-50">
-          <div className="mb-6">
-            <h3 className="font-medium text-blue-800 mb-2">Donate with PayPal</h3>
-            <p className="text-sm text-blue-700">
-              Securely process your {donationDetails.amount} {donationDetails.currency} donation using PayPal's trusted payment gateway.
-            </p>
-          </div>
-          
-          <Button 
-            onClick={async () => {
-              setIsLoading(true);
-              
-              try {
-                // Track button click
-                trackButtonClick('PayPalDonationButton', {
-                  donationType: donationDetails.type,
-                  amount: donationDetails.amount,
-                  currency: donationDetails.currency,
-                  frequency: donationDetails.frequency
-                });
-                
-                // Create donation in the database first
-                const response = await apiRequest('POST', '/api/donations', {
-                  type: donationDetails.type,
-                  amount: donationDetails.amount,
-                  currency: donationDetails.currency,
-                  frequency: donationDetails.frequency,
-                  paymentMethod: 'paypal',
-                  donorName: 'PayPal Customer', // Will be updated after payment
-                  donorEmail: '', // Will be updated after payment
-                  caseId: donationDetails.caseId,
-                  giftAid: donationDetails.giftAid || false
-                });
-                
-                if (!response.ok) {
-                  throw new Error('Failed to create donation record');
-                }
-                
-                const donation = await response.json();
-                
-                // Build PayPal redirect URL
-                // This is a simple redirect to PayPal with donation details
-                // In a production implementation, we would create an order via the PayPal API
-                // and then redirect to the approval URL
-                const baseUrl = 'https://www.paypal.com/donate';
-                const businessId = clientId; // Using client ID as business ID for demo
-                const returnUrl = encodeURIComponent(`${window.location.origin}/donation-success?id=${donation.id}`);
-                const cancelUrl = encodeURIComponent(`${window.location.origin}/donation-cancelled`);
-                const donationUrl = `${baseUrl}?business=${businessId}&amount=${donationDetails.amount}&currency_code=${donationDetails.currency.toUpperCase()}&item_name=${encodeURIComponent(`${donationDetails.type} donation for Aafiyaa Charity Clinics`)}&return=${returnUrl}&cancel_return=${cancelUrl}`;
-                
-                // Open PayPal donation page in a new tab
-                window.open(donationUrl, '_blank');
-                
-                // Show success message
-                toast({
-                  title: "PayPal Donation Started",
-                  description: "A new browser tab has opened with PayPal. Please complete your donation there.",
-                  variant: "info"
-                });
-                
-                // Track analytics
-                trackEvent({
-                  category: 'Donation',
-                  action: 'PayPalRedirect',
-                  label: donation.id.toString(),
-                  value: donationDetails.amount
-                });
-                
-              } catch (error) {
-                console.error("PayPal donation error:", error);
-                toast({
-                  title: "PayPal Error",
-                  description: "Could not process PayPal donation. Please try again later.",
-                  variant: "destructive"
-                });
-              } finally {
-                setIsLoading(false);
+        <form
+          action="https://www.paypal.com/cgi-bin/webscr"
+          method="post"
+          target="_blank"
+          onSubmit={() => {
+            // Track button click
+            trackButtonClick('PayPalDonationButton', {
+              donationType: donationDetails.type,
+              amount: donationDetails.amount,
+              currency: donationDetails.currency,
+              frequency: donationDetails.frequency
+            });
+            
+            // Create donation in database
+            apiRequest('POST', '/api/donations', {
+              type: donationDetails.type,
+              amount: donationDetails.amount,
+              currency: donationDetails.currency,
+              frequency: donationDetails.frequency,
+              paymentMethod: 'paypal',
+              donorName: 'PayPal Customer',
+              donorEmail: '',
+              caseId: donationDetails.caseId,
+              giftAid: donationDetails.giftAid || false
+            })
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Failed to create donation record');
               }
-            }}
-            className="w-full flex items-center justify-center py-4 bg-[#0070ba] hover:bg-[#003087] text-white font-medium rounded-md"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Processing
-              </>
-            ) : (
-              <span className="flex items-center">
-                <span className="mr-2 font-bold">PayPal</span> 
-                Donate {donationDetails.amount} {donationDetails.currency}
-              </span>
-            )}
-          </Button>
+              return response.json();
+            })
+            .then(donation => {
+              // Track analytics
+              trackEvent({
+                category: 'Donation',
+                action: 'PayPalRedirect',
+                label: donation.id.toString(),
+                value: donationDetails.amount
+              });
+              
+              toast({
+                title: "Redirecting to PayPal",
+                description: "Processing your donation securely with PayPal.",
+                variant: "info"
+              });
+            })
+            .catch(error => {
+              console.error("PayPal donation error:", error);
+              toast({
+                title: "PayPal Error",
+                description: "Could not process PayPal donation. Please try again later.",
+                variant: "destructive"
+              });
+            });
+          }}
+          className="w-full"
+        >
+          {/* PayPal required fields */}
+          <input type="hidden" name="cmd" value="_donations" />
+          <input type="hidden" name="business" value="aafiyaa.main@gmail.com" />
+          <input type="hidden" name="lc" value="AU" />
+          <input type="hidden" name="item_name" value={`${donationDetails.type} donation for Aafiyaa Charity Clinics`} />
+          <input type="hidden" name="amount" value={donationDetails.amount.toString()} />
+          <input type="hidden" name="currency_code" value={donationDetails.currency.toUpperCase()} />
+          <input type="hidden" name="no_note" value="0" />
+          <input type="hidden" name="return" value={`${window.location.origin}/donation-success`} />
+          <input type="hidden" name="cancel_return" value={`${window.location.origin}/donation-cancelled`} />
+          <input type="hidden" name="bn" value="PP-DonationsBF:btn_donateCC_LG.gif:NonHostedGuest" />
           
-          <p className="mt-4 text-xs text-blue-600 text-center">
-            You'll be redirected to PayPal to complete your donation securely.
-          </p>
-        </div>
-        
-        {/* PayPal Benefits */}
-        <div className="mt-6">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Benefits of PayPal:</h4>
-          <ul className="text-xs text-gray-600 space-y-1">
-            <li>• Secure and encrypted transactions</li>
-            <li>• No need to share financial information</li>
-            <li>• Protection on eligible donations</li>
-            <li>• Fast and convenient checkout</li>
-          </ul>
-        </div>
+          {/* Custom button that triggers the form submission */}
+          <div className="w-full py-6 px-6 rounded-lg border border-blue-100 bg-blue-50">
+            <div className="mb-4">
+              <h3 className="font-medium text-blue-800 mb-2">Donate with PayPal</h3>
+            </div>
+            
+            <button 
+              type="submit"
+              className="w-full flex items-center justify-center py-4 bg-[#0070ba] hover:bg-[#003087] text-white font-medium rounded-md transition-colors"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Processing
+                </>
+              ) : (
+                <span className="flex items-center justify-center">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
+                    <path d="M20.067 8.478c.492.845.74 1.887.74 3.126 0 2.888-1.213 5.158-3.64 6.812-2.428 1.653-5.644 2.48-9.648 2.48H5.616L4 24h4.32c.371 0 .685-.265.742-.632l.298-1.89.56.01.367-2.327h2.22c3.686 0 6.615-.756 8.786-2.268 2.622-1.821 3.934-4.45 3.934-7.895 0-1.823-.364-3.39-1.09-4.702-1.717-3.101-5.726-4.682-12.025-4.682H4.746c-.37 0-.686.265-.742.632L1.636 16.842c-.042.275.005.556.133.787.128.23.327.394.566.465l1.46.438V9.585c0-.522.423-.945.945-.945h3.11c3.22 0 5.691.57 7.344 1.706 1.653 1.137 2.478 2.785 2.478 4.944 0 2.025-.576 3.532-1.728 4.523-1.151.99-2.96 1.485-5.425 1.485H7.85a.751.751 0 0 0-.742.632l-.463 2.936-.033.216-.262 1.662h1.611c3.68 0 6.604-.756 8.775-2.268 2.622-1.821 3.934-4.45 3.934-7.895 0-1.823-.364-3.39-1.09-4.702-.726-1.31-1.92-2.342-3.585-3.096-1.664-.753-3.787-1.13-6.367-1.13H4.746a.751.751 0 0 0-.742.632L1.636 16.842c-.042.275.005.556.133.787.128.23.327.394.566.465l1.46.438V9.585c0-.522.423-.945.945-.945h3.11c3.22 0 5.691.57 7.344 1.706 1.653 1.137 2.478 2.785 2.478 4.944 0 2.025-.576 3.532-1.728 4.523-1.151.99-2.96 1.485-5.425 1.485H7.85a.751.751 0 0 0-.742.632l-.758 4.814h.12a.751.751 0 0 0 .742-.632l.561-3.553h2.645c2.702 0 4.773-.595 6.212-1.786 1.44-1.19 2.16-2.944 2.16-5.262 0-2.477-.964-4.362-2.892-5.654-1.929-1.292-4.642-1.938-8.139-1.938H3.935c-.953 0-1.727.774-1.727 1.727v9.45l-1.302-.39a2.025 2.025 0 0 1-1.238-1.016A2.025 2.025 0 0 1-.62 16.56L1.748 3.155A1.866 1.866 0 0 1 3.591 1.58h8.504c3.417 0 6.046.527 7.887 1.582 1.84 1.054 3.126 2.675 3.857 4.861.215.46.392.938.53 1.436.041.023.79.443.115.66.143.839.213 1.714.213 2.625 0 3.729-1.397 6.647-4.188 8.755-2.793 2.107-6.608 3.16-11.447 3.16h-2.31l-.223 1.43h4.116c3.686 0 6.615-.756 8.786-2.268 2.173-1.512 3.37-3.732 3.59-6.662.033.004.064.011.97.011 2.172 0 3.91-.701 5.212-2.102 1.303-1.402 1.954-3.37 1.954-5.907 0-1.434-.281-2.647-.845-3.638-.563-.99-1.372-1.776-2.427-2.355-1.055-.58-2.314-.986-3.78-1.22a29.72 29.72 0 0 0-4.804-.351h-8.32a1.866 1.866 0 0 0-1.844 1.576L1.636 16.842a2.025 2.025 0 0 0 1.526 2.322l.357.107-.39 2.485a1.866 1.866 0 0 0 1.843 2.125h4.116c3.686 0 6.615-.756 8.786-2.268 2.622-1.821 3.934-4.45 3.934-7.895 0-1.823-.364-3.39-1.09-4.702-.726-1.31-1.92-2.342-3.585-3.096-1.664-.753-3.787-1.13-6.367-1.13H4.746a.751.751 0 0 0-.742.632L1.636 16.842c-.042.275.005.556.133.787.128.23.327.394.566.465l1.46.438V9.585c0-.522.423-.945.945-.945h3.11c3.22 0 5.691.57 7.344 1.706 1.653 1.137 2.478 2.785 2.478 4.944 0 2.025-.576 3.532-1.728 4.523-1.151.99-2.96 1.485-5.425 1.485H7.85a.751.751 0 0 0-.742.632l-.758 4.814h.12a.751.751 0 0 0 .742-.632l.561-3.553h2.645c2.702 0 4.773-.595 6.212-1.786 1.44-1.19 2.16-2.944 2.16-5.262 0-2.477-.964-4.362-2.892-5.654-1.929-1.292-4.642-1.938-8.139-1.938H3.935c-.953 0-1.727.774-1.727 1.727v9.45l-1.302-.39a2.025 2.025 0 0 1-1.238-1.016A2.025 2.025 0 0 1-.62 16.56L1.748 3.155A1.866 1.866 0 0 1 3.591 1.58h8.504c3.417 0 6.046.527 7.887 1.582 1.84 1.054 3.126 2.675 3.857 4.861.76.16.148.324.228.455z" fill="#fff"/>
+                  </svg>
+                  Donate {donationDetails.amount} {donationDetails.currency}
+                </span>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
