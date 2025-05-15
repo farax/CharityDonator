@@ -329,270 +329,92 @@ const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
   const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Log the client ID (with partial masking for security)
-  const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || '';
-  const maskedClientId = clientId ? 
-    clientId.substring(0, 5) + '...' + clientId.substring(clientId.length - 5) : 
-    'not found';
-  console.log('PayPal Client ID available:', !!clientId, '- Value starts with:', maskedClientId);
-
-  // PayPal configuration options
-  const paypalOptions = {
-    clientId: clientId,
-    currency: donationDetails.currency.toLowerCase(),
-    intent: "capture"
-  };
-  
-  // Warn if PayPal client ID is missing
-  if (!clientId) {
-    console.warn('Missing required PayPal key: VITE_PAYPAL_CLIENT_ID');
-    toast({
-      title: "PayPal Configuration Error",
-      description: "PayPal client ID is missing. Please contact support.",
-      variant: "destructive"
-    });
-  }
-
-  // Define success handler for PayPal
-  const handlePayPalSuccess = (details: any) => {
-    // Check if this is a recurring payment or one-time
-    const isRecurring = donationDetails.frequency !== 'one-off';
-    
-    // Track payment success with PayPal
-    trackEvent({
-      category: 'Payment',
-      action: 'Success',
-      label: isRecurring ? 'PayPal Subscription' : 'PayPal',
-      value: donationDetails.amount,
-      attributes: {
-        paymentMethod: 'paypal',
-        donationId: donationDetails.id.toString(),
-        frequency: donationDetails.frequency,
-        paypalOrderId: details.id,
-        isRecurring
-      }
-    });
-    
-    // Update donation status in the database
-    apiRequest("POST", "/api/update-donation-status", {
-      donationId: donationDetails.id,
-      status: isRecurring ? "active-subscription" : "completed",
-      paymentMethod: "paypal",
-      paymentId: details.id,
-      subscriptionId: isRecurring ? details.subscriptionID : undefined
-    }).then(async () => {
-      // Also directly notify about payment success to update case amount if applicable
-      if (donationDetails.caseId) {
-        try {
-          await apiRequest("POST", "/api/stripe-payment-success", {
-            donationId: donationDetails.id,
-            paymentIntentId: details.id
-          });
-          console.log("Case amount updated via direct notification for PayPal payment", donationDetails.caseId);
-        } catch (error) {
-          console.error("Failed to update case amount:", error);
-          // Continue with success path even if case update fails
-        }
-      }
-      
-      toast({
-        title: isRecurring ? "Subscription Successful" : "Payment Successful",
-        description: isRecurring
-          ? `Thank you for your recurring donation via PayPal! You'll be charged ${donationDetails.currency} ${donationDetails.amount} ${donationDetails.frequency}.`
-          : "Thank you for your generous donation via PayPal!",
-        variant: "success"
-      });
-      
-      // Redirect to homepage after successful payment
-      setTimeout(() => {
-        setLocation('/');
-      }, 2000);
-    });
-  };
-
-  // Handle errors
-  const handlePayPalError = (error: any) => {
-    // Track payment failure
-    trackEvent({
-      category: 'Payment',
-      action: 'Failed',
-      label: 'PayPal',
-      attributes: {
-        paymentMethod: 'paypal',
-        errorMessage: error?.message || 'Unknown PayPal error'
-      }
-    });
-    
-    toast({
-      title: "Payment Failed",
-      description: error?.message || "There was an issue processing your PayPal payment.",
-      variant: "destructive",
-    });
-  };
-
   return (
     <div className="space-y-6">
-      
       <div className="w-full">
-        <PayPalScriptProvider options={{
-          clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || '',
-          currency: donationDetails.currency.toLowerCase(),
-          intent: "capture",
-          components: "buttons",
-          'disable-funding': 'credit,card'
-        }}>
-          <div className="mb-4 text-center text-sm text-gray-500">
-            Click the PayPal button below to proceed with your donation
-          </div>
-          
-          <PayPalButtons
-            style={{
-              layout: "vertical",
-              color: "blue",
-              shape: "rect",
-              label: "donate"
-            }}
-            disabled={isLoading}
-            fundingSource={undefined}
-            forceReRender={[donationDetails.amount, donationDetails.currency]}
-            createOrder={async () => {
-              setIsLoading(true);
+        <form 
+          action="https://www.sandbox.paypal.com/cgi-bin/webscr" 
+          method="post" 
+          target="_top"
+          className="w-full"
+          onSubmit={() => {
+            // Track button click
+            trackButtonClick('PayPalDonationButton', {
+              donationType: donationDetails.type,
+              amount: donationDetails.amount,
+              currency: donationDetails.currency,
+              frequency: donationDetails.frequency
+            });
+            
+            // Create donation in database
+            apiRequest('POST', '/api/donations', {
+              type: donationDetails.type,
+              amount: donationDetails.amount,
+              currency: donationDetails.currency,
+              frequency: donationDetails.frequency,
+              paymentMethod: 'paypal',
+              donorName: 'PayPal Customer',
+              donorEmail: '',
+              caseId: donationDetails.caseId,
+              giftAid: donationDetails.giftAid || false
+            })
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Failed to create donation record');
+              }
+              return response.json();
+            })
+            .then(donation => {
+              // Track analytics
+              trackEvent({
+                category: 'Donation',
+                action: 'PayPalRedirect',
+                label: donation.id.toString(),
+                value: donationDetails.amount
+              });
               
-              try {
-                // Track PayPal button click
-                trackButtonClick('PayPalSDKButton', {
-                  donationType: donationDetails.type,
-                  amount: donationDetails.amount,
-                  currency: donationDetails.currency,
-                  frequency: donationDetails.frequency
-                });
-                
-                // 1. Create donation in database first
-                const donationResponse = await apiRequest('POST', '/api/donations', {
-                  type: donationDetails.type,
-                  amount: donationDetails.amount,
-                  currency: donationDetails.currency,
-                  frequency: donationDetails.frequency,
-                  paymentMethod: 'paypal',
-                  donorName: 'PayPal Customer',
-                  donorEmail: '',
-                  caseId: donationDetails.caseId,
-                  giftAid: donationDetails.giftAid || false
-                });
-                
-                if (!donationResponse.ok) {
-                  throw new Error('Failed to create donation record');
-                }
-                
-                const donation = await donationResponse.json();
-                
-                // 2. Create PayPal order through our server API
-                const orderResponse = await fetch('/api/paypal/create-order', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    amount: donationDetails.amount,
-                    currency: donationDetails.currency,
-                    donationId: donation.id
-                  }),
-                });
-                
-                if (!orderResponse.ok) {
-                  throw new Error('Failed to create PayPal order');
-                }
-                
-                const order = await orderResponse.json();
-                
-                // Track PayPal order creation success
-                trackEvent({
-                  category: 'Donation',
-                  action: 'PayPalOrderCreated',
-                  label: order.id,
-                  value: donationDetails.amount
-                });
-                
-                return order.id;
-              } catch (error) {
-                console.error('Error creating PayPal order:', error);
-                toast({
-                  title: 'PayPal Error',
-                  description: 'Could not create PayPal order. Please try again later.',
-                  variant: 'destructive',
-                });
-                setIsLoading(false);
-                throw error;
-              }
-            }}
-            onApprove={async (data, actions) => {
-              try {
-                // Capture the order through our server API
-                const response = await fetch(`/api/paypal/capture-order/${data.orderID}`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                });
-                
-                if (!response.ok) {
-                  throw new Error('Failed to capture PayPal order');
-                }
-                
-                const captureData = await response.json();
-                
-                // Track successful payment
-                trackEvent({
-                  category: 'Donation',
-                  action: 'PayPalPaymentSuccess',
-                  label: captureData.id,
-                  value: donationDetails.amount
-                });
-                
-                toast({
-                  title: 'Payment Successful',
-                  description: 'Thank you for your donation!',
-                  variant: 'success',
-                });
-                
-                // Redirect to success page
-                setLocation('/donation-success');
-              } catch (error) {
-                console.error('Error capturing PayPal order:', error);
-                toast({
-                  title: 'Payment Error',
-                  description: 'Could not complete your payment. Please try again later.',
-                  variant: 'destructive',
-                });
-              } finally {
-                setIsLoading(false);
-              }
-            }}
-            onCancel={() => {
-              setIsLoading(false);
               toast({
-                title: 'Payment Cancelled',
-                description: 'You cancelled the PayPal payment process.',
-                variant: 'info',
+                title: "Redirecting to PayPal",
+                description: "Processing your donation securely with PayPal.",
+                variant: "info"
               });
-            }}
-            onError={(err) => {
-              console.error('PayPal error:', err);
-              setIsLoading(false);
+            })
+            .catch(error => {
+              console.error("PayPal donation error:", error);
               toast({
-                title: 'PayPal Error',
-                description: 'An error occurred with PayPal. Please try again later.',
-                variant: 'destructive',
+                title: "PayPal Error",
+                description: "Could not process PayPal donation. Please try again later.",
+                variant: "destructive"
               });
-            }}
-          />
-        </PayPalScriptProvider>
+            });
+          }}
+        >
+          {/* PayPal required fields */}
+          <input type="hidden" name="cmd" value="_donations" />
+          <input type="hidden" name="business" value="aafiyaa.main@gmail.com" />
+          <input type="hidden" name="lc" value="AU" />
+          <input type="hidden" name="item_name" value={`${donationDetails.type} donation for Aafiyaa Charity Clinics`} />
+          <input type="hidden" name="amount" value={donationDetails.amount.toString()} />
+          <input type="hidden" name="currency_code" value={donationDetails.currency.toUpperCase()} />
+          <input type="hidden" name="no_note" value="0" />
+          <input type="hidden" name="return" value={`${window.location.origin}/donation-success`} />
+          <input type="hidden" name="cancel_return" value={`${window.location.origin}/donation-cancelled`} />
+          <input type="hidden" name="bn" value="PP-DonationsBF:btn_donateCC_LG.gif:NonHostedGuest" />
+          
+          <button 
+            type="submit"
+            className="w-full flex items-center justify-center py-4 bg-[#0070ba] hover:bg-[#003087] text-white font-medium rounded-md transition-colors"
+          >
+            <SiPaypal className="mr-2 h-5 w-5" />
+            <span className="flex items-center justify-center">
+              Pay with PayPal
+            </span>
+          </button>
+        </form>
         
-        {/* Fallback message if PayPal buttons fail to load */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <p className="text-center text-sm text-gray-500">
-            Having trouble with PayPal? Try refreshing the page or contact our support team.
-          </p>
+        {/* Implementation note */}
+        <div className="mt-4 text-xs text-gray-500 italic">
+          Note: We're temporarily using the PayPal hosted buttons while we resolve an issue with the PayPal JavaScript SDK.
         </div>
       </div>
     </div>
