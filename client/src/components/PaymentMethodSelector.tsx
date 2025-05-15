@@ -32,8 +32,8 @@ export default function PaymentMethodSelector() {
       id: 'paypal',
       name: 'PayPal',
       icon: <SiPaypal className="h-6 w-6 text-blue-700" />,
-      description: 'Pay with PayPal Balance or Account',
-      available: true,
+      description: 'Pay with PayPal Balance or Account (temporarily unavailable)',
+      available: false, // Temporarily disabled while organization account is under review
     }
   ];
 

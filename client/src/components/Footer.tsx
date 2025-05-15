@@ -1,6 +1,7 @@
 import { Link } from 'wouter';
 import { Heart, MapPin, Mail, Phone, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 import aafiyaaLogo from '@assets/aafiyaa-logo.png';
+import acncLogo from '@assets/ACNC-Registered-Charity-Logo_RGB.png';
 
 export default function Footer() {
   return (

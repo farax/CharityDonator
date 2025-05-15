@@ -12,11 +12,12 @@ import { Loader2 } from 'lucide-react';
 import { useDonation } from '@/components/DonationContext';
 import PaymentMethodSelector from '@/components/PaymentMethodSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  PayPalScriptProvider, 
-  PayPalButtons,
-  FUNDING
-} from '@paypal/react-paypal-js';
+// PayPal SDK removed temporarily while organization account is under review
+// import { 
+//   PayPalScriptProvider, 
+//   PayPalButtons,
+//   FUNDING
+// } from '@paypal/react-paypal-js';
 import { SiPaypal } from 'react-icons/si';
 import { trackButtonClick, trackEvent, trackFormSubmission } from '@/lib/analytics';
 
@@ -323,119 +324,33 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   );
 };
 
-// Component for PayPal payment
+// Component for PayPal payment (currently disabled)
 const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Create the donation in our system first
-  const createDonationRecord = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/donations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: donationDetails.type,
-          amount: donationDetails.amount,
-          currency: donationDetails.currency,
-          frequency: donationDetails.frequency,
-          paymentMethod: 'paypal',
-          donorName: 'PayPal Customer',
-          donorEmail: '',
-          caseId: donationDetails.caseId,
-          giftAid: donationDetails.giftAid || false
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create donation record');
-      }
-      
-      const donation = await response.json();
-      console.log('Donation record created:', donation);
-      
-      // Now redirect to PayPal
-      toast({
-        title: "Redirecting to PayPal",
-        description: "Processing your donation securely with PayPal.",
-        variant: "info"
-      });
-      
-      // Track analytics
-      trackEvent({
-        category: 'Donation',
-        action: 'PayPalRedirect',
-        label: donation.id.toString(),
-        value: donationDetails.amount
-      });
-      
-      // Redirect to PayPal directly
-      const paypalURL = new URL('https://www.sandbox.paypal.com/cgi-bin/webscr');
-      paypalURL.searchParams.append('cmd', '_donations');
-      paypalURL.searchParams.append('business', 'sb-dnxnt28574747@business.example.com');
-      paypalURL.searchParams.append('lc', 'AU');
-      paypalURL.searchParams.append('item_name', `${donationDetails.type} donation for Aafiyaa Charity Clinics`);
-      paypalURL.searchParams.append('amount', donationDetails.amount.toString());
-      paypalURL.searchParams.append('currency_code', donationDetails.currency.toUpperCase());
-      paypalURL.searchParams.append('no_note', '0');
-      paypalURL.searchParams.append('return', `${window.location.origin}/donation-success`);
-      paypalURL.searchParams.append('cancel_return', `${window.location.origin}/donation-cancelled`);
-      paypalURL.searchParams.append('bn', 'PP-DonationsBF:btn_donateCC_LG.gif:NonHostedGuest');
-      paypalURL.searchParams.append('custom', donation.id.toString());
-      
-      // Open PayPal in a new window
-      window.open(paypalURL.toString(), '_blank');
-      
-      return donation;
-    } catch (error) {
-      console.error("PayPal donation error:", error);
-      toast({
-        title: "PayPal Error",
-        description: "Could not process PayPal donation. Please try again later.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  
   return (
     <div className="space-y-6">
       <div className="w-full">
-        {/* Debug info */}
-        <div className="mb-4 p-3 bg-gray-50 rounded-md text-xs text-gray-600">
-          <p><strong>Debug Info:</strong> Using direct PayPal redirection</p>
-          <p><strong>PayPal URL:</strong> https://www.sandbox.paypal.com/cgi-bin/webscr</p>
-          <p><strong>Business Email:</strong> sb-dnxnt28574747@business.example.com</p>
-        </div>
-        
-        {/* Direct PayPal button */}
-        <button 
-          type="button"
-          onClick={createDonationRecord}
-          disabled={isLoading}
-          className="w-full flex items-center justify-center py-4 bg-[#0070ba] hover:bg-[#003087] text-white font-medium rounded-md transition-colors"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            <>
-              <SiPaypal className="mr-2 h-5 w-5" />
-              Pay with PayPal
-            </>
-          )}
-        </button>
-        
-        {/* Implementation note */}
-        <div className="mt-4 text-xs text-gray-500 italic">
-          Note: We're temporarily using the PayPal hosted buttons while we resolve an issue with the PayPal JavaScript SDK.
+        <div className="p-8 border border-gray-200 rounded-lg bg-gray-50 text-center">
+          <SiPaypal className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">PayPal Payments Temporarily Unavailable</h3>
+          <p className="text-gray-500 mb-4">
+            Our PayPal integration is currently under review by PayPal. Please use credit card payment instead.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => {
+              const { setPaymentMethod } = useDonation();
+              setPaymentMethod('stripe');
+              toast({
+                title: "Payment method changed",
+                description: "Switched to credit card payment",
+                variant: "info"
+              });
+            }}
+          >
+            Switch to Credit Card
+          </Button>
         </div>
       </div>
     </div>
