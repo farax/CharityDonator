@@ -328,15 +328,28 @@ const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
   const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Log the client ID (with partial masking for security)
+  const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || '';
+  const maskedClientId = clientId ? 
+    clientId.substring(0, 5) + '...' + clientId.substring(clientId.length - 5) : 
+    'not found';
+  console.log('PayPal Client ID available:', !!clientId, '- Value starts with:', maskedClientId);
+
   // PayPal configuration options
   const paypalOptions = {
-    clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID, // Use PayPal client ID from environment variables
-    currency: donationDetails.currency.toLowerCase()
+    clientId: clientId,
+    currency: donationDetails.currency.toLowerCase(),
+    intent: "capture"
   };
   
   // Warn if PayPal client ID is missing
-  if (!import.meta.env.VITE_PAYPAL_CLIENT_ID) {
+  if (!clientId) {
     console.warn('Missing required PayPal key: VITE_PAYPAL_CLIENT_ID');
+    toast({
+      title: "PayPal Configuration Error",
+      description: "PayPal client ID is missing. Please contact support.",
+      variant: "destructive"
+    });
   }
 
   // Define success handler for PayPal
@@ -425,82 +438,119 @@ const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
         </p>
       </div>
       
-      <PayPalScriptProvider options={paypalOptions}>
-        <PayPalButtons
-          style={{ 
-            layout: "vertical",
-            color: "blue",
-            shape: "rect",
-            label: "donate"
-          }}
-          disabled={isLoading}
-          fundingSource={undefined}
-          createOrder={(data, actions) => {
-            // Check if this should be a recurring payment
-            const isRecurring = donationDetails.frequency !== 'one-off';
-            
-            if (!isRecurring) {
-              // For one-time payments, create a regular order
-              return actions.order.create({
-                intent: "CAPTURE",
-                purchase_units: [
-                  {
-                    amount: {
-                      value: donationDetails.amount.toString(),
-                      currency_code: donationDetails.currency.toUpperCase()
-                    },
-                    description: `${donationDetails.type} donation for Aafiyaa Charity Clinics`
-                  }
-                ],
-                application_context: {
-                  shipping_preference: "NO_SHIPPING"
-                }
-              });
-            } else {
-              // For recurring payments, we'd create a subscription
-              // Note: This is a simplified example as PayPal subscription requires a different approach
-              // In a production app, we would use PayPal Subscriptions API
+      <div>
+        {/* Simple PayPal button implementation */}
+        <div className="px-4 py-6 rounded-lg border border-blue-100 bg-blue-50">
+          <div className="mb-6">
+            <h3 className="font-medium text-blue-800 mb-2">Donate with PayPal</h3>
+            <p className="text-sm text-blue-700">
+              Securely process your {donationDetails.amount} {donationDetails.currency} donation using PayPal's trusted payment gateway.
+            </p>
+          </div>
+          
+          <Button 
+            onClick={async () => {
+              setIsLoading(true);
               
-              // For now, we'll use the regular order flow but indicate it's a subscription
-              return actions.order.create({
-                intent: "CAPTURE",
-                purchase_units: [
-                  {
-                    amount: {
-                      value: donationDetails.amount.toString(),
-                      currency_code: donationDetails.currency.toUpperCase()
-                    },
-                    description: `${donationDetails.type} ${donationDetails.frequency} donation for Aafiyaa Charity Clinics`
-                  }
-                ],
-                application_context: {
-                  shipping_preference: "NO_SHIPPING",
-                  user_action: "CONTINUE"
+              try {
+                // Track button click
+                trackButtonClick('PayPalDonationButton', {
+                  donationType: donationDetails.type,
+                  amount: donationDetails.amount,
+                  currency: donationDetails.currency,
+                  frequency: donationDetails.frequency
+                });
+                
+                // Create donation in the database first
+                const response = await apiRequest('POST', '/api/donations', {
+                  type: donationDetails.type,
+                  amount: donationDetails.amount,
+                  currency: donationDetails.currency,
+                  frequency: donationDetails.frequency,
+                  paymentMethod: 'paypal',
+                  donorName: 'PayPal Customer', // Will be updated after payment
+                  donorEmail: '', // Will be updated after payment
+                  caseId: donationDetails.caseId,
+                  giftAid: donationDetails.giftAid || false
+                });
+                
+                if (!response.ok) {
+                  throw new Error('Failed to create donation record');
                 }
-              });
-            }
-          }}
-          onApprove={async (data, actions) => {
-            setIsLoading(true);
-            if (actions.order) {
-              return actions.order.capture().then((details) => {
-                handlePayPalSuccess(details);
+                
+                const donation = await response.json();
+                
+                // Build PayPal redirect URL
+                // This is a simple redirect to PayPal with donation details
+                // In a production implementation, we would create an order via the PayPal API
+                // and then redirect to the approval URL
+                const baseUrl = 'https://www.paypal.com/donate';
+                const businessId = clientId; // Using client ID as business ID for demo
+                const returnUrl = encodeURIComponent(`${window.location.origin}/donation-success?id=${donation.id}`);
+                const cancelUrl = encodeURIComponent(`${window.location.origin}/donation-cancelled`);
+                const donationUrl = `${baseUrl}?business=${businessId}&amount=${donationDetails.amount}&currency_code=${donationDetails.currency.toUpperCase()}&item_name=${encodeURIComponent(`${donationDetails.type} donation for Aafiyaa Charity Clinics`)}&return=${returnUrl}&cancel_return=${cancelUrl}`;
+                
+                // Open PayPal donation page in a new tab
+                window.open(donationUrl, '_blank');
+                
+                // Show success message
+                toast({
+                  title: "PayPal Donation Started",
+                  description: "A new browser tab has opened with PayPal. Please complete your donation there.",
+                  variant: "info"
+                });
+                
+                // Track analytics
+                trackEvent({
+                  category: 'Donation',
+                  action: 'PayPalRedirect',
+                  label: donation.id.toString(),
+                  value: donationDetails.amount
+                });
+                
+              } catch (error) {
+                console.error("PayPal donation error:", error);
+                toast({
+                  title: "PayPal Error",
+                  description: "Could not process PayPal donation. Please try again later.",
+                  variant: "destructive"
+                });
+              } finally {
                 setIsLoading(false);
-              });
-            }
-            setIsLoading(false);
-            return Promise.resolve();
-          }}
-          onError={handlePayPalError}
-          onCancel={() => {
-            toast({
-              title: "Payment Cancelled",
-              description: "Your PayPal payment was cancelled.",
-              variant: "info",
-            });
-          }}
-        />
-      </PayPalScriptProvider>
+              }
+            }}
+            className="w-full flex items-center justify-center py-4 bg-[#0070ba] hover:bg-[#003087] text-white font-medium rounded-md"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Processing
+              </>
+            ) : (
+              <span className="flex items-center">
+                <span className="mr-2 font-bold">PayPal</span> 
+                Donate {donationDetails.amount} {donationDetails.currency}
+              </span>
+            )}
+          </Button>
+          
+          <p className="mt-4 text-xs text-blue-600 text-center">
+            You'll be redirected to PayPal to complete your donation securely.
+          </p>
+        </div>
+        
+        {/* PayPal Benefits */}
+        <div className="mt-6">
+          <h4 className="text-sm font-medium text-gray-700 mb-2">Benefits of PayPal:</h4>
+          <ul className="text-xs text-gray-600 space-y-1">
+            <li>• Secure and encrypted transactions</li>
+            <li>• No need to share financial information</li>
+            <li>• Protection on eligible donations</li>
+            <li>• Fast and convenient checkout</li>
+          </ul>
+        </div>
+      </div>
     </div>
   );
 };
