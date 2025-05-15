@@ -17,6 +17,7 @@ import {
   PayPalButtons,
   FUNDING
 } from '@paypal/react-paypal-js';
+import { SiPaypal } from 'react-icons/si';
 import { trackButtonClick, trackEvent, trackFormSubmission } from '@/lib/analytics';
 
 // No donor form schema needed since we'll use the payment provider's UI
@@ -514,7 +515,6 @@ const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
               </>
             ) : (
               <span className="flex items-center justify-center">
-                <SiPaypal className="h-5 w-5 mr-2" />
                 Pay with PayPal
               </span>
             )}
