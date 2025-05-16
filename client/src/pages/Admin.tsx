@@ -65,11 +65,18 @@ export default function Admin() {
     // Default to first day of current month
     const date = new Date();
     date.setDate(1); // First day of month
-    return date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`; // Format as YYYY-MM-DD
   });
   const [endDate, setEndDate] = useState(() => {
-    // Default to today
-    return new Date().toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    // Default to today's date in the local time zone
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`; // Format as YYYY-MM-DD
   });
   
   // For patient stats management
