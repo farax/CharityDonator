@@ -147,7 +147,10 @@ export default function CaseSelector({ open, onOpenChange }: CaseSelectorProps) 
                   <Button variant="outline" onClick={() => onOpenChange(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleSelect}>
+                  <Button 
+                    onClick={handleSelect}
+                    className="bg-teal-600 hover:bg-teal-700 text-white font-semibold"
+                  >
                     Select This Case
                   </Button>
                 </div>
