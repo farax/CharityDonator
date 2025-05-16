@@ -864,11 +864,7 @@ export default function Payment() {
                         </div>
                         <div className="flex justify-between text-green-600 font-medium">
                           <span>Charity receives:</span>
-                          {coverFees ? (
-                            <span>{donationDetails.currency} {donationDetails.amount.toFixed(2)}</span>
-                          ) : (
-                            <span>{donationDetails.currency} {(donationDetails.amount - feeBreakdown.processingFee).toFixed(2)}</span>
-                          )}
+                          <span>{donationDetails.currency} {donationDetails.amount.toFixed(2)}</span>
                         </div>
                       </div>
                       
