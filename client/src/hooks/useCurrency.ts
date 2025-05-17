@@ -53,6 +53,15 @@ export function useCurrency() {
   // Fetch user's currency based on IP or URL param with no cache
   const { data: currencyData, refetch: refetchCurrency } = useQuery<CurrencyByIp>({
     queryKey: ['/api/currency-by-ip', regionParam], // Include region param in query key to refetch when it changes
+    queryFn: async () => {
+      // Construct URL with region parameter if present
+      const url = regionParam 
+        ? `/api/currency-by-ip?region=${regionParam}` 
+        : '/api/currency-by-ip';
+      
+      const response = await fetch(url);
+      return response.json();
+    },
     staleTime: 0, // Don't cache to always get fresh location data
     retry: 3, // Retry 3 times if the request fails
     refetchOnMount: true, // Ensure we always refetch when component mounts
@@ -65,12 +74,12 @@ export function useCurrency() {
     staleTime: 60 * 60 * 1000, // 1 hour
   });
 
-  // Refetch currency when region param changes
+  // Refetch currency when location/URL changes
   useEffect(() => {
-    if (regionParam) {
-      refetchCurrency();
-    }
-  }, [regionParam, refetchCurrency]);
+    // Always refetch when location changes as we might have a different region param
+    refetchCurrency();
+    console.log("Location changed, refetching currency with region:", regionParam);
+  }, [location, regionParam, refetchCurrency]);
 
   // Set currency and symbol immediately when data is available
   useEffect(() => {
