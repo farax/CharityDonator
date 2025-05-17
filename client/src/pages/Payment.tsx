@@ -8,7 +8,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, HelpCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDonation } from '@/components/DonationContext';
 import PaymentMethodSelector from '@/components/PaymentMethodSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -850,7 +851,19 @@ export default function Payment() {
                           <span className="font-medium">{donationDetails.currency} {donationDetails.amount.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Processing fee:</span>
+                          <span className="flex items-center gap-1">
+                            Processing fee:
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs">
+                                  <p>If you do not cover the processing fee, Aafiyaa would fund it through other donation types.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </span>
                           <span className={coverFees ? "font-medium" : "text-red-500 font-medium"}>
                             {donationDetails.currency} {feeBreakdown.processingFee.toFixed(2)}
                           </span>
