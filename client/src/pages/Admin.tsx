@@ -25,6 +25,7 @@ interface Donation {
   paymentMethod: string | null;
   stripePaymentId: string | null;
   caseId: number | null;
+  caseName?: string; // Added case name from server
   destinationProject: string | null;
   createdAt: string;
   email: string | null;
@@ -552,10 +553,13 @@ export default function Admin() {
                                 </TableCell>
                                 <TableCell className="capitalize">{donation.paymentMethod?.replace('_', ' ') || 'Unknown'}</TableCell>
                                 <TableCell>
-                                  {donation.caseId ? `Case ID: ${donation.caseId}` : 
+                                  {donation.caseName ? donation.caseName : 
                                   donation.destinationProject || 'Unknown'}
                                 </TableCell>
-                                <TableCell>{new Date(donation.createdAt).toLocaleDateString()}</TableCell>
+                                <TableCell>
+                                  {new Date(donation.createdAt).toLocaleDateString()} {' '}
+                                  {new Date(donation.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </TableCell>
                               </TableRow>
                             ))
                         ) : (

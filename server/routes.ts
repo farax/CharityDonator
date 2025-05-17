@@ -1034,8 +1034,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/payment-history", isAdminAuthenticated, async (req, res) => {
     try {
       const donations = await storage.getDonations();
-      res.json(donations);
+      const allCases = await storage.getCases();
+      
+      // Filter out transactions with "processing" status and enhance with case names
+      const enhancedDonations = donations
+        .filter(donation => donation.status !== 'processing')
+        .map(donation => {
+          // Add case name if caseId exists
+          if (donation.caseId) {
+            const matchingCase = allCases.find(c => c.id === donation.caseId);
+            return {
+              ...donation,
+              caseName: matchingCase?.title || 'Unknown Case'
+            };
+          }
+          return donation;
+        });
+        
+      res.json(enhancedDonations);
     } catch (error) {
+      console.error('Failed to fetch payment history:', error);
       res.status(500).json({ message: "Failed to fetch payment history" });
     }
   });
