@@ -52,9 +52,11 @@ export default function CaseSelector({ open, onOpenChange }: CaseSelectorProps) 
   const currentCase = cases[currentIndex];
   
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-AU', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'AUD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -91,16 +93,16 @@ export default function CaseSelector({ open, onOpenChange }: CaseSelectorProps) 
               <p className="text-gray-600 mb-4">{currentCase?.description}</p>
               
               <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">Required</p>
-                  <p className="text-lg font-semibold text-primary">
-                    {currentCase && formatAmount(currentCase.amountRequired)}
-                  </p>
-                </div>
                 <div className="bg-green-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">Collected</p>
+                  <p className="text-sm text-gray-600">Raised so far</p>
                   <p className="text-lg font-semibold text-green-600">
                     {currentCase && formatAmount(currentCase.amountCollected)}
+                  </p>
+                </div>
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <p className="text-sm text-gray-600">Still needed</p>
+                  <p className="text-lg font-semibold text-primary">
+                    {currentCase && formatAmount(Math.max(0, currentCase.amountRequired - currentCase.amountCollected))}
                   </p>
                 </div>
               </div>

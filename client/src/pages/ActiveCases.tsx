@@ -52,9 +52,9 @@ export default function ActiveCases() {
 
   // Format currency
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-AU', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'AUD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -109,15 +109,21 @@ export default function ActiveCases() {
                     
                     <div className="space-y-2 mt-4">
                       <div className="flex justify-between text-sm">
-                        <span className="font-medium text-gray-500">Collected</span>
+                        <span className="font-medium text-gray-500">Progress</span>
                         <span className="font-medium text-gray-700">
-                          {formatAmount(caseItem.amountCollected)} of {formatAmount(caseItem.amountRequired)}
+                          {formatAmount(caseItem.amountCollected)} raised
                         </span>
                       </div>
                       <Progress 
                         value={calculateProgress(caseItem.amountCollected, caseItem.amountRequired)} 
                         className="h-2"
                       />
+                      <div className="flex justify-between text-sm mt-1">
+                        <span className="font-medium text-gray-500">Still needed</span>
+                        <span className="font-medium text-gray-700 text-right">
+                          {formatAmount(Math.max(0, caseItem.amountRequired - caseItem.amountCollected))}
+                        </span>
+                      </div>
                     </div>
                   </CardContent>
                   <CardFooter>
