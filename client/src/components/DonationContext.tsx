@@ -99,7 +99,7 @@ export function DonationProvider({ children }: { children: React.ReactNode }) {
     let feeDescription = "";
     
     // Fee calculation based on payment method
-    // These fee structures are based on Stripe's Australian rates
+    // These fee structures are based on Stripe's Australian rates (updated April 2024)
     switch (method) {
       case 'stripe':
         // Stripe fee structure for Australian account
@@ -107,13 +107,13 @@ export function DonationProvider({ children }: { children: React.ReactNode }) {
         const isInternationalCard = !isAustralianCurrency;
         
         if (isAustralianCurrency) {
-          // Domestic Australian cards (AUD): 1.75% + A$0.30
-          processingFee = baseAmount * 0.0175 + 0.30;
-          feeDescription = "Stripe charges 1.75% + A$0.30 for Australian cards";
+          // Domestic Australian cards (AUD): 1.7% + A$0.30 (reduced from April 1, 2024)
+          processingFee = baseAmount * 0.017 + 0.30;
+          feeDescription = "Stripe charges 1.7% + A$0.30 for Australian cards";
         } else {
-          // International cards: 2.9% + A$0.30 equivalent
-          processingFee = baseAmount * 0.029 + 0.30;
-          feeDescription = `Stripe charges 2.9% + ${currencySymbol}0.30 for international cards`;
+          // International cards: 3.5% + A$0.30 equivalent
+          processingFee = baseAmount * 0.035 + 0.30;
+          feeDescription = `Stripe charges 3.5% + ${currencySymbol}0.30 for international cards`;
         }
         break;
         
