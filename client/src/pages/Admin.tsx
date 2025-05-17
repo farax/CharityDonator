@@ -394,7 +394,10 @@ export default function Admin() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="capitalize">{donation.paymentMethod?.replace('_', ' ') || 'Unknown'}</TableCell>
-                              <TableCell>{new Date(donation.createdAt).toLocaleDateString()}</TableCell>
+                              <TableCell>
+                                {new Date(donation.createdAt).toLocaleDateString()} {' '}
+                                {new Date(donation.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                              </TableCell>
                             </TableRow>
                           ))
                       ) : (
