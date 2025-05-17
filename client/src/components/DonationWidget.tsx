@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useDonation } from "@/components/DonationContext";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrency } from "@/hooks/useCurrency";
 import { apiRequest } from "@/lib/queryClient";
 import CurrencySelector from "@/components/CurrencySelector";
 import CaseSelector from "@/components/CaseSelector";
@@ -191,15 +192,7 @@ export default function DonationWidget() {
     }
   };
 
-  // Format amount with proper currency formatting
-  const formatAmount = (amt: number) => {
-    return new Intl.NumberFormat('en-AU', {
-      style: 'currency',
-      currency: 'AUD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amt);
-  };
+  // Use the formatAmount function from the useCurrency hook
 
   return (
     <div className="container mx-auto px-4 relative -mt-24 sm:-mt-32 lg:-mt-40 mb-16 max-w-4xl">

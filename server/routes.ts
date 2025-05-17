@@ -211,15 +211,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get user's currency based on IP
+  // Get user's currency based on IP with support for URL parameter testing
   app.get("/api/currency-by-ip", async (req, res) => {
     try {
-      // Since Stripe account is registered in Australia, default to AUD
-      // For testing purposes, we'll hardcode this to AUD
-      res.json({ currency: 'AUD' });
+      // Check if there's a region parameter for testing
+      const testRegion = req.query.region as string;
+      
+      if (testRegion) {
+        // Map common regions to currencies for testing
+        const regionToCurrency: Record<string, string> = {
+          'us': 'USD',
+          'uk': 'GBP',
+          'eu': 'EUR',
+          'jp': 'JPY',
+          'in': 'INR',
+          'au': 'AUD',
+          'ca': 'CAD',
+          'ch': 'CHF',
+          'cn': 'CNY',
+          'hk': 'HKD',
+          'pk': 'PKR',
+          'sa': 'SAR',
+          'ae': 'AED',
+          'my': 'MYR',
+          'sg': 'SGD',
+          'za': 'ZAR'
+        };
+        
+        const currency = regionToCurrency[testRegion.toLowerCase()];
+        if (currency) {
+          return res.json({ currency, source: 'url-param' });
+        }
+      }
+      
+      // If no test parameter or invalid region, use IP-based detection
+      try {
+        // Use ipapi.co for geolocation (free tier, no API key needed)
+        const ipAddress = req.headers['x-forwarded-for'] || 
+                         req.socket.remoteAddress || 
+                         '8.8.8.8'; // Default to Google DNS if can't determine IP
+        
+        const response = await fetch(`https://ipapi.co/${ipAddress}/json/`);
+        const ipData = await response.json();
+        
+        if (ipData.currency && !ipData.error) {
+          return res.json({ currency: ipData.currency, source: 'ip-api' });
+        }
+      } catch (geoError) {
+        console.error('Geolocation API error:', geoError);
+        // Continue to fallback if geo API fails
+      }
+      
+      // Default to AUD if all else fails
+      res.json({ currency: 'AUD', source: 'default' });
     } catch (error) {
+      console.error('Currency detection error:', error);
       // Default to AUD if there's an error
-      res.json({ currency: 'AUD' });
+      res.json({ currency: 'AUD', source: 'error-fallback' });
     }
   });
   
