@@ -580,20 +580,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Donation not found" });
       }
       
+      // Check if donation needs to be updated
+      const wasAlreadyCompleted = donation.status === 'completed';
+      
       // Update donation status if not already completed
-      if (donation.status !== 'completed') {
+      if (!wasAlreadyCompleted) {
         await storage.updateDonationStatus(
           donation.id, 
           "completed", 
           paymentIntentId || donation.stripePaymentId
         );
         console.log(`[STRIPE-CLIENT] Updated donation ${donation.id} status to completed`);
-      }
-      
-      // If donation is for a specific case, update the case's amount collected
-      if (donation.caseId) {
-        await storage.updateCaseAmountCollected(donation.caseId, donation.amount);
-        console.log(`[STRIPE-CLIENT] Updated case ${donation.caseId} amount collected by ${donation.amount}`);
+        
+        // Only update case amount if we're the ones who marked it completed
+        // This prevents double-counting with the webhook handler
+        if (donation.caseId) {
+          await storage.updateCaseAmountCollected(donation.caseId, donation.amount);
+          console.log(`[STRIPE-CLIENT] Updated case ${donation.caseId} amount collected by ${donation.amount}`);
+        }
+      } else {
+        console.log(`[STRIPE-CLIENT] Donation ${donation.id} was already completed, skipping case update`);
       }
       
       res.status(200).json({ success: true, message: "Payment success processed" });
