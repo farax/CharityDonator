@@ -806,12 +806,13 @@ export default function Payment() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      
-      <main className="flex-grow py-12 bg-gray-50">
-        <div className="container mx-auto px-4 max-w-2xl">
-          <Card>
+    <TooltipProvider>
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        
+        <main className="flex-grow py-12 bg-gray-50">
+          <div className="container mx-auto px-4 max-w-2xl">
+            <Card>
             <CardHeader>
               <CardTitle className="text-2xl">Complete Your Donation</CardTitle>
               <CardDescription>
@@ -837,7 +838,6 @@ export default function Payment() {
                   
                   {/* Payment Fee Breakdown */}
                   {feeBreakdown && (
-                    <TooltipProvider>
                     <div className="mt-4 pt-4 border-t border-gray-200">
                       <h4 className="font-medium text-gray-800 mb-2">Payment Fee Breakdown</h4>
                       
@@ -992,6 +992,7 @@ export default function Payment() {
       </main>
       
       <Footer />
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
