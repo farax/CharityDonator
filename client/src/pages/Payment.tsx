@@ -841,35 +841,21 @@ export default function Payment() {
                     <div className="mt-4 pt-4 border-t border-gray-200">
                       <h4 className="font-medium text-gray-800 mb-2">Payment Fee Breakdown</h4>
                       
-                      {/* Fee description based on payment gateway */}
+                      {/* Fee description with tooltip */}
                       <div className="text-xs text-gray-500 mb-2">
-                        {paymentMethod === 'stripe' ? (
-                          <>
-                            <p className="font-medium mb-1">Stripe processing fees:</p>
-                            <ul className="list-disc list-inside pl-1 space-y-1">
-                              <li className={currency === 'AUD' ? "font-semibold" : ""}>
-                                Australian cards: 1.7% + A$0.30 {currency === 'AUD' && '(applies to you)'}
-                              </li>
-                              <li className={currency !== 'AUD' ? "font-semibold" : ""}>
-                                Non-Australian cards: 3.5% + A$0.30 {currency !== 'AUD' && '(applies to you)'}
-                              </li>
-                            </ul>
-                          </>
-                        ) : paymentMethod === 'paypal' ? (
-                          <>
-                            <p className="font-medium mb-1">PayPal processing fees:</p>
-                            <ul className="list-disc list-inside pl-1 space-y-1">
-                              <li className={currency === 'AUD' ? "font-semibold" : ""}>
-                                Australian cards: 2.6% + A$0.30 {currency === 'AUD' && '(applies to you)'}
-                              </li>
-                              <li className={currency !== 'AUD' ? "font-semibold" : ""}>
-                                Non-Australian cards: 3.6% + A$0.30 {currency !== 'AUD' && '(applies to you)'}
-                              </li>
-                            </ul>
-                          </>
-                        ) : (
-                          feeBreakdown.feeDescription
-                        )}
+                        <div className="flex items-center gap-1">
+                          <p className="font-medium">Payment processing fees: 3.5% + A$0.30</p>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p>This is an approximate charge the payment gateway (stripe) charges aafiyaa for managing payments. If stripe ends up charging less than the fee you provided, the excess amount would be used as Sadaqah</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
                       
                       <div className="text-sm text-gray-600 space-y-1">
@@ -886,7 +872,7 @@ export default function Payment() {
                                   <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
                                 </TooltipTrigger>
                                 <TooltipContent className="max-w-xs">
-                                  <p>If you do not cover the processing fee, Aafiyaa would fund it through other donation types.</p>
+                                  <p>This is an approximate charge the payment gateway (stripe) charges aafiyaa for managing payments. If stripe ends up charging less than the fee you provided, the excess amount would be used as Sadaqah</p>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
