@@ -89,6 +89,8 @@ export default function DonationWidget() {
 
     // We don't track every keystroke to avoid too many events
   };
+  
+  // We're using the formatAmount function declared below
 
   const handleDonateClick = async () => {
     try {
@@ -252,7 +254,7 @@ export default function DonationWidget() {
                         {selectedCase.title}
                       </div>
                       <div className="text-sm text-gray-600 mt-1">
-                        {formatAmount(selectedCase.amountRequired)} required
+                        {formatAmount(Math.max(0, selectedCase.amountRequired - selectedCase.amountCollected))} still needed
                       </div>
                     </div>
                   ) : (
