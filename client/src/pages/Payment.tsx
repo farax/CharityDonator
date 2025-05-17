@@ -841,8 +841,26 @@ export default function Payment() {
                       <h4 className="font-medium text-gray-800 mb-2">Payment Fee Breakdown</h4>
                       
                       {/* Fee description based on payment gateway */}
-                      <div className="text-xs text-gray-500 italic mb-2">
-                        {feeBreakdown.feeDescription}
+                      <div className="text-xs text-gray-500 mb-2">
+                        {paymentMethod === 'stripe' ? (
+                          <>
+                            <p className="font-medium mb-1">Stripe processing fees:</p>
+                            <ul className="list-disc list-inside pl-1 space-y-1">
+                              <li>Australian cards: 1.7% + A$0.30</li>
+                              <li>Non-Australian cards: 3.5% + A$0.30</li>
+                            </ul>
+                          </>
+                        ) : paymentMethod === 'paypal' ? (
+                          <>
+                            <p className="font-medium mb-1">PayPal processing fees:</p>
+                            <ul className="list-disc list-inside pl-1 space-y-1">
+                              <li>Australian cards: 2.6% + A$0.30</li>
+                              <li>Non-Australian cards: 3.6% + A$0.30</li>
+                            </ul>
+                          </>
+                        ) : (
+                          feeBreakdown.feeDescription
+                        )}
                       </div>
                       
                       <div className="text-sm text-gray-600 space-y-1">
