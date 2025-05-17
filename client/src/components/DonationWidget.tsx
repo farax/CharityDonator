@@ -191,9 +191,14 @@ export default function DonationWidget() {
     }
   };
 
-  // Format amount with currency symbol but no conversion (fixed amounts)
+  // Format amount with proper currency formatting
   const formatAmount = (amt: number) => {
-    return `${currencySymbol}${amt}`;
+    return new Intl.NumberFormat('en-AU', {
+      style: 'currency',
+      currency: 'AUD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amt);
   };
 
   return (
