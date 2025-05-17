@@ -15,6 +15,14 @@ export default function ActiveCases() {
   const queryClient = useQueryClient();
   const [location] = useLocation();
   
+  // Use the currency hook for proper currency formatting and conversion
+  const { 
+    currency, 
+    currencySymbol, 
+    formatAmount: formatCurrencyAmount,
+    convertAmount
+  } = useCurrency();
+  
   // Check if we returned from a payment page (potential donation complete)
   useEffect(() => {
     // If navigating to this page from another page, refresh the case data
@@ -51,14 +59,12 @@ export default function ActiveCases() {
     return Math.min(percentage, 100); // Cap at 100%
   };
 
-  // Format currency
+  // Format and convert currency
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-AU', {
-      style: 'currency',
-      currency: 'AUD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+    // First convert from AUD to current currency
+    const convertedAmount = convertAmount(amount);
+    // Then format with proper currency symbol
+    return formatCurrencyAmount(convertedAmount);
   };
 
   if (isLoading) {
