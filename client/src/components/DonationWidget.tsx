@@ -36,6 +36,9 @@ export default function DonationWidget() {
     showCaseSelector,
     setShowCaseSelector,
   } = useDonation();
+  
+  // Use the enhanced currency formatting from the useCurrency hook
+  const { formatAmount } = useCurrency();
 
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -252,7 +255,7 @@ export default function DonationWidget() {
                         {selectedCase.title}
                       </div>
                       <div className="text-sm text-gray-600 mt-1">
-                        {formatAmount(Math.max(0, selectedCase.amountRequired - selectedCase.amountCollected))} still needed
+                        {formatAmount(Math.max(0, selectedCase.amountRequired - selectedCase.amountCollected), true)} still needed
                       </div>
                     </div>
                   ) : (
@@ -458,7 +461,7 @@ export default function DonationWidget() {
                     font-semibold py-3 px-4 rounded-md border transition-all duration-200`}
                   onClick={() => handleAmountClick(10)}
                 >
-                  {formatAmount(10)}
+                  {formatAmount(10, true)}
                 </button>
                 <button
                   className={`${
@@ -469,7 +472,7 @@ export default function DonationWidget() {
                     font-semibold py-3 px-4 rounded-md border transition-all duration-200`}
                   onClick={() => handleAmountClick(50)}
                 >
-                  {formatAmount(50)}
+                  {formatAmount(50, true)}
                 </button>
                 <button
                   className={`${
@@ -480,7 +483,7 @@ export default function DonationWidget() {
                     font-semibold py-3 px-4 rounded-md border transition-all duration-200`}
                   onClick={() => handleAmountClick(100)}
                 >
-                  {formatAmount(100)}
+                  {formatAmount(100, true)}
                 </button>
                 <button
                   className={`${
