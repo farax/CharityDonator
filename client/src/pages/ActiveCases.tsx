@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useDonation } from '@/components/DonationContext';
+import { useCurrency } from '@/hooks/useCurrency';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 

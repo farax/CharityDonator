@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useDonation } from '@/components/DonationContext';
-import { useQuery } from '@tanstack/react-query';
+import { useCurrency } from '@/hooks/useCurrency';
 import { 
   Select,
   SelectContent,
@@ -10,7 +10,8 @@ import {
 } from '@/components/ui/select';
 import { trackEvent } from '@/lib/analytics';
 
-const currencySymbols: Record<string, string> = {
+// Map of currency codes to their symbols
+export const currencySymbols: Record<string, string> = {
   USD: '$',
   EUR: '€',
   GBP: '£',
@@ -29,7 +30,28 @@ const currencySymbols: Record<string, string> = {
   ZAR: 'R',
 };
 
+// Map of currency codes to their regions for URL parameters
+export const currencyRegions: Record<string, string> = {
+  USD: 'us',
+  EUR: 'eu',
+  GBP: 'uk',
+  JPY: 'jp',
+  CAD: 'ca',
+  AUD: 'au',
+  CHF: 'ch',
+  CNY: 'cn',
+  HKD: 'hk',
+  INR: 'in',
+  PKR: 'pk',
+  SAR: 'sa',
+  AED: 'ae',
+  MYR: 'my',
+  SGD: 'sg',
+  ZAR: 'za'
+};
+
 export default function CurrencySelector() {
+  // Get donation context values and setters
   const { 
     currency, 
     setCurrency, 
@@ -37,63 +59,46 @@ export default function CurrencySelector() {
     setExchangeRate,
     availableCurrencies
   } = useDonation();
-
-  // Define types for API responses
-  interface ExchangeRateData {
-    rates: Record<string, number>;
-    base: string;
-  }
   
-  interface LocationCurrencyData {
-    currency: string;
-  }
-
-  // Fetch exchange rates from API
-  const { data: exchangeRates } = useQuery<ExchangeRateData>({
-    queryKey: ['/api/exchange-rates'],
-    staleTime: 60 * 60 * 1000, // 1 hour
-  });
-
-  // Fetch user's default currency based on IP
-  const { data: locationCurrency } = useQuery<LocationCurrencyData>({
-    queryKey: ['/api/currency-by-ip'],
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours
-  });
-
-  // Set default currency based on user's location
+  // Get geo-detected currency
+  const { 
+    currency: detectedCurrency, 
+    currencySymbol: detectedSymbol,
+    exchangeRate: detectedRate,
+    currencyData
+  } = useCurrency();
+  
+  // Synchronize detected currency with donation context
   useEffect(() => {
-    if (locationCurrency?.currency) {
-      setCurrency(locationCurrency.currency);
-      setCurrencySymbol(currencySymbols[locationCurrency.currency] || locationCurrency.currency);
+    if (detectedCurrency && currencyData?.source) {
+      console.log(`Setting currency from ${currencyData.source}: ${detectedCurrency} (${detectedSymbol})`);
+                  
+      setCurrency(detectedCurrency);
+      setCurrencySymbol(detectedSymbol);
+      setExchangeRate(detectedRate);
     }
-  }, [locationCurrency, setCurrency, setCurrencySymbol]);
+  }, [detectedCurrency, detectedSymbol, detectedRate, currencyData, setCurrency, setCurrencySymbol, setExchangeRate]);
 
-  // Update exchange rate when currency changes
-  useEffect(() => {
-    if (exchangeRates?.rates && currency !== 'USD') {
-      setExchangeRate(exchangeRates.rates[currency] || 1);
-    } else {
-      setExchangeRate(1);
-    }
-  }, [exchangeRates, currency, setExchangeRate]);
-
+  // Handle manual currency selection from dropdown
   const handleCurrencyChange = (value: string) => {
-    const previousCurrency = currency;
-    
-    // Track currency change
+    // Track the change
     trackEvent({
       category: 'Donation',
       action: 'CurrencyChange',
       label: value,
       attributes: {
-        previousCurrency,
-        newCurrency: value,
-        exchangeRate: exchangeRates?.rates?.[value] || 1
+        previousCurrency: currency,
+        newCurrency: value
       }
     });
     
-    setCurrency(value);
-    setCurrencySymbol(currencySymbols[value] || value);
+    // Update URL parameter to trigger the currency detection hook
+    const region = currencyRegions[value] || value.toLowerCase();
+    const url = new URL(window.location.href);
+    url.searchParams.set('region', region);
+    window.history.replaceState({}, '', url.toString());
+    
+    // The currency will be updated via the useCurrency hook and URL parameter detection
   };
 
   return (
