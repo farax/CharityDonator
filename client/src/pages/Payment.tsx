@@ -844,9 +844,12 @@ export default function Payment() {
                       <div className="text-xs text-gray-500 mb-2">
                         <div className="flex items-center gap-1">
                           <p className="font-medium">Payment processing fees: 3.5% + A$0.30</p>
-                          <span title="This is an approximate charge the payment gateway (stripe) charges aafiyaa for managing payments. If stripe ends up charging less than the fee you provided, the excess amount would be used as Sadaqah">
+                          <div className="relative group">
                             <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
-                          </span>
+                            <div className="hidden group-hover:block absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 bg-gray-800 text-white text-xs rounded shadow-lg w-60 z-50">
+                              This is an approximate charge the payment gateway (stripe) charges aafiyaa for managing payments. If stripe ends up charging less than the fee you provided, the excess amount would be used as Sadaqah
+                            </div>
+                          </div>
                         </div>
                       </div>
                       
@@ -858,9 +861,12 @@ export default function Payment() {
                         <div className="flex justify-between">
                           <span className="flex items-center gap-1">
                             Processing fee:
-                            <span title="This is an approximate charge the payment gateway (stripe) charges aafiyaa for managing payments. If stripe ends up charging less than the fee you provided, the excess amount would be used as Sadaqah">
+                            <div className="relative group">
                               <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
-                            </span>
+                              <div className="hidden group-hover:block absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 bg-gray-800 text-white text-xs rounded shadow-lg w-60 z-50">
+                                This is an approximate charge the payment gateway (stripe) charges aafiyaa for managing payments. If stripe ends up charging less than the fee you provided, the excess amount would be used as Sadaqah
+                              </div>
+                            </div>
                           </span>
                           <span className={coverFees ? "font-medium" : "text-red-500 font-medium"}>
                             {donationDetails.currency} {feeBreakdown.processingFee.toFixed(2)}
