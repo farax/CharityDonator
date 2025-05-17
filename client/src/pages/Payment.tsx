@@ -845,16 +845,14 @@ export default function Payment() {
                       <div className="text-xs text-gray-500 mb-2">
                         <div className="flex items-center gap-1">
                           <p className="font-medium">Payment processing fees: 3.5% + A$0.30</p>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-xs">
-                                <p>This is an approximate charge the payment gateway (stripe) charges aafiyaa for managing payments. If stripe ends up charging less than the fee you provided, the excess amount would be used as Sadaqah</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p>This is an approximate charge the payment gateway (stripe) charges aafiyaa for managing payments. If stripe ends up charging less than the fee you provided, the excess amount would be used as Sadaqah</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </div>
                       
@@ -866,16 +864,14 @@ export default function Payment() {
                         <div className="flex justify-between">
                           <span className="flex items-center gap-1">
                             Processing fee:
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
-                                </TooltipTrigger>
-                                <TooltipContent className="max-w-xs">
-                                  <p>This is an approximate charge the payment gateway (stripe) charges aafiyaa for managing payments. If stripe ends up charging less than the fee you provided, the excess amount would be used as Sadaqah</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p>This is an approximate charge the payment gateway (stripe) charges aafiyaa for managing payments. If stripe ends up charging less than the fee you provided, the excess amount would be used as Sadaqah</p>
+                              </TooltipContent>
+                            </Tooltip>
                           </span>
                           <span className={coverFees ? "font-medium" : "text-red-500 font-medium"}>
                             {donationDetails.currency} {feeBreakdown.processingFee.toFixed(2)}
