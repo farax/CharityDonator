@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
+import { donationPresets, getPresetsForCurrency } from '@/lib/donationPresets';
 
 interface ExchangeRates {
   rates: Record<string, number>;
