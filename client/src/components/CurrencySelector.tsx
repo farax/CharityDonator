@@ -105,7 +105,9 @@ export default function CurrencySelector() {
     <div className="w-full max-w-[150px]">
       <Select value={currency} onValueChange={handleCurrencyChange}>
         <SelectTrigger>
-          <SelectValue placeholder="Currency" />
+          <SelectValue>
+            {currencySymbols[currency] || currency} {currency}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {availableCurrencies.map((curr) => (
