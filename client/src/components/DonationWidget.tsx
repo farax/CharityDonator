@@ -37,8 +37,8 @@ export default function DonationWidget() {
     setShowCaseSelector,
   } = useDonation();
   
-  // Use the enhanced currency formatting from the useCurrency hook
-  const { formatAmount } = useCurrency();
+  // Use the enhanced currency and preset amount system
+  const { formatAmount, getPresetAmount } = useCurrency();
 
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -454,36 +454,36 @@ export default function DonationWidget() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button
                   className={`${
-                    !isCustomAmount && amount === 10
+                    !isCustomAmount && amount === getPresetAmount('tier1')
                       ? "bg-primary text-white border-primary-600 shadow-md"
                       : "bg-blue-50 hover:bg-blue-100 border-blue-100 text-primary"
                   } 
                     font-semibold py-3 px-4 rounded-md border transition-all duration-200`}
-                  onClick={() => handleAmountClick(10)}
+                  onClick={() => handleAmountClick(getPresetAmount('tier1'))}
                 >
-                  {formatAmount(10, true)}
+                  {formatAmount(getPresetAmount('tier1'))}
                 </button>
                 <button
                   className={`${
-                    !isCustomAmount && amount === 50
+                    !isCustomAmount && amount === getPresetAmount('tier2')
                       ? "bg-primary text-white border-primary-600 shadow-md"
                       : "bg-blue-50 hover:bg-blue-100 border-blue-100 text-primary"
                   } 
                     font-semibold py-3 px-4 rounded-md border transition-all duration-200`}
-                  onClick={() => handleAmountClick(50)}
+                  onClick={() => handleAmountClick(getPresetAmount('tier2'))}
                 >
-                  {formatAmount(50, true)}
+                  {formatAmount(getPresetAmount('tier2'))}
                 </button>
                 <button
                   className={`${
-                    !isCustomAmount && amount === 100
+                    !isCustomAmount && amount === getPresetAmount('tier3')
                       ? "bg-primary text-white border-primary-600 shadow-md"
                       : "bg-blue-50 hover:bg-blue-100 border-blue-100 text-primary"
                   } 
                     font-semibold py-3 px-4 rounded-md border transition-all duration-200`}
-                  onClick={() => handleAmountClick(100)}
+                  onClick={() => handleAmountClick(getPresetAmount('tier3'))}
                 >
-                  {formatAmount(100, true)}
+                  {formatAmount(getPresetAmount('tier3'))}
                 </button>
                 <button
                   className={`${

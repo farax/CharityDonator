@@ -105,19 +105,25 @@ export function useCurrency() {
     }
   }, [exchangeRates, currency, baseCurrency]);
 
-  // Format amount with proper currency formatting and conversion
+  // Format amount with proper currency formatting (no conversion)
   const formatAmount = useCallback((amount: number, convert = true) => {
-    const convertedAmount = convert ? amount * exchangeRate : amount;
-    
+    // We're no longer doing mathematical conversion - just formatting
     return new Intl.NumberFormat(undefined, {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
-    }).format(convertedAmount);
-  }, [currency, exchangeRate]);
+    }).format(amount);
+  }, [currency]);
 
-  // Convert amount without formatting
+  // Get preset amount for the current currency based on tier
+  const getPresetAmount = useCallback((tier: 'tier1' | 'tier2' | 'tier3'): number => {
+    const presets = getPresetsForCurrency(currency);
+    return presets[tier];
+  }, [currency]);
+  
+  // This is maintained for backward compatibility but shouldn't be used
+  // with the new preset system
   const convertAmount = useCallback((amount: number): number => {
     return parseFloat((amount * exchangeRate).toFixed(2));
   }, [exchangeRate]);
@@ -128,6 +134,7 @@ export function useCurrency() {
     exchangeRate,
     convertAmount,
     formatAmount,
+    getPresetAmount,
     baseCurrency,
     currencyData
   };
