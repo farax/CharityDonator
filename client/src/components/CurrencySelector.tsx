@@ -92,13 +92,15 @@ export default function CurrencySelector() {
       }
     });
     
-    // Update URL parameter to trigger the currency detection hook
+    // Directly update the currency in the donation context
+    setCurrency(value);
+    setCurrencySymbol(currencySymbols[value] || value);
+    
+    // Also update URL parameter to maintain state between refreshes
     const region = currencyRegions[value] || value.toLowerCase();
     const url = new URL(window.location.href);
     url.searchParams.set('region', region);
     window.history.replaceState({}, '', url.toString());
-    
-    // The currency will be updated via the useCurrency hook and URL parameter detection
   };
 
   return (
