@@ -68,6 +68,20 @@ export default function Header() {
                   scrolled ? "h-[90px]" : "h-[105px]" // 50% bigger (from 70px to 105px)
                 )} 
               />
+              <div className="ml-3">
+                <h1 className={cn(
+                  "font-bold text-primary transition-all duration-300",
+                  scrolled ? "text-xl" : "text-2xl"
+                )}>
+                  AAFIYAA
+                </h1>
+                <p className={cn(
+                  "text-gray-600 transition-all duration-300",
+                  scrolled ? "text-sm" : "text-base"
+                )}>
+                  Charity Clinics
+                </p>
+              </div>
             </Link>
           </div>
 
