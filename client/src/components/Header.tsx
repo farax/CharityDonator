@@ -47,9 +47,7 @@ export default function Header() {
   return (
     <header className={cn(
       "bg-white shadow-md sticky top-0 z-50 transition-all duration-300",
-=
       scrolled ? "py-0" : "py-1" // Smaller padding for header
-
     )}>
       <div className="container mx-auto px-0 sm:px-1 lg:px-2"> {/* Reduced container padding */}
         <div className={cn(
@@ -57,9 +55,10 @@ export default function Header() {
 
           scrolled ? "py-1" : "py-2" // Smaller padding for content
 
+
         )}>
           <div className={cn(
-            "flex items-center transition-all duration-500 ease-in-out",
+            "col-span-7 md:col-span-8 flex items-center transition-all duration-500 ease-in-out", // Increased column span
             isLoaded ? "-ml-5" : "-ml-[50px] opacity-0", // More negative margin to position further left
             scrolled ? "scale-95" : "scale-100" // Subtle scaling effect on scroll
           )}>
@@ -90,7 +89,7 @@ export default function Header() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="col-span-5 md:col-span-4 flex justify-end md:hidden">
             <Button
               variant="ghost"
               size="icon"
@@ -106,9 +105,8 @@ export default function Header() {
           </div>
 
           {/* Desktop Navigation */}
-
           <nav className={cn(
-            "hidden md:flex space-x-8 transition-all duration-500 ease-in-out", // Original spacing and font size
+            "hidden col-span-5 md:col-span-4 md:flex justify-end space-x-4 transition-all duration-500 ease-in-out", // Adjusted column span and spacing
             isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-[-10px]" // Fade in from top
           )}>
             <Link href="/" className={cn(
