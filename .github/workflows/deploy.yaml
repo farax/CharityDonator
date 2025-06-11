@@ -6,8 +6,8 @@ on:
       - main
 
 env:
-  SMTP_USER: ${{ secrets.SMTP_USER }}
-  SMTP_PASS: ${{ secrets.SMTP_PASS }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
 
 jobs:
   deploy:
@@ -26,8 +26,4 @@ jobs:
 
       - name: Run deploy script on VPS
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
-            echo 'SMTP_USER=${{ secrets.SMTP_USER }}' >> /var/www/aafiyaa/.env &&
-            echo 'SMTP_PASS=${{ secrets.SMTP_PASS }}' >> /var/www/aafiyaa/.env &&
-            bash /var/www/aafiyaa/scripts/deploy.sh
-          "
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "bash /var/www/aafiyaa/scripts/deploy.sh"
