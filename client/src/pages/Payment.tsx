@@ -714,6 +714,8 @@ export default function Payment() {
     calculateFees 
   } = useDonation();
   const [donationDetails, setDonationDetails] = useState<any>(null);
+  const [editableAmount, setEditableAmount] = useState<string>("");
+  const [isEditingAmount, setIsEditingAmount] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<{
     processingFee: number;
     totalWithFees: number;
@@ -737,6 +739,7 @@ export default function Payment() {
     
     const donation = JSON.parse(donationData);
     setDonationDetails(donation);
+    setEditableAmount(donation.amount.toString());
     
     // Only create a payment intent if using Stripe
     if (paymentMethod === 'stripe') {
@@ -799,6 +802,68 @@ export default function Payment() {
     }
   }, [donationDetails, paymentMethod, coverFees, calculateFees]);
 
+  // Handle amount update
+  const handleAmountUpdate = async () => {
+    const newAmount = parseFloat(editableAmount);
+    
+    if (!newAmount || newAmount <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid donation amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update donation details
+    const updatedDonation = { ...donationDetails, amount: newAmount };
+    setDonationDetails(updatedDonation);
+    
+    // Update session storage
+    sessionStorage.setItem('currentDonation', JSON.stringify(updatedDonation));
+    
+    // Update the donation in the backend
+    try {
+      await apiRequest("POST", "/api/update-donation-amount", {
+        donationId: donationDetails.id,
+        amount: newAmount
+      });
+    } catch (error) {
+      console.error("Failed to update donation amount:", error);
+    }
+    
+    // Recreate payment intent with new amount if using Stripe
+    if (paymentMethod === 'stripe') {
+      const fees = calculateFees(newAmount, paymentMethod);
+      const finalAmount = coverFees ? fees.totalWithFees : newAmount;
+      
+      try {
+        const response = await apiRequest("POST", "/api/create-payment-intent", { 
+          amount: finalAmount,
+          currency: donationDetails.currency || currency,
+          donationId: donationDetails.id,
+          coverFees: coverFees
+        });
+        const data = await response.json();
+        setClientSecret(data.clientSecret);
+      } catch (error) {
+        toast({
+          title: "Payment update failed",
+          description: "There was an error updating the payment amount",
+          variant: "destructive",
+        });
+      }
+    }
+    
+    setIsEditingAmount(false);
+    
+    toast({
+      title: "Amount updated",
+      description: `Donation amount updated to ${donationDetails.currency} ${newAmount.toFixed(2)}`,
+      variant: "success"
+    });
+  };
+
   // Format frequency for display
   const formatFrequency = (frequency: string) => {
     if (frequency === 'one-off') return 'One-time';
@@ -825,7 +890,56 @@ export default function Payment() {
                   <h3 className="font-medium text-gray-800 mb-2">Donation Summary</h3>
                   <div className="text-sm text-gray-600 space-y-1">
                     <p>Type: <span className="font-medium">{donationDetails.type.charAt(0).toUpperCase() + donationDetails.type.slice(1)}</span></p>
-                    <p>Amount: <span className="font-medium">{donationDetails.currency} {donationDetails.amount}</span></p>
+                    <div className="flex items-center justify-between">
+                      <span>Amount:</span>
+                      {isEditingAmount ? (
+                        <div className="flex items-center gap-2">
+                          <div className="flex">
+                            <span className="bg-gray-100 flex items-center px-2 rounded-l-md border border-r-0 border-gray-300 text-sm">
+                              {donationDetails.currency}
+                            </span>
+                            <input
+                              type="number"
+                              className="w-20 p-1 border border-gray-300 rounded-r-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                              value={editableAmount}
+                              onChange={(e) => setEditableAmount(e.target.value)}
+                              min="0.01"
+                              step="0.01"
+                            />
+                          </div>
+                          <Button 
+                            size="sm" 
+                            onClick={handleAmountUpdate}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Save
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              setIsEditingAmount(false);
+                              setEditableAmount(donationDetails.amount.toString());
+                            }}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{donationDetails.currency} {donationDetails.amount}</span>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setIsEditingAmount(true)}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Edit
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                     <p>Frequency: <span className="font-medium">{formatFrequency(donationDetails.frequency)}</span></p>
                     {donationDetails.destinationProject && (
                       <p>Destination: <span className="font-medium">{donationDetails.destinationProject}</span></p>

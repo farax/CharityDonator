@@ -42,6 +42,7 @@ export interface IStorage {
     nextPaymentDate?: Date | null
   ): Promise<Donation | undefined>;
   updateDonationDonor(id: number, name: string, email: string): Promise<Donation | undefined>;
+  updateDonationAmount(id: number, amount: number): Promise<Donation | undefined>;
   getDonations(): Promise<Donation[]>;
   getDonationsByUserId(userId: number): Promise<Donation[]>;
   getActiveSubscriptions(): Promise<Donation[]>;
