@@ -3,7 +3,7 @@ import { useDonation } from '@/components/DonationContext';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { CreditCard } from 'lucide-react';
-import { SiPaypal } from 'react-icons/si';
+
 import { trackEvent } from '@/lib/analytics';
 
 type PaymentMethodType = 'stripe' | 'paypal';
@@ -27,14 +27,8 @@ export default function PaymentMethodSelector() {
       icon: <CreditCard className="h-6 w-6" />,
       description: 'Pay with Credit or Debit Card (includes Apple Pay and Google Pay when available)',
       available: true,
-    },
-    {
-      id: 'paypal',
-      name: 'PayPal',
-      icon: <SiPaypal className="h-6 w-6 text-blue-700" />,
-      description: 'Pay with PayPal Balance or Account (temporarily unavailable)',
-      available: false, // Temporarily disabled while organization account is under review
     }
+    // PayPal payment option removed
   ];
 
   const handlePaymentMethodChange = (value: string) => {
