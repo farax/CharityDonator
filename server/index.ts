@@ -15,17 +15,21 @@ console.log(`🚀 Starting server in ${config.NODE_ENV} mode`);
 // Validate configuration on startup
 validateConfig();
 
-// Run database migrations if PostgreSQL is available
+// Run database migrations if PostgreSQL available
 if (isDatabaseAvailable()) {
-  runMigrations().then(success => {
-    if (success) {
-      console.log('Database initialized successfully');
-    } else {
-      console.warn('Database initialization failed, continuing with in-memory storage');
-    }
-  }).catch(error => {
-    console.error('Error during database initialization:', error);
-  });
+  runMigrations()
+    .then((success) => {
+      if (success) {
+        console.log("Database initialized successfully");
+      } else {
+        console.warn(
+          "Database initialization failed, continuing with in-memory storage"
+        );
+      }
+    })
+    .catch((error) => {
+      console.error("Error during database initialization:", error);
+    });
 }
 
 const app = express();
@@ -33,18 +37,20 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Session middleware
-app.use(session({
-  secret: config.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true, // Changed to true to ensure session is always saved
-  cookie: { 
-    secure: false, // Always false to work in the webview regardless of environment
-    httpOnly: true,
-    sameSite: 'lax', // Less restrictive SameSite setting
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  },
-  store: storage.sessionStore
-}));
+app.use(
+  session({
+    secret: config.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true, // Changed to true to ensure session is always saved
+    cookie: {
+      secure: false, // Always false to work in the webview regardless of environment
+      httpOnly: true,
+      sameSite: "lax", // Less restrictive SameSite setting
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+    store: storage.sessionStore,
+  })
+);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -99,11 +105,14 @@ app.use((req, res, next) => {
   // Get port from config, defaulting to 5000
   // this serves both the API and the client.
   const port = config.PORT;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  server.listen(
+    {
+      port,
+      host: "0.0.0.0",
+      reusePort: true,
+    },
+    () => {
+      log(`serving on port ${port}`);
+    }
+  );
 })();

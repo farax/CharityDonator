@@ -11,7 +11,7 @@ export default function Header() {
   const [isHome, setIsHome] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Check if we're on the home page
+  // Check if we are on the home page
   const [isOnHomePage] = useRoute("/");
 
   // Effect to track scroll position
@@ -45,6 +45,7 @@ export default function Header() {
 
   return (
 
+
     <header className={cn(
       "bg-white shadow-md sticky top-0 z-50 transition-all duration-300",
       scrolled ? "py-0" : "py-1" // Smaller padding for header
@@ -59,12 +60,14 @@ export default function Header() {
             isLoaded ? "-ml-5" : "-ml-[50px] opacity-0", // More negative margin to position further left
             scrolled ? "scale-95" : "scale-100" // Subtle scaling effect on scroll
           )}>
+
             <Link href="/" className="flex items-center">
               <img
                 src={aafiyaaLogo}
                 alt="Aafiyaa Charity Clinics Logo"
                 className={cn(
                   "transition-all duration-300 transform",
+
 
                   scrolled ? "h-[90px]" : "h-[105px]" // 50% bigger (from 70px to 105px)
                 )} 
@@ -81,6 +84,7 @@ export default function Header() {
                   "text-gray-600 transition-all duration-300",
                   scrolled ? "text-sm" : "text-base"
                 )}>
+
                   Charity Clinics
                 </p>
               </div>
@@ -88,7 +92,7 @@ export default function Header() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="col-span-5 md:col-span-4 flex justify-end md:hidden">
             <Button
               variant="ghost"
               size="icon"
@@ -106,6 +110,7 @@ export default function Header() {
           {/* Desktop Navigation */}
 
 
+
           <nav className={cn(
             "hidden md:flex space-x-8 transition-all duration-500 ease-in-out", // Original spacing and font size
             isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-[-10px]" // Fade in from top
@@ -117,6 +122,7 @@ export default function Header() {
                 "after:content-[''] after:block after:w-full after:h-0.5 after:bg-primary after:absolute after:-bottom-1 after:scale-x-100 after:transition-transform": isOnHomePage
               }
             )}>
+
 
               Home
             </Link>
@@ -139,14 +145,15 @@ export default function Header() {
               Get Involved
             </Link>
 
+
             <Link href="/contact" className="font-medium text-gray-600 hover:text-primary transition-colors duration-300 relative hover:after:scale-x-100 after:content-[''] after:block after:w-full after:h-0.5 after:bg-primary after:absolute after:-bottom-1 after:scale-x-0 after:transition-transform">
               Contact
+
 
             </Link>
             {/* Admin link removed from navigation, accessible directly via URL */}
           </nav>
         </div>
-
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden pb-4">

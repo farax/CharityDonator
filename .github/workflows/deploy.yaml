@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: Production
 
     steps:
       - name: Checkout code
@@ -19,6 +20,37 @@ jobs:
           echo "${{ secrets.VPS_DEPLOY_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Write .env file to VPS
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "cat <<EOF > /var/www/aafiyaa/.env
+          NODE_ENV=production
+          PORT=3000
+          SESSION_SECRET=${{ secrets.SESSION_SECRET }}
+          STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+          VITE_STRIPE_PUBLIC_KEY=${{ vars.VITE_STRIPE_PUBLIC_KEY }}
+          STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          PAYPAL_CLIENT_ID=${{ secrets.PAYPAL_CLIENT_ID }}
+          PAYPAL_SECRET_KEY=${{ secrets.PAYPAL_SECRET_KEY }}
+          VITE_PAYPAL_CLIENT_ID=${{ vars.VITE_PAYPAL_CLIENT_ID }}
+          SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}
+          SMTP_HOST=smtp.gmail.com
+          SMTP_PORT=587
+          SMTP_USER=${{ secrets.SMTP_USER }}
+          SMTP_PASS=${{ secrets.SMTP_PASS }}
+          EMAIL_FROM=${{ vars.EMAIL_FROM }}
+          EMAIL_TO=${{ vars.EMAIL_TO }}
+          NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY }}
+          VITE_NEW_RELIC_ACCOUNT_ID=${{ vars.VITE_NEW_RELIC_ACCOUNT_ID }}
+          VITE_NEW_RELIC_APPLICATION_ID=${{ vars.VITE_NEW_RELIC_APPLICATION_ID }}
+          VITE_NEW_RELIC_BROWSER_LICENSE_KEY=${{ vars.VITE_NEW_RELIC_BROWSER_LICENSE_KEY }}
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          PGUSER=${{ secrets.PGUSER }}
+          PGPASSWORD=${{ secrets.PGPASSWORD }}
+          PGDATABASE=${{ vars.PGDATABASE }}
+          PGHOST=${{ vars.PGHOST }}
+          PGPORT=${{ vars.PGPORT }}
+          EOF"
 
       - name: Run deploy script on VPS
         run: |
