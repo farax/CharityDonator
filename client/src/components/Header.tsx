@@ -44,6 +44,7 @@ export default function Header() {
   };
 
   return (
+<<<<<<< HEAD
     <header
       className={cn(
         "bg-white shadow-md sticky top-0 z-50 transition-all duration-300",
@@ -67,14 +68,35 @@ export default function Header() {
               scrolled ? "scale-95" : "scale-100" // Subtle scaling effect on scroll
             )}
           >
+=======
+    <header className={cn(
+      "bg-white shadow-md sticky top-0 z-50 transition-all duration-300",
+      scrolled ? "py-0" : "py-1" // Reduced padding to accommodate bigger logo
+    )}>
+      <div className="container mx-auto px-0 sm:px-1 lg:px-2"> {/* Reduced container padding */}
+        <div className={cn(
+          "flex justify-between items-center transition-all duration-300",
+          scrolled ? "py-1" : "py-2" // Reduced padding to accommodate bigger logo
+        )}>
+          <div className={cn(
+            "flex items-center transition-all duration-500 ease-in-out",
+            isLoaded ? "-ml-5" : "-ml-[50px] opacity-0", // More negative margin to position further left
+            scrolled ? "scale-95" : "scale-100" // Subtle scaling effect on scroll
+          )}>
+>>>>>>> 2d0c846 (Increase the size of the header logo and adjust spacing for better visuals)
             <Link href="/" className="flex items-center">
               <img
                 src={aafiyaaLogo}
                 alt="Aafiyaa Charity Clinics Logo"
                 className={cn(
                   "transition-all duration-300 transform",
+<<<<<<< HEAD
                   scrolled ? "h-[135px]" : "h-[158px]" // Additional 50% bigger (from 90/105px to 135/158px)
                 )}
+=======
+                  scrolled ? "h-[90px]" : "h-[105px]" // 50% bigger (from 70px to 105px)
+                )} 
+>>>>>>> 2d0c846 (Increase the size of the header logo and adjust spacing for better visuals)
               />
               <div className="ml-3">
                 <h1
