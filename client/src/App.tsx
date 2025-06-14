@@ -10,12 +10,7 @@ import ActiveCases from "@/pages/ActiveCases";
 import AboutUs from "@/pages/AboutUs";
 import ContactUs from "@/pages/ContactUs";
 import { DonationProvider } from "@/components/DonationContext";
-import { 
-  initAnalytics, 
-  trackPageView, 
-  trackTimeOnPage, 
-  initNewRelicBrowserAgent 
-} from "@/lib/analytics";
+import { initAnalytics, trackPageView, trackTimeOnPage } from "@/lib/analytics";
 
 // Analytics-aware router that tracks page views
 function Router() {
@@ -25,13 +20,13 @@ function Router() {
   useEffect(() => {
     // Track page view when location changes
     trackPageView(location);
-    
+
     // Track time spent on page when user navigates away
     const cleanup = trackTimeOnPage();
 
     // Scroll to top when location changes
     window.scrollTo(0, 0);
-    
+
     return cleanup;
   }, [location]);
 
