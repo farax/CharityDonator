@@ -945,7 +945,9 @@ export default function Payment() {
                   </>
                 )}
                 
-
+                {paymentMethod === 'paypal' && donationDetails && (
+                  <PayPalPayment donationDetails={donationDetails} />
+                )}
                 
                 {paymentMethod === 'apple_pay' && donationDetails && (
                   <ApplePayment donationDetails={donationDetails} />
