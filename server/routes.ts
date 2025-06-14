@@ -381,23 +381,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing or invalid required fields" });
       }
       
-      const donation = await storage.getDonation(donationId);
+      const updatedDonation = await storage.updateDonationAmount(donationId, amount);
       
-      if (!donation) {
+      if (!updatedDonation) {
         return res.status(404).json({ message: "Donation not found" });
       }
       
-      // Update the donation amount using the existing updateDonationStatus method
-      // We'll pass the current status to maintain it
-      const updatedDonation = await storage.updateDonationStatus(donationId, donation.status, donation.paymentId);
-      
-      if (updatedDonation) {
-        // Manually update the amount since updateDonationStatus doesn't handle amount changes
-        // We need to add a new method or modify the existing one
-        res.status(200).json({ success: true, donation: { ...updatedDonation, amount } });
-      } else {
-        res.status(500).json({ message: "Failed to update donation amount" });
-      }
+      res.status(200).json({ success: true, donation: updatedDonation });
     } catch (error) {
       res.status(500).json({ message: "Failed to update donation amount" });
     }

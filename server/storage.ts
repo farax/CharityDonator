@@ -385,6 +385,21 @@ export class MemStorage implements IStorage {
     
     return updatedDonation;
   }
+
+  async updateDonationAmount(id: number, amount: number): Promise<Donation | undefined> {
+    const donation = this.donations.get(id);
+    if (!donation) return undefined;
+    
+    const updatedDonation: Donation = {
+      ...donation,
+      amount
+    };
+    
+    // Update the donation in the map
+    this.donations.set(id, updatedDonation);
+    
+    return updatedDonation;
+  }
   
   // Endorsement methods
   async getEndorsements(): Promise<Endorsement[]> {
@@ -730,6 +745,18 @@ export class DatabaseStorage implements IStorage {
     const [updatedDonation] = await db
       .update(donations)
       .set({ name, email })
+      .where(eq(donations.id, id))
+      .returning();
+      
+    return updatedDonation;
+  }
+
+  async updateDonationAmount(id: number, amount: number): Promise<Donation | undefined> {
+    if (!db) return undefined;
+    
+    const [updatedDonation] = await db
+      .update(donations)
+      .set({ amount })
       .where(eq(donations.id, id))
       .returning();
       
