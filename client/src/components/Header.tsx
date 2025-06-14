@@ -102,7 +102,7 @@ export default function Header() {
             >
               Contact Us
             </Link>
-            <Link href="/donate">
+            <Link href="/payment">
               <Button className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 text-sm">
                 Donate Now
               </Button>
@@ -159,7 +159,7 @@ export default function Header() {
                 Contact Us
               </Link>
               <div className="px-4">
-                <Link href="/donate" onClick={() => setMobileMenuOpen(false)}>
+                <Link href="/payment" onClick={() => setMobileMenuOpen(false)}>
                   <Button className="bg-teal-600 hover:bg-teal-700 text-white w-full">
                     Donate Now
                   </Button>
