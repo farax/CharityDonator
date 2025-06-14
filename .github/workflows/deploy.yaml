@@ -52,6 +52,16 @@ jobs:
           PGPORT=${{ vars.PGPORT }}
           EOF"
 
+      - name: Write .env file to VPS (for frontend)
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "cat <<EOF > /var/www/aafiyaa/client/.env
+          VITE_STRIPE_PUBLIC_KEY=${{ vars.VITE_STRIPE_PUBLIC_KEY }}
+          VITE_PAYPAL_CLIENT_ID=${{ vars.VITE_PAYPAL_CLIENT_ID }}
+          VITE_NEW_RELIC_ACCOUNT_ID=${{ vars.VITE_NEW_RELIC_ACCOUNT_ID }}
+          VITE_NEW_RELIC_APPLICATION_ID=${{ vars.VITE_NEW_RELIC_APPLICATION_ID }}
+          VITE_NEW_RELIC_BROWSER_LICENSE_KEY=${{ vars.VITE_NEW_RELIC_BROWSER_LICENSE_KEY }}
+          EOF"
+
       - name: Run deploy script on VPS
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "bash /var/www/aafiyaa/scripts/deploy.sh"
