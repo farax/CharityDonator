@@ -211,15 +211,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get user's currency based on IP
+  // Get user's currency based on IP with support for URL parameter testing
   app.get("/api/currency-by-ip", async (req, res) => {
     try {
-      // Since Stripe account is registered in Australia, default to AUD
-      // For testing purposes, we'll hardcode this to AUD
-      res.json({ currency: 'AUD' });
+      // Check if there's a region parameter for testing
+      const testRegion = req.query.region as string;
+      
+      if (testRegion) {
+        // Map common regions to currencies for testing
+        const regionToCurrency: Record<string, string> = {
+          'us': 'USD',
+          'uk': 'GBP',
+          'eu': 'EUR',
+          'jp': 'JPY',
+          'in': 'INR',
+          'au': 'AUD',
+          'ca': 'CAD',
+          'ch': 'CHF',
+          'cn': 'CNY',
+          'hk': 'HKD',
+          'pk': 'PKR',
+          'sa': 'SAR',
+          'ae': 'AED',
+          'my': 'MYR',
+          'sg': 'SGD',
+          'za': 'ZAR'
+        };
+        
+        const currency = regionToCurrency[testRegion.toLowerCase()];
+        if (currency) {
+          return res.json({ currency, source: 'url-param' });
+        }
+      }
+      
+      // If no test parameter or invalid region, use IP-based detection
+      try {
+        // Use ipapi.co for geolocation (free tier, no API key needed)
+        const ipAddress = req.headers['x-forwarded-for'] || 
+                         req.socket.remoteAddress || 
+                         '8.8.8.8'; // Default to Google DNS if can't determine IP
+        
+        const response = await fetch(`https://ipapi.co/${ipAddress}/json/`);
+        const ipData = await response.json();
+        
+        if (ipData.currency && !ipData.error) {
+          return res.json({ currency: ipData.currency, source: 'ip-api' });
+        }
+      } catch (geoError) {
+        console.error('Geolocation API error:', geoError);
+        // Continue to fallback if geo API fails
+      }
+      
+      // Default to AUD if all else fails
+      res.json({ currency: 'AUD', source: 'default' });
     } catch (error) {
+      console.error('Currency detection error:', error);
       // Default to AUD if there's an error
-      res.json({ currency: 'AUD' });
+      res.json({ currency: 'AUD', source: 'error-fallback' });
     }
   });
   
@@ -324,7 +372,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // PayPal verification endpoint
+  // Update donation amount
+  app.post("/api/update-donation-amount", async (req, res) => {
+    try {
+      const { donationId, amount } = req.body;
+      
+      if (!donationId || !amount || amount <= 0) {
+        return res.status(400).json({ message: "Missing or invalid required fields" });
+      }
+      
+      const updatedDonation = await storage.updateDonationAmount(donationId, amount);
+      
+      if (!updatedDonation) {
+        return res.status(404).json({ message: "Donation not found" });
+      }
+      
+      res.status(200).json({ success: true, donation: updatedDonation });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update donation amount" });
+    }
+  });
+  
+  // PayPal verification endpoint (legacy)
   app.post("/api/paypal/verify-payment", async (req, res) => {
     try {
       const { orderId, donationId } = req.body;
@@ -401,6 +470,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // PayPal SDK integration - Create order endpoint
+  app.post("/api/paypal/create-order", async (req, res) => {
+    try {
+      const { amount, currency, donationId } = req.body;
+      
+      if (!amount || !currency) {
+        return res.status(400).json({ error: "Missing required parameters" });
+      }
+      
+      if (!config.PAYPAL.CLIENT_ID || !config.PAYPAL.SECRET_KEY) {
+        return res.status(500).json({ error: "PayPal configuration is missing" });
+      }
+      
+      console.log(`[PAYPAL] Creating order for ${currency} ${amount}`);
+      
+      try {
+        // Get access token
+        const accessToken = await getPayPalAccessToken();
+        
+        // Create order with PayPal
+        const orderResponse = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({
+            intent: 'CAPTURE',
+            purchase_units: [
+              {
+                amount: {
+                  currency_code: currency.toUpperCase(),
+                  value: amount.toString()
+                },
+                description: 'Donation to Aafiyaa Charity Clinics'
+              }
+            ],
+            application_context: {
+              brand_name: 'Aafiyaa Charity Clinics',
+              landing_page: 'BILLING',
+              shipping_preference: 'NO_SHIPPING',
+              user_action: 'PAY_NOW'
+            }
+          })
+        });
+        
+        if (!orderResponse.ok) {
+          const errorData = await orderResponse.json();
+          console.error('[PAYPAL] Error creating order:', errorData);
+          return res.status(500).json({ error: "Failed to create PayPal order" });
+        }
+        
+        const orderData = await orderResponse.json();
+        console.log('[PAYPAL] Order created:', orderData.id);
+        
+        // If donationId was provided, update the donation record with PayPal order ID
+        if (donationId) {
+          await storage.updateDonationStatus(donationId, 'pending', orderData.id);
+          console.log(`[PAYPAL] Updated donation ${donationId} with payment ID ${orderData.id}`);
+        }
+        
+        res.status(200).json(orderData);
+      } catch (error: any) {
+        console.error('[PAYPAL] Error in create-order endpoint:', error);
+        res.status(500).json({ error: `PayPal API error: ${error.message}` });
+      }
+    } catch (error: any) {
+      console.error('[PAYPAL] Error processing request:', error);
+      res.status(500).json({ error: `Server error: ${error.message}` });
+    }
+  });
+  
+  // PayPal SDK integration - Capture order endpoint
+  app.post("/api/paypal/capture-order/:orderId", async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      
+      if (!orderId) {
+        return res.status(400).json({ error: "Order ID is required" });
+      }
+      
+      if (!config.PAYPAL.CLIENT_ID || !config.PAYPAL.SECRET_KEY) {
+        return res.status(500).json({ error: "PayPal configuration is missing" });
+      }
+      
+      console.log(`[PAYPAL] Capturing order ${orderId}`);
+      
+      try {
+        // Get access token
+        const accessToken = await getPayPalAccessToken();
+        
+        // Capture the order
+        const captureResponse = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}/capture`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+        
+        if (!captureResponse.ok) {
+          const errorData = await captureResponse.json();
+          console.error('[PAYPAL] Error capturing order:', errorData);
+          return res.status(500).json({ error: "Failed to capture PayPal order" });
+        }
+        
+        const captureData = await captureResponse.json();
+        console.log('[PAYPAL] Order captured successfully:', captureData.id);
+        
+        // Find the donation associated with this order ID
+        const donations = await storage.getDonations();
+        const donation = donations.find(d => d.paymentId === orderId);
+        
+        if (donation) {
+          console.log(`[PAYPAL] Found donation ${donation.id} for order ${orderId}`);
+          
+          // Update donation status to completed
+          await storage.updateDonationStatus(donation.id, 'completed');
+          
+          // If donation has a caseId, update the case's amount collected
+          if (donation.caseId) {
+            await storage.updateCaseAmountCollected(donation.caseId, donation.amount);
+            console.log(`[PAYPAL] Updated case ${donation.caseId} amount collected by ${donation.amount}`);
+          }
+        } else {
+          console.log(`[PAYPAL] No donation found for order ${orderId}`);
+        }
+        
+        res.status(200).json(captureData);
+      } catch (error: any) {
+        console.error('[PAYPAL] Error in capture-order endpoint:', error);
+        res.status(500).json({ error: `PayPal API error: ${error.message}` });
+      }
+    } catch (error: any) {
+      console.error('[PAYPAL] Error processing request:', error);
+      res.status(500).json({ error: `Server error: ${error.message}` });
+    }
+  });
+  
   // Update donor information
   app.post("/api/update-donation-donor", async (req, res) => {
     try {
@@ -441,20 +649,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Donation not found" });
       }
       
+      // Check if donation needs to be updated
+      const wasAlreadyCompleted = donation.status === 'completed';
+      
       // Update donation status if not already completed
-      if (donation.status !== 'completed') {
+      if (!wasAlreadyCompleted) {
         await storage.updateDonationStatus(
           donation.id, 
           "completed", 
           paymentIntentId || donation.stripePaymentId
         );
         console.log(`[STRIPE-CLIENT] Updated donation ${donation.id} status to completed`);
-      }
-      
-      // If donation is for a specific case, update the case's amount collected
-      if (donation.caseId) {
-        await storage.updateCaseAmountCollected(donation.caseId, donation.amount);
-        console.log(`[STRIPE-CLIENT] Updated case ${donation.caseId} amount collected by ${donation.amount}`);
+        
+        // Only update case amount if we're the ones who marked it completed
+        // This prevents double-counting with the webhook handler
+        if (donation.caseId) {
+          await storage.updateCaseAmountCollected(donation.caseId, donation.amount);
+          console.log(`[STRIPE-CLIENT] Updated case ${donation.caseId} amount collected by ${donation.amount}`);
+        }
+      } else {
+        console.log(`[STRIPE-CLIENT] Donation ${donation.id} was already completed, skipping case update`);
       }
       
       res.status(200).json({ success: true, message: "Payment success processed" });
@@ -577,7 +791,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Convert amount to cents and determine billing interval
       const amountInCents = Math.round(amount * 100);
-      const billingInterval = frequency === 'weekly' ? 'week' : 'month';
+      
+      // Convert frequency to valid Stripe intervals - must be 'day', 'week', 'month' or 'year'
+      let interval: 'day' | 'week' | 'month' | 'year';
+      let intervalCount: number;
+      
+      if (frequency === 'weekly') {
+        interval = 'week';
+        intervalCount = 1;
+      } else if (frequency === 'monthly') {
+        interval = 'month';
+        intervalCount = 1;
+      } else if (frequency === 'quarterly') {
+        interval = 'month';
+        intervalCount = 3;
+      } else if (frequency === 'yearly') {
+        interval = 'year';
+        intervalCount = 1;
+      } else {
+        // Default to monthly if an unknown frequency is provided
+        interval = 'month';
+        intervalCount = 1;
+      }
+      
+      console.log(`Setting up subscription with interval: ${interval}, count: ${intervalCount}, frequency: ${frequency}`);
       
       // Step 1: Find or create customer
       let user = await storage.getUserByEmail(email);
@@ -628,11 +865,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Step 2: Create a price for this donation amount
+      // Log data for debugging
+      console.log('Creating price with the following data:');
+      console.log('- Amount in cents:', amountInCents);
+      console.log('- Currency:', currency.toLowerCase());
+      console.log('- Interval:', interval);
+      console.log('- Interval count:', intervalCount);
+      
+      // Note: We need to cast interval to any to avoid TypeScript error due to Stripe types
       const price = await stripe.prices.create({
         unit_amount: amountInCents,
         currency: currency.toLowerCase(),
         recurring: {
-          interval: billingInterval,
+          interval: interval as any,
+          interval_count: intervalCount,
         },
         product_data: {
           name: `${donation.type} Donation (${frequency}) - ${donation.destinationProject || 'Aafiyaa Charity Clinics'}`,
@@ -663,12 +909,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Created subscription ${subscription.id} for donation ${donationId}`);
       
       // Step 4: Update the donation with subscription details
+      let nextPaymentDate = null;
+      
+      // Safely extract the current_period_end timestamp (if it exists)
+      if (subscription && typeof subscription === 'object' && 'current_period_end' in subscription) {
+        const periodEnd = subscription.current_period_end;
+        if (periodEnd && typeof periodEnd === 'number') {
+          nextPaymentDate = new Date(periodEnd * 1000); // Convert UNIX timestamp to Date
+          console.log('Next payment date set to:', nextPaymentDate);
+        } else {
+          console.log('current_period_end is not a valid number:', periodEnd);
+        }
+      } else {
+        console.log('Subscription has no current_period_end property');
+      }
+      
       await storage.updateDonationSubscription(
         donation.id,
         'stripe',
         subscription.id,
         subscription.status,
-        new Date(subscription.current_period_end * 1000) // Convert UNIX timestamp to Date
+        nextPaymentDate
       );
       
       // Also link the user
@@ -753,10 +1014,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get client secret from the PaymentIntent if exists
       const clientSecret = paymentIntent?.client_secret;
       
+      // Safely prepare response data
+      let responseNextPaymentDate = null;
+      
+      // Use the same nextPaymentDate we calculated earlier
+      if (nextPaymentDate instanceof Date) {
+        responseNextPaymentDate = nextPaymentDate;
+      }
+      
       res.json({
         subscriptionId: subscription.id,
         status: subscription.status,
-        nextPaymentDate: new Date(Number(subscription.current_period_end) * 1000),
+        nextPaymentDate: responseNextPaymentDate,
         invoiceId: invoice.id,
         paymentIntentId: paymentIntent?.id,
         clientSecret: clientSecret
@@ -840,8 +1109,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/payment-history", isAdminAuthenticated, async (req, res) => {
     try {
       const donations = await storage.getDonations();
-      res.json(donations);
+      const allCases = await storage.getCases();
+      
+      // Filter out transactions with "processing" status and enhance with case names
+      const enhancedDonations = donations
+        .filter(donation => donation.status !== 'processing')
+        .map(donation => {
+          // Add case name if caseId exists
+          if (donation.caseId) {
+            const matchingCase = allCases.find(c => c.id === donation.caseId);
+            return {
+              ...donation,
+              caseName: matchingCase?.title || 'Unknown Case'
+            };
+          }
+          return donation;
+        });
+        
+      res.json(enhancedDonations);
     } catch (error) {
+      console.error('Failed to fetch payment history:', error);
       res.status(500).json({ message: "Failed to fetch payment history" });
     }
   });

@@ -8,15 +8,18 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, HelpCircle } from 'lucide-react';
+// Removed Tooltip import - using HTML title for tooltips
 import { useDonation } from '@/components/DonationContext';
 import PaymentMethodSelector from '@/components/PaymentMethodSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  PayPalScriptProvider, 
-  PayPalButtons,
-  FUNDING
-} from '@paypal/react-paypal-js';
+// PayPal SDK removed temporarily while organization account is under review
+// import { 
+//   PayPalScriptProvider, 
+//   PayPalButtons,
+//   FUNDING
+// } from '@paypal/react-paypal-js';
+import { SiPaypal } from 'react-icons/si';
 import { trackButtonClick, trackEvent, trackFormSubmission } from '@/lib/analytics';
 
 // No donor form schema needed since we'll use the payment provider's UI
@@ -237,7 +240,8 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         
         toast({
           title: "Payment Successful",
-          description: "Thank you for your donation!",
+          description: "Thank you for your generous donation!",
+          variant: "success",
         });
         
         // Redirect to homepage after successful payment
@@ -321,184 +325,35 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   );
 };
 
-// Component for PayPal payment
+// Component for PayPal payment (currently disabled)
 const PayPalPayment = ({ donationDetails }: { donationDetails: any }) => {
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
-  const [isLoading, setIsLoading] = useState(false);
-
-  // PayPal configuration options
-  const paypalOptions = {
-    clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID, // Use PayPal client ID from environment variables
-    currency: donationDetails.currency.toLowerCase()
-  };
   
-  // Warn if PayPal client ID is missing
-  if (!import.meta.env.VITE_PAYPAL_CLIENT_ID) {
-    console.warn('Missing required PayPal key: VITE_PAYPAL_CLIENT_ID');
-  }
-
-  // Define success handler for PayPal
-  const handlePayPalSuccess = (details: any) => {
-    // Check if this is a recurring payment or one-time
-    const isRecurring = donationDetails.frequency !== 'one-off';
-    
-    // Track payment success with PayPal
-    trackEvent({
-      category: 'Payment',
-      action: 'Success',
-      label: isRecurring ? 'PayPal Subscription' : 'PayPal',
-      value: donationDetails.amount,
-      attributes: {
-        paymentMethod: 'paypal',
-        donationId: donationDetails.id.toString(),
-        frequency: donationDetails.frequency,
-        paypalOrderId: details.id,
-        isRecurring
-      }
-    });
-    
-    // Update donation status in the database
-    apiRequest("POST", "/api/update-donation-status", {
-      donationId: donationDetails.id,
-      status: isRecurring ? "active-subscription" : "completed",
-      paymentMethod: "paypal",
-      paymentId: details.id,
-      subscriptionId: isRecurring ? details.subscriptionID : undefined
-    }).then(async () => {
-      // Also directly notify about payment success to update case amount if applicable
-      if (donationDetails.caseId) {
-        try {
-          await apiRequest("POST", "/api/stripe-payment-success", {
-            donationId: donationDetails.id,
-            paymentIntentId: details.id
-          });
-          console.log("Case amount updated via direct notification for PayPal payment", donationDetails.caseId);
-        } catch (error) {
-          console.error("Failed to update case amount:", error);
-          // Continue with success path even if case update fails
-        }
-      }
-      
-      toast({
-        title: isRecurring ? "Subscription Successful" : "Payment Successful",
-        description: isRecurring
-          ? `Thank you for your recurring donation via PayPal! You'll be charged ${donationDetails.currency} ${donationDetails.amount} ${donationDetails.frequency}.`
-          : "Thank you for your donation via PayPal!",
-      });
-      
-      // Redirect to homepage after successful payment
-      setTimeout(() => {
-        setLocation('/');
-      }, 2000);
-    });
-  };
-
-  // Handle errors
-  const handlePayPalError = (error: any) => {
-    // Track payment failure
-    trackEvent({
-      category: 'Payment',
-      action: 'Failed',
-      label: 'PayPal',
-      attributes: {
-        paymentMethod: 'paypal',
-        errorMessage: error?.message || 'Unknown PayPal error'
-      }
-    });
-    
-    toast({
-      title: "Payment Failed",
-      description: error?.message || "There was an issue processing your PayPal payment.",
-      variant: "destructive",
-    });
-  };
-
   return (
     <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mb-4">
-        <h3 className="font-medium text-blue-800 mb-2">PayPal Checkout</h3>
-        <p className="text-sm text-blue-600">
-          Securely donate using your PayPal account or credit/debit card via PayPal.
-        </p>
+      <div className="w-full">
+        <div className="p-8 border border-gray-200 rounded-lg bg-gray-50 text-center">
+          <SiPaypal className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">PayPal Payments Temporarily Unavailable</h3>
+          <p className="text-gray-500 mb-4">
+            Our PayPal integration is currently under review by PayPal. Please use credit card payment instead.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => {
+              const { setPaymentMethod } = useDonation();
+              setPaymentMethod('stripe');
+              toast({
+                title: "Payment method changed",
+                description: "Switched to credit card payment",
+                variant: "info"
+              });
+            }}
+          >
+            Switch to Credit Card
+          </Button>
+        </div>
       </div>
-      
-      <PayPalScriptProvider options={paypalOptions}>
-        <PayPalButtons
-          style={{ 
-            layout: "vertical",
-            color: "blue",
-            shape: "rect",
-            label: "donate"
-          }}
-          disabled={isLoading}
-          fundingSource={undefined}
-          createOrder={(data, actions) => {
-            // Check if this should be a recurring payment
-            const isRecurring = donationDetails.frequency !== 'one-off';
-            
-            if (!isRecurring) {
-              // For one-time payments, create a regular order
-              return actions.order.create({
-                intent: "CAPTURE",
-                purchase_units: [
-                  {
-                    amount: {
-                      value: donationDetails.amount.toString(),
-                      currency_code: donationDetails.currency.toUpperCase()
-                    },
-                    description: `${donationDetails.type} donation for Aafiyaa Charity Clinics`
-                  }
-                ],
-                application_context: {
-                  shipping_preference: "NO_SHIPPING"
-                }
-              });
-            } else {
-              // For recurring payments, we'd create a subscription
-              // Note: This is a simplified example as PayPal subscription requires a different approach
-              // In a production app, we would use PayPal Subscriptions API
-              
-              // For now, we'll use the regular order flow but indicate it's a subscription
-              return actions.order.create({
-                intent: "CAPTURE",
-                purchase_units: [
-                  {
-                    amount: {
-                      value: donationDetails.amount.toString(),
-                      currency_code: donationDetails.currency.toUpperCase()
-                    },
-                    description: `${donationDetails.type} ${donationDetails.frequency} donation for Aafiyaa Charity Clinics`
-                  }
-                ],
-                application_context: {
-                  shipping_preference: "NO_SHIPPING",
-                  user_action: "CONTINUE"
-                }
-              });
-            }
-          }}
-          onApprove={async (data, actions) => {
-            setIsLoading(true);
-            if (actions.order) {
-              return actions.order.capture().then((details) => {
-                handlePayPalSuccess(details);
-                setIsLoading(false);
-              });
-            }
-            setIsLoading(false);
-            return Promise.resolve();
-          }}
-          onError={handlePayPalError}
-          onCancel={() => {
-            toast({
-              title: "Payment Cancelled",
-              description: "Your PayPal payment was cancelled.",
-              variant: "default",
-            });
-          }}
-        />
-      </PayPalScriptProvider>
     </div>
   );
 };
@@ -592,6 +447,7 @@ const ApplePayment = ({ donationDetails }: { donationDetails: any }) => {
       toast({
         title: "Payment Successful",
         description: "Thank you for your donation via Apple Pay!",
+        variant: "success"
       });
       
       // Redirect to homepage after successful payment
@@ -762,6 +618,7 @@ const GooglePayment = ({ donationDetails }: { donationDetails: any }) => {
       toast({
         title: "Payment Successful",
         description: "Thank you for your donation via Google Pay!",
+        variant: "success"
       });
       
       // Redirect to homepage after successful payment
@@ -857,6 +714,8 @@ export default function Payment() {
     calculateFees 
   } = useDonation();
   const [donationDetails, setDonationDetails] = useState<any>(null);
+  const [editableAmount, setEditableAmount] = useState<string>("");
+  const [isEditingAmount, setIsEditingAmount] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<{
     processingFee: number;
     totalWithFees: number;
@@ -880,6 +739,7 @@ export default function Payment() {
     
     const donation = JSON.parse(donationData);
     setDonationDetails(donation);
+    setEditableAmount(donation.amount.toString());
     
     // Only create a payment intent if using Stripe
     if (paymentMethod === 'stripe') {
@@ -942,6 +802,68 @@ export default function Payment() {
     }
   }, [donationDetails, paymentMethod, coverFees, calculateFees]);
 
+  // Handle amount update
+  const handleAmountUpdate = async () => {
+    const newAmount = parseFloat(editableAmount);
+    
+    if (!newAmount || newAmount <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid donation amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update donation details
+    const updatedDonation = { ...donationDetails, amount: newAmount };
+    setDonationDetails(updatedDonation);
+    
+    // Update session storage
+    sessionStorage.setItem('currentDonation', JSON.stringify(updatedDonation));
+    
+    // Update the donation in the backend
+    try {
+      await apiRequest("POST", "/api/update-donation-amount", {
+        donationId: donationDetails.id,
+        amount: newAmount
+      });
+    } catch (error) {
+      console.error("Failed to update donation amount:", error);
+    }
+    
+    // Recreate payment intent with new amount if using Stripe
+    if (paymentMethod === 'stripe') {
+      const fees = calculateFees(newAmount, paymentMethod);
+      const finalAmount = coverFees ? fees.totalWithFees : newAmount;
+      
+      try {
+        const response = await apiRequest("POST", "/api/create-payment-intent", { 
+          amount: finalAmount,
+          currency: donationDetails.currency || currency,
+          donationId: donationDetails.id,
+          coverFees: coverFees
+        });
+        const data = await response.json();
+        setClientSecret(data.clientSecret);
+      } catch (error) {
+        toast({
+          title: "Payment update failed",
+          description: "There was an error updating the payment amount",
+          variant: "destructive",
+        });
+      }
+    }
+    
+    setIsEditingAmount(false);
+    
+    toast({
+      title: "Amount updated",
+      description: `Donation amount updated to ${donationDetails.currency} ${newAmount.toFixed(2)}`,
+      variant: "success"
+    });
+  };
+
   // Format frequency for display
   const formatFrequency = (frequency: string) => {
     if (frequency === 'one-off') return 'One-time';
@@ -949,12 +871,12 @@ export default function Payment() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      
-      <main className="flex-grow py-12 bg-gray-50">
-        <div className="container mx-auto px-4 max-w-2xl">
-          <Card>
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        
+        <main className="flex-grow py-12 bg-gray-50">
+          <div className="container mx-auto px-4 max-w-2xl">
+            <Card>
             <CardHeader>
               <CardTitle className="text-2xl">Complete Your Donation</CardTitle>
               <CardDescription>
@@ -968,7 +890,56 @@ export default function Payment() {
                   <h3 className="font-medium text-gray-800 mb-2">Donation Summary</h3>
                   <div className="text-sm text-gray-600 space-y-1">
                     <p>Type: <span className="font-medium">{donationDetails.type.charAt(0).toUpperCase() + donationDetails.type.slice(1)}</span></p>
-                    <p>Amount: <span className="font-medium">{donationDetails.currency} {donationDetails.amount}</span></p>
+                    <div className="flex items-center justify-between">
+                      <span>Amount:</span>
+                      {isEditingAmount ? (
+                        <div className="flex items-center gap-2">
+                          <div className="flex">
+                            <span className="bg-gray-100 flex items-center px-2 rounded-l-md border border-r-0 border-gray-300 text-sm">
+                              {donationDetails.currency}
+                            </span>
+                            <input
+                              type="number"
+                              className="w-20 p-1 border border-gray-300 rounded-r-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                              value={editableAmount}
+                              onChange={(e) => setEditableAmount(e.target.value)}
+                              min="0.01"
+                              step="0.01"
+                            />
+                          </div>
+                          <Button 
+                            size="sm" 
+                            onClick={handleAmountUpdate}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Save
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              setIsEditingAmount(false);
+                              setEditableAmount(donationDetails.amount.toString());
+                            }}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{donationDetails.currency} {donationDetails.amount}</span>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setIsEditingAmount(true)}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Edit
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                     <p>Frequency: <span className="font-medium">{formatFrequency(donationDetails.frequency)}</span></p>
                     {donationDetails.destinationProject && (
                       <p>Destination: <span className="font-medium">{donationDetails.destinationProject}</span></p>
@@ -983,9 +954,17 @@ export default function Payment() {
                     <div className="mt-4 pt-4 border-t border-gray-200">
                       <h4 className="font-medium text-gray-800 mb-2">Payment Fee Breakdown</h4>
                       
-                      {/* Fee description based on payment gateway */}
-                      <div className="text-xs text-gray-500 italic mb-2">
-                        {feeBreakdown.feeDescription}
+                      {/* Fee description with tooltip */}
+                      <div className="text-xs text-gray-500 mb-2">
+                        <div className="flex items-center gap-1">
+                          <p className="font-medium">Payment processing fees: 3.5% + A$0.30</p>
+                          <div className="relative group">
+                            <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                            <div className="hidden group-hover:block absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 bg-gray-800 text-white text-xs rounded shadow-lg w-60 z-50">
+                              This is an approximate charge the payment gateway (stripe) charges aafiyaa for managing payments. If stripe ends up charging less than the fee you provided, the excess amount would be used as Sadaqah
+                            </div>
+                          </div>
+                        </div>
                       </div>
                       
                       <div className="text-sm text-gray-600 space-y-1">
@@ -994,7 +973,15 @@ export default function Payment() {
                           <span className="font-medium">{donationDetails.currency} {donationDetails.amount.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Processing fee:</span>
+                          <span className="flex items-center gap-1">
+                            Processing fee:
+                            <div className="relative group">
+                              <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                              <div className="hidden group-hover:block absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 bg-gray-800 text-white text-xs rounded shadow-lg w-60 z-50">
+                                This is an approximate charge the payment gateway (stripe) charges aafiyaa for managing payments. If stripe ends up charging less than the fee you provided, the excess amount would be used as Sadaqah
+                              </div>
+                            </div>
+                          </span>
                           <span className={coverFees ? "font-medium" : "text-red-500 font-medium"}>
                             {donationDetails.currency} {feeBreakdown.processingFee.toFixed(2)}
                           </span>
@@ -1008,16 +995,7 @@ export default function Payment() {
                         </div>
                         <div className="flex justify-between text-green-600 font-medium">
                           <span>Charity receives:</span>
-                          {coverFees ? (
-                            <span>{donationDetails.currency} {donationDetails.amount.toFixed(2)}</span>
-                          ) : (
-                            <span className="flex flex-col items-end">
-                              <span>{donationDetails.currency} {donationDetails.amount.toFixed(2)}</span>
-                              <span className="text-xs text-red-500 font-normal">
-                                (minus {donationDetails.currency} {feeBreakdown.processingFee.toFixed(2)} fees)
-                              </span>
-                            </span>
-                          )}
+                          <span>{donationDetails.currency} {donationDetails.amount.toFixed(2)}</span>
                         </div>
                       </div>
                       
@@ -1068,9 +1046,7 @@ export default function Payment() {
                             }
                           }
                         },
-                        loader: 'auto',
-                        // Set payment method creation mode to manual as required by Stripe
-                        paymentMethodCreation: 'manual'
+                        loader: 'auto'
                         // Note: We'll rely on server-side configuration for payment method restriction
                       }}>
                         <CheckoutForm isSubscription={isSubscription} />
@@ -1107,6 +1083,6 @@ export default function Payment() {
       </main>
       
       <Footer />
-    </div>
+      </div>
   );
 }

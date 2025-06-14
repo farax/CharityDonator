@@ -44,165 +44,128 @@ export default function Header() {
   };
 
   return (
-    <header
-      className={cn(
-        "bg-white shadow-md sticky top-0 z-50 transition-all duration-300",
-        scrolled ? "py-0" : "py-1" // Smaller padding for header
-      )}
-    >
-      <div className="container mx-auto px-0 sm:px-1 lg:px-2">
-        {" "}
-        {/* Reduced container padding */}
-        <div
-          className={cn(
-            "flex justify-between items-center transition-all duration-300",
-
-            scrolled ? "py-1" : "py-2" // Smaller padding for content
-          )}
-        >
-          <div
-            className={cn(
-              "col-span-7 md:col-span-8 flex items-center transition-all duration-500 ease-in-out", // Increased column span
-              isLoaded ? "-ml-5" : "-ml-[50px] opacity-0", // More negative margin to position further left
-              scrolled ? "scale-95" : "scale-100" // Subtle scaling effect on scroll
-            )}
-          >
+    <header className={cn(
+      "bg-white shadow-md sticky top-0 z-50 transition-all duration-300",
+      scrolled ? "py-0" : "py-1" // Reduced padding to accommodate bigger logo
+    )}>
+      <div className="container mx-auto px-0 sm:px-1 lg:px-2"> {/* Reduced container padding */}
+        <div className={cn(
+          "flex justify-between items-center transition-all duration-300",
+          scrolled ? "py-1" : "py-2" // Reduced padding to accommodate bigger logo
+        )}>
+          <div className={cn(
+            "flex items-center transition-all duration-500 ease-in-out",
+            isLoaded ? "-ml-5" : "-ml-[50px] opacity-0", // More negative margin to position further left
+            scrolled ? "scale-95" : "scale-100" // Subtle scaling effect on scroll
+          )}>
             <Link href="/" className="flex items-center">
               <img
                 src={aafiyaaLogo}
                 alt="Aafiyaa Charity Clinics Logo"
                 className={cn(
                   "transition-all duration-300 transform",
-                  scrolled ? "h-[135px]" : "h-[158px]" // Additional 50% bigger (from 90/105px to 135/158px)
-                )}
+                  scrolled ? "h-[90px]" : "h-[105px]" // 50% bigger (from 70px to 105px)
+                )} 
               />
-              <div className="ml-3">
-                <h1
-                  className={cn(
-                    "font-bold text-primary transition-all duration-300",
-                    scrolled ? "text-xl" : "text-2xl"
-                  )}
-                >
-                  AAFIYAA
-                </h1>
-                <p
-                  className={cn(
-                    "text-gray-600 transition-all duration-300",
-                    scrolled ? "text-sm" : "text-base"
-                  )}
-                >
-                  Charity Clinics
-                </p>
-              </div>
             </Link>
           </div>
 
-          {/* Mobile menu button */}
-          <div className="col-span-5 md:col-span-4 flex justify-end md:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleMenu}
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </Button>
-          </div>
-
           {/* Desktop Navigation */}
-          <nav
-            className={cn(
-              "hidden col-span-5 md:col-span-4 md:flex justify-end space-x-4 transition-all duration-500 ease-in-out", // Adjusted column span and spacing
-              isLoaded
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-[-10px]" // Fade in from top
-            )}
-          >
+          <nav className="hidden md:flex items-center space-x-8">
             <Link
               href="/"
-              className={cn(
-                "font-medium hover:text-primary relative transition-all duration-300", // Original font size
-                isOnHomePage ? "text-primary" : "text-gray-800",
-                {
-                  "after:content-[''] after:block after:w-full after:h-0.5 after:bg-primary after:absolute after:-bottom-1 after:scale-x-100 after:transition-transform":
-                    isOnHomePage,
-                }
-              )}
+              className="text-gray-700 hover:text-teal-600 transition-colors text-sm font-medium"
             >
               Home
             </Link>
             <Link
               href="/about"
-              className="font-medium text-gray-600 hover:text-primary transition-colors duration-300 relative hover:after:scale-x-100 after:content-[''] after:block after:w-full after:h-0.5 after:bg-primary after:absolute after:-bottom-1 after:scale-x-0 after:transition-transform"
+              className="text-gray-700 hover:text-teal-600 transition-colors text-sm font-medium"
             >
               About Us
             </Link>
             <Link
               href="/active-cases"
-              className="font-medium text-gray-600 hover:text-primary transition-colors duration-300 relative hover:after:scale-x-100 after:content-[''] after:block after:w-full after:h-0.5 after:bg-primary after:absolute after:-bottom-1 after:scale-x-0 after:transition-transform"
+              className="text-gray-700 hover:text-teal-600 transition-colors text-sm font-medium"
             >
               Active Cases
             </Link>
             <Link
               href="/get-involved"
-              className="font-medium text-gray-600 hover:text-primary transition-colors duration-300 relative hover:after:scale-x-100 after:content-[''] after:block after:w-full after:h-0.5 after:bg-primary after:absolute after:-bottom-1 after:scale-x-0 after:transition-transform"
+              className="text-gray-700 hover:text-teal-600 transition-colors text-sm font-medium"
             >
               Get Involved
             </Link>
             <Link
               href="/contact"
-              className="font-medium text-gray-600 hover:text-primary transition-colors duration-300 relative hover:after:scale-x-100 after:content-[''] after:block after:w-full after:h-0.5 after:bg-primary after:absolute after:-bottom-1 after:scale-x-0 after:transition-transform"
+              className="text-gray-700 hover:text-teal-600 transition-colors text-sm font-medium"
             >
-              Contact
+              Contact Us
             </Link>
-            {/* Admin link removed from navigation, accessible directly via URL */}
+            <Link href="/payment">
+              <Button className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 text-sm">
+                Donate Now
+              </Button>
+            </Link>
           </nav>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={toggleMenu}
+            className="md:hidden p-2 text-gray-600 hover:text-teal-600 transition-colors"
+            aria-label="Toggle mobile menu"
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
+
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden pb-4">
-            <div className="flex flex-col space-y-3">
+          <div className="md:hidden bg-white border-t border-gray-200 py-4">
+            <nav className="flex flex-col space-y-4">
               <Link
                 href="/"
-                className="font-medium text-gray-800 hover:text-primary"
+                className="text-gray-700 hover:text-teal-600 transition-colors px-4 py-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Home
               </Link>
               <Link
                 href="/about"
-                className="font-medium text-gray-600 hover:text-primary"
+                className="text-gray-700 hover:text-teal-600 transition-colors px-4 py-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 About Us
               </Link>
               <Link
                 href="/active-cases"
-                className="font-medium text-gray-600 hover:text-primary"
+                className="text-gray-700 hover:text-teal-600 transition-colors px-4 py-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Active Cases
               </Link>
               <Link
                 href="/get-involved"
-                className="font-medium text-gray-600 hover:text-primary"
+                className="text-gray-700 hover:text-teal-600 transition-colors px-4 py-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Get Involved
               </Link>
               <Link
                 href="/contact"
-                className="font-medium text-gray-600 hover:text-primary"
+                className="text-gray-700 hover:text-teal-600 transition-colors px-4 py-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Contact
+                Contact Us
               </Link>
-              {/* Admin and Donate buttons removed from mobile menu */}
-            </div>
+              <div className="px-4">
+                <Link href="/payment" onClick={() => setMobileMenuOpen(false)}>
+                  <Button className="bg-teal-600 hover:bg-teal-700 text-white w-full">
+                    Donate Now
+                  </Button>
+                </Link>
+              </div>
+            </nav>
           </div>
         )}
       </div>

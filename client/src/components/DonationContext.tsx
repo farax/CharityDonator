@@ -47,7 +47,7 @@ const DonationContext = createContext<DonationContextType | undefined>(undefined
 
 export function DonationProvider({ children }: { children: React.ReactNode }) {
   const [type, setType] = useState<DonationType>('sadqah');
-  const [amount, setAmount] = useState<number>(10);
+  const [amount, setAmount] = useState<number>(0);
   const [customAmount, setCustomAmount] = useState<string>('');
   const [isCustomAmount, setIsCustomAmount] = useState<boolean>(false);
   const [frequency, setFrequency] = useState<FrequencyType>('one-off');
@@ -98,38 +98,19 @@ export function DonationProvider({ children }: { children: React.ReactNode }) {
     let finalDonationAmount = 0;
     let feeDescription = "";
     
-    // Fee calculation based on payment method
-    // These fee structures are based on Stripe's Australian rates
+    // Fixed fee calculation for all payment methods
+    // Using a simplified flat rate of 3.5% + A$0.30
     switch (method) {
       case 'stripe':
-        // Stripe fee structure for Australian account
-        const isAustralianCurrency = ['AUD'].includes(currency);
-        const isInternationalCard = !isAustralianCurrency;
-        
-        if (isAustralianCurrency) {
-          // Domestic Australian cards (AUD): 1.75% + A$0.30
-          processingFee = baseAmount * 0.0175 + 0.30;
-          feeDescription = "Stripe charges 1.75% + A$0.30 for Australian cards";
-        } else {
-          // International cards: 2.9% + A$0.30 equivalent
-          processingFee = baseAmount * 0.029 + 0.30;
-          feeDescription = `Stripe charges 2.9% + ${currencySymbol}0.30 for international cards`;
-        }
+        // All cards: 3.5% + A$0.30
+        processingFee = baseAmount * 0.035 + 0.30;
+        feeDescription = "Payment processing fees: 3.5% + A$0.30";
         break;
         
       case 'paypal':
-        // PayPal fee structure for Australian account
-        const isPayPalAU = ['AUD'].includes(currency);
-        
-        if (isPayPalAU) {
-          // Australian PayPal domestic: 2.6% + A$0.30
-          processingFee = baseAmount * 0.026 + 0.30;
-          feeDescription = "PayPal charges 2.6% + A$0.30 for domestic transactions";
-        } else {
-          // International PayPal: 3.6% + fixed fee (in AUD)
-          processingFee = baseAmount * 0.036 + 0.30;
-          feeDescription = `PayPal charges 3.6% + ${currencySymbol}0.30 for international transactions`;
-        }
+        // All cards: 3.5% + A$0.30 (standardized for simplicity)
+        processingFee = baseAmount * 0.035 + 0.30;
+        feeDescription = "Payment processing fees: 3.5% + A$0.30";
         break;
         
       default:

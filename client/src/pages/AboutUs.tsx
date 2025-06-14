@@ -9,7 +9,7 @@ export default function AboutUs() {
     {
       name: "Dr. Javeria Khan",
       role: "General Practitioner",
-      bio: "Dr. Javeria Khan brings a wealth of experience in general medicine, with a special focus on providing accessible healthcare to underserved communities. She is dedicated to treating patients with compassion and ensuring everyone receives quality care regardless of their background.",
+      bio: "Dr. Javeria is a medical graduate with a Master's in Public Health and over six years of experience in emergency medicine. Certified in Basic Life Support (BLS) and Advanced Cardiovascular Life Support (ACLS), she specializes in active lifesaving, prompt diagnosis, and personalized treatment planning. Her work also emphasizes preventative care, vaccination strategies, and maternal and child health. With a strong commitment to evidence-based, patient-centered care, Dr. Javeria consistently strives to improve health outcomes across diverse patient populations.",
       image: "/images/team/doctor.jpg",
       initials: "JK"
     }

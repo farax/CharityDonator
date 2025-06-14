@@ -19,6 +19,9 @@ interface PaymentMethodOption {
 export default function PaymentMethodSelector() {
   const { paymentMethod, setPaymentMethod } = useDonation();
 
+  // Feature flags for payment methods
+  const ENABLE_PAYPAL = false; // Set to true to enable PayPal option
+
   // Define available payment methods
   const paymentMethods: PaymentMethodOption[] = [
     {
@@ -33,7 +36,7 @@ export default function PaymentMethodSelector() {
       name: 'PayPal',
       icon: <SiPaypal className="h-6 w-6 text-blue-700" />,
       description: 'Pay with PayPal Balance or Account',
-      available: true,
+      available: ENABLE_PAYPAL,
     }
   ];
 

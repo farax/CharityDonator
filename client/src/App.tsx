@@ -10,7 +10,15 @@ import ActiveCases from "@/pages/ActiveCases";
 import AboutUs from "@/pages/AboutUs";
 import ContactUs from "@/pages/ContactUs";
 import { DonationProvider } from "@/components/DonationContext";
-import { initAnalytics, trackPageView, trackTimeOnPage } from "@/lib/analytics";
+
+import { Toaster } from "@/components/ui/toaster";
+import { 
+  initAnalytics, 
+  trackPageView, 
+  trackTimeOnPage, 
+  initNewRelicBrowserAgent 
+} from "@/lib/analytics";
+
 
 // Analytics-aware router that tracks page views
 function Router() {
@@ -55,6 +63,7 @@ function App() {
   return (
     <DonationProvider>
       <Router />
+      <Toaster />
     </DonationProvider>
   );
 }

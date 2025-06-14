@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useDonation } from '@/components/DonationContext';
+import { useCurrency } from '@/hooks/useCurrency';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -13,6 +14,14 @@ export default function ActiveCases() {
   const { setType, setSelectedCase } = useDonation();
   const queryClient = useQueryClient();
   const [location] = useLocation();
+  
+  // Use the currency hook for proper currency formatting and conversion
+  const { 
+    currency, 
+    currencySymbol, 
+    formatAmount: formatCurrencyAmount,
+    convertAmount
+  } = useCurrency();
   
   // Check if we returned from a payment page (potential donation complete)
   useEffect(() => {
@@ -50,14 +59,12 @@ export default function ActiveCases() {
     return Math.min(percentage, 100); // Cap at 100%
   };
 
-  // Format currency
+  // Format and convert currency
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+    // First convert from AUD to current currency
+    const convertedAmount = convertAmount(amount);
+    // Then format with proper currency symbol
+    return formatCurrencyAmount(convertedAmount);
   };
 
   if (isLoading) {
@@ -109,15 +116,21 @@ export default function ActiveCases() {
                     
                     <div className="space-y-2 mt-4">
                       <div className="flex justify-between text-sm">
-                        <span className="font-medium text-gray-500">Collected</span>
+                        <span className="font-medium text-gray-500">Progress</span>
                         <span className="font-medium text-gray-700">
-                          {formatAmount(caseItem.amountCollected)} of {formatAmount(caseItem.amountRequired)}
+                          {formatAmount(caseItem.amountCollected)} raised
                         </span>
                       </div>
                       <Progress 
                         value={calculateProgress(caseItem.amountCollected, caseItem.amountRequired)} 
                         className="h-2"
                       />
+                      <div className="flex justify-between text-sm mt-1">
+                        <span className="font-medium text-gray-500">Still needed</span>
+                        <span className="font-medium text-gray-700 text-right">
+                          {formatAmount(Math.max(0, caseItem.amountRequired - caseItem.amountCollected))}
+                        </span>
+                      </div>
                     </div>
                   </CardContent>
                   <CardFooter>

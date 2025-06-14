@@ -39,8 +39,10 @@ export interface IStorage {
     provider: 'stripe' | 'paypal', 
     subscriptionId: string, 
     subscriptionStatus: string, 
-    nextPaymentDate?: Date
+    nextPaymentDate?: Date | null
   ): Promise<Donation | undefined>;
+  updateDonationDonor(id: number, name: string, email: string): Promise<Donation | undefined>;
+  updateDonationAmount(id: number, amount: number): Promise<Donation | undefined>;
   getDonations(): Promise<Donation[]>;
   getDonationsByUserId(userId: number): Promise<Donation[]>;
   getActiveSubscriptions(): Promise<Donation[]>;
@@ -317,7 +319,7 @@ export class MemStorage implements IStorage {
     provider: 'stripe' | 'paypal', 
     subscriptionId: string, 
     subscriptionStatus: string, 
-    nextPaymentDate?: Date
+    nextPaymentDate?: Date | null
   ): Promise<Donation | undefined> {
     const donation = this.donations.get(id);
     if (!donation) return undefined;
@@ -340,7 +342,7 @@ export class MemStorage implements IStorage {
       ...donation,
       status,
       subscriptionStatus,
-      ...(nextPaymentDate && { nextPaymentDate }),
+      nextPaymentDate: nextPaymentDate || null,
       ...(provider === 'stripe' ? { stripeSubscriptionId: subscriptionId } : { paypalSubscriptionId: subscriptionId }),
       stripeSubscriptionId: provider === 'stripe' ? subscriptionId : (donation.stripeSubscriptionId || null),
       paypalSubscriptionId: provider === 'paypal' ? subscriptionId : (donation.paypalSubscriptionId || null)
@@ -376,6 +378,21 @@ export class MemStorage implements IStorage {
       ...donation,
       name,
       email
+    };
+    
+    // Update the donation in the map
+    this.donations.set(id, updatedDonation);
+    
+    return updatedDonation;
+  }
+
+  async updateDonationAmount(id: number, amount: number): Promise<Donation | undefined> {
+    const donation = this.donations.get(id);
+    if (!donation) return undefined;
+    
+    const updatedDonation: Donation = {
+      ...donation,
+      amount
     };
     
     // Update the donation in the map
@@ -659,7 +676,7 @@ export class DatabaseStorage implements IStorage {
     provider: 'stripe' | 'paypal', 
     subscriptionId: string, 
     subscriptionStatus: string, 
-    nextPaymentDate?: Date
+    nextPaymentDate?: Date | null
   ): Promise<Donation | undefined> {
     if (!db) return undefined;
     
@@ -684,7 +701,7 @@ export class DatabaseStorage implements IStorage {
     const updateData: Partial<Donation> = {
       status,
       subscriptionStatus,
-      ...(nextPaymentDate && { nextPaymentDate }),
+      nextPaymentDate: nextPaymentDate === null ? null : nextPaymentDate,
       ...(provider === 'stripe' 
         ? { stripeSubscriptionId: subscriptionId } 
         : { paypalSubscriptionId: subscriptionId })
@@ -720,6 +737,30 @@ export class DatabaseStorage implements IStorage {
       .from(donations)
       .where(eq(donations.status, 'active-subscription'))
       .orderBy(desc(donations.createdAt));
+  }
+  
+  async updateDonationDonor(id: number, name: string, email: string): Promise<Donation | undefined> {
+    if (!db) return undefined;
+    
+    const [updatedDonation] = await db
+      .update(donations)
+      .set({ name, email })
+      .where(eq(donations.id, id))
+      .returning();
+      
+    return updatedDonation;
+  }
+
+  async updateDonationAmount(id: number, amount: number): Promise<Donation | undefined> {
+    if (!db) return undefined;
+    
+    const [updatedDonation] = await db
+      .update(donations)
+      .set({ amount })
+      .where(eq(donations.id, id))
+      .returning();
+      
+    return updatedDonation;
   }
   
   // Endorsement methods

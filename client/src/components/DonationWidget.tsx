@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useDonation } from "@/components/DonationContext";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrency } from "@/hooks/useCurrency";
 import { apiRequest } from "@/lib/queryClient";
 import CurrencySelector from "@/components/CurrencySelector";
 import CaseSelector from "@/components/CaseSelector";
@@ -35,6 +36,9 @@ export default function DonationWidget() {
     showCaseSelector,
     setShowCaseSelector,
   } = useDonation();
+  
+  // Use the enhanced currency and preset amount system
+  const { formatAmount, getPresetAmount } = useCurrency();
 
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -89,6 +93,8 @@ export default function DonationWidget() {
 
     // We don't track every keystroke to avoid too many events
   };
+  
+  // We're using the formatAmount function declared below
 
   const handleDonateClick = async () => {
     try {
@@ -189,10 +195,7 @@ export default function DonationWidget() {
     }
   };
 
-  // Format amount with currency symbol but no conversion (fixed amounts)
-  const formatAmount = (amt: number) => {
-    return `${currencySymbol}${amt}`;
-  };
+  // Use the formatAmount function from the useCurrency hook
 
   return (
     <div className="container mx-auto px-4 relative -mt-24 sm:-mt-32 lg:-mt-40 mb-16 max-w-4xl">
@@ -252,7 +255,7 @@ export default function DonationWidget() {
                         {selectedCase.title}
                       </div>
                       <div className="text-sm text-gray-600 mt-1">
-                        {formatAmount(selectedCase.amountRequired)} required
+                        {formatAmount(Math.max(0, selectedCase.amountRequired - selectedCase.amountCollected), true)} still needed
                       </div>
                     </div>
                   ) : (
@@ -451,36 +454,36 @@ export default function DonationWidget() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button
                   className={`${
-                    !isCustomAmount && amount === 10
+                    !isCustomAmount && amount === getPresetAmount('tier1')
                       ? "bg-primary text-white border-primary-600 shadow-md"
                       : "bg-blue-50 hover:bg-blue-100 border-blue-100 text-primary"
                   } 
                     font-semibold py-3 px-4 rounded-md border transition-all duration-200`}
-                  onClick={() => handleAmountClick(10)}
+                  onClick={() => handleAmountClick(getPresetAmount('tier1'))}
                 >
-                  {formatAmount(10)}
+                  {formatAmount(getPresetAmount('tier1'))}
                 </button>
                 <button
                   className={`${
-                    !isCustomAmount && amount === 50
+                    !isCustomAmount && amount === getPresetAmount('tier2')
                       ? "bg-primary text-white border-primary-600 shadow-md"
                       : "bg-blue-50 hover:bg-blue-100 border-blue-100 text-primary"
                   } 
                     font-semibold py-3 px-4 rounded-md border transition-all duration-200`}
-                  onClick={() => handleAmountClick(50)}
+                  onClick={() => handleAmountClick(getPresetAmount('tier2'))}
                 >
-                  {formatAmount(50)}
+                  {formatAmount(getPresetAmount('tier2'))}
                 </button>
                 <button
                   className={`${
-                    !isCustomAmount && amount === 100
+                    !isCustomAmount && amount === getPresetAmount('tier3')
                       ? "bg-primary text-white border-primary-600 shadow-md"
                       : "bg-blue-50 hover:bg-blue-100 border-blue-100 text-primary"
                   } 
                     font-semibold py-3 px-4 rounded-md border transition-all duration-200`}
-                  onClick={() => handleAmountClick(100)}
+                  onClick={() => handleAmountClick(getPresetAmount('tier3'))}
                 >
-                  {formatAmount(100)}
+                  {formatAmount(getPresetAmount('tier3'))}
                 </button>
                 <button
                   className={`${

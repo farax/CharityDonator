@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useDonation } from '@/components/DonationContext';
+import { useCurrency } from '@/hooks/useCurrency';
 import { Case } from '@shared/schema';
 import { 
   Dialog, 
@@ -20,6 +21,14 @@ interface CaseSelectorProps {
 export default function CaseSelector({ open, onOpenChange }: CaseSelectorProps) {
   const { selectedCase, setSelectedCase } = useDonation();
   const [currentIndex, setCurrentIndex] = useState(0);
+  
+  // Use currency hook for proper currency conversion
+  const { 
+    currency, 
+    currencySymbol,
+    formatAmount: formatCurrencyAmount,
+    convertAmount
+  } = useCurrency();
 
   // Fetch active zakaat cases
   const { data: cases = [], isLoading } = useQuery<Case[]>({
@@ -51,11 +60,12 @@ export default function CaseSelector({ open, onOpenChange }: CaseSelectorProps) 
 
   const currentCase = cases[currentIndex];
   
+  // Format and convert currency from AUD to current currency
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+    // First convert from AUD to current currency
+    const convertedAmount = convertAmount(amount);
+    // Then format with proper currency symbol
+    return formatCurrencyAmount(convertedAmount);
   };
 
   return (
@@ -91,16 +101,16 @@ export default function CaseSelector({ open, onOpenChange }: CaseSelectorProps) 
               <p className="text-gray-600 mb-4">{currentCase?.description}</p>
               
               <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">Required</p>
-                  <p className="text-lg font-semibold text-primary">
-                    {currentCase && formatAmount(currentCase.amountRequired)}
-                  </p>
-                </div>
                 <div className="bg-green-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">Collected</p>
+                  <p className="text-sm text-gray-600">Raised so far</p>
                   <p className="text-lg font-semibold text-green-600">
                     {currentCase && formatAmount(currentCase.amountCollected)}
+                  </p>
+                </div>
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <p className="text-sm text-gray-600">Still needed</p>
+                  <p className="text-lg font-semibold text-primary">
+                    {currentCase && formatAmount(Math.max(0, currentCase.amountRequired - currentCase.amountCollected))}
                   </p>
                 </div>
               </div>
@@ -147,7 +157,10 @@ export default function CaseSelector({ open, onOpenChange }: CaseSelectorProps) 
                   <Button variant="outline" onClick={() => onOpenChange(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleSelect}>
+                  <Button 
+                    onClick={handleSelect}
+                    className="bg-teal-600 hover:bg-teal-700 text-white font-semibold"
+                  >
                     Select This Case
                   </Button>
                 </div>

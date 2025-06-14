@@ -1,0 +1,29 @@
+As of the latest updates, Stripe's standard pricing for Australian businesses is as follows:([Stripe Support][1])
+
+### 💳 Stripe Fees for Australian Businesses
+
+* **Domestic Cards**: 1.7% + A\$0.30 per successful transaction.
+
+  * This rate applies to cards issued by Australian banks.
+  * Effective from April 1, 2024, this is a reduction from the previous rate of 1.75% + A\$0.30 .([Stripe][2], [Stripe Support][3], [Stripe Support][1])
+
+* **International Cards**: 3.5% + A\$0.30 per successful transaction.
+
+  * This rate comprises the domestic fee (1.75%) plus an additional international fee (1.75%) .([Stripe][4], [Stripe Support][3])
+
+### 🔄 Additional Considerations
+
+* **Refunds**: Stripe does not return the original processing fees when a payment is refunded.
+* **Disputes**: As of October 15, 2023, Stripe no longer returns the dispute fee for successfully contested disputes .
+* **Alternative Payment Methods**: Stripe supports various local payment methods, such as BECS Direct Debit, which may have different fee structures.([Stripe Docs][5], [Stripe Support][3], [Stripe][2])
+
+For the most accurate and up-to-date information, please refer to Stripe's official pricing page: ([Stripe][6]).
+
+If you need assistance in calculating fees for specific scenarios or exploring alternative payment methods, feel free to ask!
+
+[1]: https://support.stripe.com/questions/april-2024-pricing-update-for-businesses-on-standard-pricing-in-australia?utm_source=chatgpt.com "April 2024 pricing update for businesses on standard pricing ... - Stripe"
+[2]: https://stripe.com/au/pricing/local-payment-methods?utm_source=chatgpt.com "Local payment methods pricing - Stripe"
+[3]: https://support.stripe.com/questions/october-2023-pricing-updates-for-global-standard-pricing-users?utm_source=chatgpt.com "October 2023 pricing updates for global standard pricing users - Stripe"
+[4]: https://stripe.com/au/billing/pricing?utm_source=chatgpt.com "Stripe Billing: Manage subscriptions, recurring payments and billing"
+[5]: https://docs.stripe.com/terminal/payments/regional?integration-country=AU&utm_source=chatgpt.com "Regional considerations | Stripe Documentation"
+[6]: https://stripe.com/au/pricing?utm_source=chatgpt.com "Pricing & Fees - Stripe"

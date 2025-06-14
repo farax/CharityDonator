@@ -1,20 +1,19 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from 'ws';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '@shared/schema';
 import config from './config';
-
-// Configure neon database if needed
-neonConfig.webSocketConstructor = ws;
 
 // Check if a database URL is available
 if (!config.DATABASE.URL) {
   console.log('No DATABASE_URL found. Using in-memory storage instead.');
 }
 
-// Create a connection pool
+// Create a connection pool with standard PostgreSQL configuration
 export const pool = config.DATABASE.URL 
-  ? new Pool({ connectionString: config.DATABASE.URL }) 
+  ? new Pool({ 
+      connectionString: config.DATABASE.URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    }) 
   : null;
 
 // Create a Drizzle ORM instance if pool is available
