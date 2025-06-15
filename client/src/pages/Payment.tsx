@@ -82,17 +82,21 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           throw new Error(submitError.message);
         }
         
-        // 1. Create a payment method from the form elements
-        const { error: elementsError, paymentMethod } = await stripe.createPaymentMethod({
-          elements
+        // 1. Confirm the SetupIntent with the collected payment method
+        const { error: confirmError, setupIntent } = await stripe.confirmSetup({
+          elements,
+          confirmParams: {
+            return_url: window.location.origin, // Not used but required
+          },
+          redirect: 'if_required'
         });
         
-        if (elementsError) {
-          throw new Error(elementsError.message);
+        if (confirmError) {
+          throw new Error(confirmError.message);
         }
         
-        if (!paymentMethod) {
-          throw new Error('Failed to create payment method');
+        if (!setupIntent || !setupIntent.payment_method) {
+          throw new Error('Failed to collect payment method');
         }
         
         // 2. Create a subscription with the payment method
@@ -102,7 +106,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           currency: donationDetails.currency,
           email: email,
           name: name,
-          paymentMethodId: paymentMethod.id,
+          paymentMethodId: setupIntent.payment_method,
           frequency: donationDetails.frequency
         });
         
@@ -117,7 +121,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
             subscriptionData.clientSecret,
             { 
-              payment_method: paymentMethod.id
+              payment_method: setupIntent.payment_method
             }
           );
           
@@ -1046,7 +1050,9 @@ export default function Payment() {
                             }
                           }
                         },
-                        loader: 'auto'
+                        loader: 'auto',
+                        // For subscriptions, we need manual payment method creation
+                        ...(isSubscription && { paymentMethodCreation: 'manual' })
                         // Note: We'll rely on server-side configuration for payment method restriction
                       }}>
                         <CheckoutForm isSubscription={isSubscription} />
