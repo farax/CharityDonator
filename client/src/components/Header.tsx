@@ -58,7 +58,7 @@ export default function Header() {
             isLoaded ? "-ml-5" : "-ml-[50px] opacity-0", // More negative margin to position further left
             scrolled ? "scale-95" : "scale-100" // Subtle scaling effect on scroll
           )}>
-            <Link href="/" className="flex items-center">
+            <Link href="/" className="flex items-center space-x-3">
               <img
                 src={aafiyaaLogo}
                 alt="Aafiyaa Charity Clinics Logo"
@@ -67,6 +67,17 @@ export default function Header() {
                   scrolled ? "h-[90px]" : "h-[105px]" // 50% bigger (from 70px to 105px)
                 )} 
               />
+              <div className={cn(
+                "transition-all duration-300",
+                scrolled ? "scale-95" : "scale-100"
+              )}>
+                <h1 className={cn(
+                  "font-bold text-primary transition-all duration-300",
+                  scrolled ? "text-xl" : "text-2xl"
+                )}>
+                  Aafiyaa Charity Clinics
+                </h1>
+              </div>
             </Link>
           </div>
 
