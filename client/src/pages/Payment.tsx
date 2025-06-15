@@ -842,6 +842,9 @@ export default function Payment() {
       const finalAmount = coverFees ? fees.totalWithFees : newAmount;
       
       try {
+        // Clear the old client secret first to force re-render
+        setClientSecret("");
+        
         const response = await apiRequest("POST", "/api/create-payment-intent", { 
           amount: finalAmount,
           currency: donationDetails.currency || currency,
@@ -849,13 +852,20 @@ export default function Payment() {
           coverFees: coverFees
         });
         const data = await response.json();
-        setClientSecret(data.clientSecret);
+        
+        // Set the new client secret after a brief delay to ensure proper re-initialization
+        setTimeout(() => {
+          setClientSecret(data.clientSecret);
+        }, 100);
+        
+        console.log(`Payment intent updated for new amount: ${finalAmount} ${donationDetails.currency}`);
       } catch (error) {
         toast({
           title: "Payment update failed",
           description: "There was an error updating the payment amount",
           variant: "destructive",
         });
+        console.error("Payment intent update error:", error);
       }
     }
     
@@ -1042,26 +1052,29 @@ export default function Payment() {
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                       </div>
                     ) : stripePromise ? (
-                      <Elements stripe={stripePromise} options={{ 
-                        clientSecret, 
-                        appearance: { 
-                          theme: 'stripe',
-                          variables: {
-                            // Customize the font to match our branding
-                            fontFamily: 'system-ui, sans-serif',
-                            colorPrimary: '#10b981', // Emerald-500 - match our primary brand color
-                          },
-                          rules: {
-                            '.Label': {
-                              fontWeight: '500'
+                      <Elements 
+                        key={clientSecret} 
+                        stripe={stripePromise} 
+                        options={{ 
+                          clientSecret, 
+                          appearance: { 
+                            theme: 'stripe',
+                            variables: {
+                              // Customize the font to match our branding
+                              fontFamily: 'system-ui, sans-serif',
+                              colorPrimary: '#10b981', // Emerald-500 - match our primary brand color
+                            },
+                            rules: {
+                              '.Label': {
+                                fontWeight: '500'
+                              }
                             }
-                          }
-                        },
-                        loader: 'auto',
-                        // For subscriptions, we need manual payment method creation
-                        ...(isSubscription && { paymentMethodCreation: 'manual' })
-                        // Note: We'll rely on server-side configuration for payment method restriction
-                      }}>
+                          },
+                          loader: 'auto',
+                          // For subscriptions, we need manual payment method creation
+                          ...(isSubscription && { paymentMethodCreation: 'manual' })
+                          // Note: We'll rely on server-side configuration for payment method restriction
+                        }}>
                         <CheckoutForm isSubscription={isSubscription} />
                       </Elements>
                     ) : (
