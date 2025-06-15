@@ -512,7 +512,14 @@ export default function DonationWidget() {
                       onChange={handleCustomAmountChange}
                       aria-label={`Enter amount in ${currency}`}
                       min="0.01"
+                      max="999999"
                       step="0.01"
+                      onInput={(e) => {
+                        const target = e.target as HTMLInputElement;
+                        if (target.value.length > 6) {
+                          target.value = target.value.slice(0, 6);
+                        }
+                      }}
                     />
                   </div>
                 </div>
