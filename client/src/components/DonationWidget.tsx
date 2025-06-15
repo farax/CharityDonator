@@ -239,6 +239,23 @@ export default function DonationWidget() {
             </button>
           </div>
 
+          {/* Dispose Interest Note */}
+          {type === "interest" && (
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm mb-6">
+              <p className="text-amber-800">
+                In Islam, interest (riba) is unlawful. You may dispose of interest funds by donating them to charity without expecting reward, as a means of purification.{" "}
+                <a 
+                  href="https://islamqa.org/hanafi/muftionline/114377/using-bank-interest-for-charity-permissible-or-not/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="underline hover:text-amber-900 font-medium"
+                >
+                  View fatwa
+                </a>
+              </p>
+            </div>
+          )}
+
           {/* Donation Form Content */}
           <div className="donation-form-content">
             {/* Destination Project Section */}
