@@ -48,15 +48,15 @@ export default function Header() {
       "bg-white shadow-md sticky top-0 z-50 transition-all duration-300",
       scrolled ? "py-0" : "py-1" // Reduced padding to accommodate bigger logo
     )}>
-      <div className="container mx-auto px-0 sm:px-1 lg:px-2"> {/* Reduced container padding */}
+      <div className="container mx-auto px-4 sm:px-1 lg:px-2">
         <div className={cn(
           "flex justify-between items-center transition-all duration-300",
-          scrolled ? "py-1" : "py-2" // Reduced padding to accommodate bigger logo
+          scrolled ? "py-1" : "py-2"
         )}>
           <div className={cn(
             "flex items-center transition-all duration-500 ease-in-out",
-            isLoaded ? "-ml-5" : "-ml-[50px] opacity-0", // More negative margin to position further left
-            scrolled ? "scale-95" : "scale-100" // Subtle scaling effect on scroll
+            isLoaded ? "ml-0 sm:-ml-5" : "-ml-[50px] opacity-0", // No negative margin on mobile, negative on sm+
+            scrolled ? "scale-95" : "scale-100"
           )}>
             <Link href="/" className="flex items-center group">
               <img
