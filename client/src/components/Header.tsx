@@ -58,25 +58,44 @@ export default function Header() {
             isLoaded ? "-ml-5" : "-ml-[50px] opacity-0", // More negative margin to position further left
             scrolled ? "scale-95" : "scale-100" // Subtle scaling effect on scroll
           )}>
-            <Link href="/" className="flex items-center space-x-3">
+            <Link href="/" className="flex items-center group">
               <img
                 src={aafiyaaLogo}
                 alt="Aafiyaa Charity Clinics Logo"
                 className={cn(
-                  "transition-all duration-300 transform",
-                  scrolled ? "h-[90px]" : "h-[105px]" // 50% bigger (from 70px to 105px)
+                  "transition-all duration-300 transform mr-4",
+                  scrolled ? "h-[50px]" : "h-[60px]"
                 )} 
               />
-              <div className={cn(
-                "transition-all duration-300",
-                scrolled ? "scale-95" : "scale-100"
-              )}>
-                <h1 className={cn(
-                  "font-bold text-primary transition-all duration-300",
-                  scrolled ? "text-xl" : "text-2xl"
+              <div className="flex flex-col">
+                <div className="flex items-baseline space-x-2">
+                  <h1 className={cn(
+                    "font-bold tracking-wide transition-all duration-300",
+                    "bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent",
+                    "group-hover:from-teal-700 group-hover:to-emerald-700",
+                    scrolled ? "text-lg" : "text-2xl"
+                  )}>
+                    AAFIYAA
+                  </h1>
+                  <span className={cn(
+                    "font-light text-gray-600 transition-all duration-300",
+                    scrolled ? "text-sm" : "text-lg"
+                  )}>
+                    Charity Clinics
+                  </span>
+                </div>
+                <div className={cn(
+                  "flex items-center space-x-1 transition-all duration-300",
+                  scrolled ? "mt-0" : "mt-1"
                 )}>
-                  Aafiyaa Charity Clinics
-                </h1>
+                  <div className="w-8 h-0.5 bg-gradient-to-r from-teal-500 to-emerald-500"></div>
+                  <p className={cn(
+                    "text-gray-500 font-medium tracking-wider uppercase transition-all duration-300",
+                    scrolled ? "text-xs" : "text-xs"
+                  )}>
+                    Healthcare & Compassion
+                  </p>
+                </div>
               </div>
             </Link>
           </div>
