@@ -1,6 +1,7 @@
 import { Link } from 'wouter';
 import { Heart, MapPin, Mail, Phone, Facebook, Twitter, Instagram, Linkedin, X } from 'lucide-react';
 import aafiyaaLogo from '@assets/aafiyaa-logo.png';
+import additionalLogo from '@assets/WhatsApp Image 2025-06-17 at 21.06.34_1750160957596.jpeg';
 import { useState } from 'react';
 
 export default function Footer() {
@@ -116,21 +117,30 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Registered Charity</h3>
             <div className="flex flex-col items-start">
-              <div 
-                className="cursor-pointer transition-transform duration-300 hover:scale-105 group mb-3"
-                onClick={() => setShowAcncModal(true)}
-              >
-                <img 
-                  src="/images/ACNC-Registered-Charity-Logo_RGB.png" 
-                  alt="ACNC Registered Charity" 
-                  className="h-20 w-20 md:h-24 md:w-24 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group-hover:ring-4 group-hover:ring-teal-400/50"
-                />
+              <div className="flex items-center space-x-4 mb-3">
+                <div 
+                  className="cursor-pointer transition-transform duration-300 hover:scale-105 group"
+                  onClick={() => setShowAcncModal(true)}
+                >
+                  <img 
+                    src="/images/ACNC-Registered-Charity-Logo_RGB.png" 
+                    alt="ACNC Registered Charity" 
+                    className="h-20 w-20 md:h-24 md:w-24 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group-hover:ring-4 group-hover:ring-teal-400/50"
+                  />
+                </div>
+                <div className="transition-transform duration-300 hover:scale-105">
+                  <img 
+                    src={additionalLogo} 
+                    alt="Additional Certification" 
+                    className="h-20 w-20 md:h-24 md:w-24 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                  />
+                </div>
               </div>
               <p className="text-gray-300 text-sm font-medium">
-                Click to expand
+                Click ACNC logo to expand
               </p>
               <p className="text-gray-400 text-xs">
-                ACNC Registered
+                Officially Registered & Certified
               </p>
             </div>
           </div>
