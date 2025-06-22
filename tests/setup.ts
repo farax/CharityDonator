@@ -1,13 +1,13 @@
 import { beforeAll, afterAll, beforeEach } from 'vitest';
 import { storage } from '../server/storage';
 
-// Test configuration
+// Test configuration - prevents using production keys
 export const TEST_CONFIG = {
   stripe: {
-    // Using environment variables for test keys - no hardcoded secrets
-    secretKey: process.env.STRIPE_SECRET_KEY,
-    publicKey: process.env.VITE_STRIPE_PUBLIC_KEY,
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET
+    // Test environment uses separate test-specific environment variables
+    secretKey: process.env.STRIPE_TEST_SECRET_KEY,
+    publicKey: process.env.STRIPE_TEST_PUBLIC_KEY,
+    webhookSecret: process.env.STRIPE_TEST_WEBHOOK_SECRET
   },
   currencies: ['AUD', 'USD', 'EUR', 'GBP', 'INR'],
   amounts: [5.00, 25.50, 100.00, 1000.00],
@@ -50,11 +50,21 @@ beforeEach(async () => {
 beforeAll(async () => {
   // Set test environment
   process.env.NODE_ENV = 'test';
-  // Environment variables for Stripe keys should be set in CI/CD or local test environment
+  
+  // Safety check: prevent tests from running with production keys
+  if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.startsWith('sk_live_')) {
+    throw new Error('FATAL: Production Stripe keys detected in test environment. Tests aborted for safety.');
+  }
+  
+  // Ensure test keys are available
+  if (!process.env.STRIPE_TEST_SECRET_KEY) {
+    console.warn('Warning: STRIPE_TEST_SECRET_KEY not found. Some tests may fail.');
+  }
 });
 
 afterAll(async () => {
-  // Cleanup after all tests
-  delete process.env.STRIPE_SECRET_KEY;
-  delete process.env.STRIPE_WEBHOOK_SECRET;
+  // Cleanup test environment variables
+  delete process.env.STRIPE_TEST_SECRET_KEY;
+  delete process.env.STRIPE_TEST_PUBLIC_KEY;
+  delete process.env.STRIPE_TEST_WEBHOOK_SECRET;
 });
