@@ -82,6 +82,12 @@ const logOrphanedPayment = (paymentIntent: any) => {
 
 // Enhanced payment intent matching with multiple fallback strategies
 const findDonationByPaymentIntent = async (paymentIntent: any): Promise<Donation | null> => {
+  // Handle malformed payment intent data
+  if (!paymentIntent || !paymentIntent.id) {
+    console.warn('Payment intent missing required ID field');
+    return null;
+  }
+
   const donations = await storage.getDonations();
   
   // Strategy 1: Direct payment intent ID match
@@ -168,7 +174,17 @@ const findDonationByPaymentIntent = async (paymentIntent: any): Promise<Donation
 
 // Enhanced payment intent succeeded handler
 export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
-  logWebhookEvent('PAYMENT_INTENT_SUCCEEDED', { id: paymentIntent.id, amount: paymentIntent.amount });
+  // Handle malformed payment intent data gracefully
+  if (!paymentIntent || typeof paymentIntent !== 'object') {
+    console.warn('Invalid payment intent object received');
+    return;
+  }
+
+  // Ensure ID exists and is valid
+  const paymentId = paymentIntent.id || null;
+  const amount = paymentIntent.amount || 0;
+  
+  logWebhookEvent('PAYMENT_INTENT_SUCCEEDED', { id: paymentId, amount: amount });
   
   try {
     const donation = await findDonationByPaymentIntent(paymentIntent);
