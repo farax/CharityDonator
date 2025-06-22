@@ -4,10 +4,10 @@ import { storage } from '../server/storage';
 // Test configuration
 export const TEST_CONFIG = {
   stripe: {
-    // Using environment variables for test keys to avoid exposing secrets
-    secretKey: process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder',
-    publicKey: process.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_placeholder',
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test_placeholder'
+    // Using environment variables for test keys - no hardcoded secrets
+    secretKey: process.env.STRIPE_SECRET_KEY,
+    publicKey: process.env.VITE_STRIPE_PUBLIC_KEY,
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET
   },
   currencies: ['AUD', 'USD', 'EUR', 'GBP', 'INR'],
   amounts: [5.00, 25.50, 100.00, 1000.00],
