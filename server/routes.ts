@@ -27,8 +27,16 @@ import {
 import config from "./config";
 import { sendContactFormEmail, verifyEmailService } from "./email-service";
 
-// New Relic integration
-const newrelic = require('newrelic');
+// New Relic integration - safe import with fallback
+let newrelic: any = null;
+try {
+  // Use dynamic require for New Relic in production, fallback in development
+  if (process.env.NODE_ENV === 'production' && process.env.NEW_RELIC_LICENSE_KEY) {
+    newrelic = require('newrelic');
+  }
+} catch (error) {
+  console.warn('New Relic not available:', error);
+}
 
 // Initialize Stripe with the secret key with enhanced logging
 let stripe: Stripe | undefined;
@@ -1305,10 +1313,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const startTime = Date.now();
     
     if (!stripe) {
-      newrelic.recordCustomEvent('WebhookError', {
-        error: 'Stripe not configured',
-        timestamp: new Date().toISOString()
-      });
+      if (newrelic?.recordCustomEvent) {
+        newrelic.recordCustomEvent('WebhookError', {
+          error: 'Stripe not configured',
+          timestamp: new Date().toISOString()
+        });
+      }
       return res.status(500).json({ message: "Stripe is not configured" });
     }
 
@@ -1336,12 +1346,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Webhook received: ${event.type}`);
       
       // Track webhook received in New Relic
-      newrelic.recordCustomEvent('WebhookReceived', {
-        eventType: event.type,
-        eventId: event.id,
-        timestamp: new Date().toISOString(),
-        hasSignature: !!sig
-      });
+      if (newrelic?.recordCustomEvent) {
+        newrelic.recordCustomEvent('WebhookReceived', {
+          eventType: event.type,
+          eventId: event.id,
+          timestamp: new Date().toISOString(),
+          hasSignature: !!sig
+        });
+      }
 
       // Handle different event types
       switch (event.type) {
@@ -1372,22 +1384,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         default:
           // Unexpected event type
           console.log(`Unhandled event type ${event.type}`);
-          newrelic.recordCustomEvent('WebhookUnhandled', {
-            eventType: event.type,
-            eventId: event.id,
-            timestamp: new Date().toISOString()
-          });
+          if (newrelic?.recordCustomEvent) {
+            newrelic.recordCustomEvent('WebhookUnhandled', {
+              eventType: event.type,
+              eventId: event.id,
+              timestamp: new Date().toISOString()
+            });
+          }
       }
 
       // Track successful webhook processing
       const processingTime = Date.now() - startTime;
-      newrelic.recordCustomEvent('WebhookProcessed', {
-        eventType: event.type,
-        eventId: event.id,
-        processingTimeMs: processingTime,
-        success: true,
-        timestamp: new Date().toISOString()
-      });
+      if (newrelic?.recordCustomEvent) {
+        newrelic.recordCustomEvent('WebhookProcessed', {
+          eventType: event.type,
+          eventId: event.id,
+          processingTimeMs: processingTime,
+          success: true,
+          timestamp: new Date().toISOString()
+        });
+      }
 
       res.json({ received: true });
     } catch (error: any) {
@@ -1395,22 +1411,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Webhook Error:', error.message);
       
       // Track webhook processing errors in New Relic
-      newrelic.recordCustomEvent('WebhookError', {
-        eventType: event?.type || 'unknown',
-        eventId: event?.id || 'unknown',
-        error: error.message,
-        processingTimeMs: processingTime,
-        success: false,
-        timestamp: new Date().toISOString()
-      });
+      if (newrelic?.recordCustomEvent) {
+        newrelic.recordCustomEvent('WebhookError', {
+          eventType: event?.type || 'unknown',
+          eventId: event?.id || 'unknown',
+          error: error.message,
+          processingTimeMs: processingTime,
+          success: false,
+          timestamp: new Date().toISOString()
+        });
+      }
       
       // Also record as an error for alerting
-      newrelic.noticeError(error, {
-        customAttributes: {
-          context: 'stripe_webhook',
-          eventType: event?.type || 'unknown'
-        }
-      });
+      if (newrelic?.noticeError) {
+        newrelic.noticeError(error, {
+          customAttributes: {
+            context: 'stripe_webhook',
+            eventType: event?.type || 'unknown'
+          }
+        });
+      }
       
       res.status(400).json({ message: `Webhook Error: ${error.message}` });
     }

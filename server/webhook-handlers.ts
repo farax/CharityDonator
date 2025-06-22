@@ -6,8 +6,16 @@
 import { storage } from './storage';
 import type { Donation } from '@shared/schema';
 
-// New Relic integration
-const newrelic = require('newrelic');
+// New Relic integration - safe import with fallback
+let newrelic: any = null;
+try {
+  // Use dynamic require for New Relic in production, fallback in development
+  if (process.env.NODE_ENV === 'production' && process.env.NEW_RELIC_LICENSE_KEY) {
+    newrelic = require('newrelic');
+  }
+} catch (error) {
+  console.warn('New Relic not available:', error);
+}
 
 // Enhanced logging for webhook events with New Relic integration
 const logWebhookEvent = (event: string, details: any) => {
@@ -15,11 +23,13 @@ const logWebhookEvent = (event: string, details: any) => {
   console.log(logMessage, JSON.stringify(details, null, 2));
   
   // Send custom event to New Relic
-  newrelic.recordCustomEvent('WebhookEvent', {
-    eventType: event.toUpperCase(),
-    ...details,
-    timestamp: new Date().toISOString()
-  });
+  if (newrelic?.recordCustomEvent) {
+    newrelic.recordCustomEvent('WebhookEvent', {
+      eventType: event.toUpperCase(),
+      ...details,
+      timestamp: new Date().toISOString()
+    });
+  }
 };
 
 // Special logging for orphaned payments with high priority in New Relic
@@ -39,17 +49,21 @@ const logOrphanedPayment = (paymentIntent: any) => {
   console.log('[WEBHOOK-ORPHANED_PAYMENT]', JSON.stringify(orphanedDetails, null, 2));
   
   // New Relic custom event with high priority
-  newrelic.recordCustomEvent('OrphanedPayment', {
-    ...orphanedDetails,
-    alertLevel: 'CRITICAL',
-    requiresInvestigation: true,
-    timestamp: new Date().toISOString()
-  });
+  if (newrelic?.recordCustomEvent) {
+    newrelic.recordCustomEvent('OrphanedPayment', {
+      ...orphanedDetails,
+      alertLevel: 'CRITICAL',
+      requiresInvestigation: true,
+      timestamp: new Date().toISOString()
+    });
+  }
 
   // Also record as an error for alerting
-  newrelic.noticeError(new Error('Orphaned payment detected'), {
-    customAttributes: orphanedDetails
-  });
+  if (newrelic?.noticeError) {
+    newrelic.noticeError(new Error('Orphaned payment detected'), {
+      customAttributes: orphanedDetails
+    });
+  }
 };
 
 // Enhanced payment intent matching with multiple fallback strategies
