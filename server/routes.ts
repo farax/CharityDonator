@@ -14,6 +14,16 @@ import fetch from "node-fetch";
 import { insertDonationSchema, insertCaseSchema, contactFormSchema, ContactMessage } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import {
+  handlePaymentIntentSucceeded,
+  handlePaymentIntentFailed,
+  handleCheckoutSessionCompleted,
+  handleSubscriptionCreated,
+  handleSubscriptionUpdated,
+  handleSubscriptionCancelled,
+  handleInvoicePaymentSucceeded,
+  handleInvoicePaymentFailed
+} from "./webhook-handlers";
 import config from "./config";
 import { sendContactFormEmail, verifyEmailService } from "./email-service";
 
@@ -1354,107 +1364,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Handler for successful payment intents
-  const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
-    console.log('Payment Intent Succeeded:', paymentIntent.id);
-    
-    try {
-      // Get all donations
-      const donations = await storage.getDonations();
-      
-      // Find donation by multiple possible matching strategies
-      const donation = donations.find(d => {
-        // Direct match on payment intent ID
-        if (d.stripePaymentId === paymentIntent.id) return true;
-        
-        // Match on client secret
-        if (d.stripePaymentId === paymentIntent.client_secret) return true;
-        
-        // Match on combined format that we're now using
-        if (d.stripePaymentId === `${paymentIntent.id}|${paymentIntent.client_secret}`) return true;
-        
-        // Check if payment ID contains the intent ID (partial match)
-        if (d.stripePaymentId && d.stripePaymentId.includes(paymentIntent.id)) return true;
-        
-        // Match via metadata (we store the donation ID in metadata)
-        if (paymentIntent.metadata && paymentIntent.metadata.donationId && 
-            d.id === parseInt(paymentIntent.metadata.donationId)) {
-          return true;
-        }
-        
-        return false;
-      });
-      
-      if (donation) {
-        console.log(`Found donation ID ${donation.id} for payment intent ${paymentIntent.id}`);
-        
-        // Update donation status to completed
-        await storage.updateDonationStatus(donation.id, "completed", paymentIntent.id);
-        
-        // If donation is for a specific case, update the case's amount collected
-        if (donation.caseId) {
-          await storage.updateCaseAmountCollected(donation.caseId, donation.amount);
-        }
-        
-        console.log(`Donation ${donation.id} marked as completed and amount collected updated`);
-      } else {
-        console.warn(`No donation found for payment intent ${paymentIntent.id}`);
-        
-        // Additional diagnostic info
-        console.log('Available donations:', donations.map(d => ({
-          id: d.id,
-          status: d.status,
-          stripePaymentId: d.stripePaymentId
-        })));
-      }
-    } catch (error: any) {
-      console.error('Error handling payment intent succeeded:', error.message);
-    }
-  };
 
-  // Handler for failed payment intents
-  const handlePaymentIntentFailed = async (paymentIntent: any) => {
-    console.log('Payment Intent Failed:', paymentIntent.id);
-    
-    try {
-      // Get all donations
-      const donations = await storage.getDonations();
-      
-      // Find donation by multiple possible matching strategies (same as success handler)
-      const donation = donations.find(d => {
-        // Direct match on payment intent ID
-        if (d.stripePaymentId === paymentIntent.id) return true;
-        
-        // Match on client secret
-        if (d.stripePaymentId === paymentIntent.client_secret) return true;
-        
-        // Match on combined format that we're now using
-        if (d.stripePaymentId === `${paymentIntent.id}|${paymentIntent.client_secret}`) return true;
-        
-        // Check if payment ID contains the intent ID (partial match)
-        if (d.stripePaymentId && d.stripePaymentId.includes(paymentIntent.id)) return true;
-        
-        // Match via metadata (we store the donation ID in metadata)
-        if (paymentIntent.metadata && paymentIntent.metadata.donationId && 
-            d.id === parseInt(paymentIntent.metadata.donationId)) {
-          return true;
-        }
-        
-        return false;
-      });
-      
-      if (donation) {
-        console.log(`Found donation ID ${donation.id} for failed payment intent ${paymentIntent.id}`);
-        // Update donation status to failed
-        await storage.updateDonationStatus(donation.id, "failed", paymentIntent.id);
-        console.log(`Donation ${donation.id} marked as failed`);
-      } else {
-        console.warn(`No donation found for failed payment intent ${paymentIntent.id}`);
-      }
-    } catch (error: any) {
-      console.error('Error handling payment intent failed:', error.message);
-    }
-  };
+
+
 
   // Handler for completed checkout sessions
   const handleCheckoutSessionCompleted = async (session: any) => {
