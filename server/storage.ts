@@ -915,7 +915,20 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Choose the appropriate storage implementation based on database availability
-export const storage = isDatabaseAvailable() 
-  ? new DatabaseStorage() 
-  : new MemStorage();
+// Create a singleton storage instance to ensure consistency across all components
+let storageInstance: IStorage | null = null;
+
+function createStorageInstance(): IStorage {
+  if (storageInstance) {
+    return storageInstance;
+  }
+  
+  storageInstance = isDatabaseAvailable() 
+    ? new DatabaseStorage() 
+    : new MemStorage();
+    
+  return storageInstance;
+}
+
+// Export the singleton storage instance
+export const storage = createStorageInstance();

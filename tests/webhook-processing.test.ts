@@ -152,6 +152,7 @@ describe('Enhanced Webhook Processing', () => {
 
       // Verify donation marked as failed
       let updatedDonation = await storage.getDonation(donation.id);
+      console.log(`[TEST-DEBUG] After webhook, donation ${donation.id} status: ${updatedDonation?.status}`);
       expect(updatedDonation?.status).toBe('failed');
 
       // Second attempt succeeds

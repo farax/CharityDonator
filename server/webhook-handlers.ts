@@ -246,14 +246,13 @@ export const handlePaymentIntentFailed = async (paymentIntent: any) => {
     
     if (donation) {
       // Update donation status to failed
-      console.log(`[WEBHOOK-DEBUG] Updating donation ${donation.id} status from ${donation.status} to failed`);
+      console.log(`[WEBHOOK-DEBUG] About to update donation ${donation.id} from ${donation.status} to failed`);
       const updatedDonation = await storage.updateDonationStatus(donation.id, "failed", paymentIntent.id);
+      console.log(`[WEBHOOK-DEBUG] Update result: ${updatedDonation ? `SUCCESS - new status: ${updatedDonation.status}` : 'FAILURE'}`);
       
       if (updatedDonation) {
-        console.log(`[WEBHOOK-DEBUG] Donation ${donation.id} updated successfully, new status: ${updatedDonation.status}`);
         logWebhookEvent('DONATION_FAILED', { donationId: donation.id, paymentIntentId: paymentIntent.id });
       } else {
-        console.log(`[WEBHOOK-DEBUG] Failed to update donation ${donation.id}`);
         logWebhookEvent('DONATION_UPDATE_FAILED', { donationId: donation.id, paymentIntentId: paymentIntent.id });
       }
     } else {
