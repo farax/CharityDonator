@@ -6,9 +6,50 @@
 import { storage } from './storage';
 import type { Donation } from '@shared/schema';
 
-// Enhanced logging for webhook events
+// New Relic integration
+const newrelic = require('newrelic');
+
+// Enhanced logging for webhook events with New Relic integration
 const logWebhookEvent = (event: string, details: any) => {
-  console.log(`[WEBHOOK-${event.toUpperCase()}]`, JSON.stringify(details, null, 2));
+  const logMessage = `[WEBHOOK-${event.toUpperCase()}]`;
+  console.log(logMessage, JSON.stringify(details, null, 2));
+  
+  // Send custom event to New Relic
+  newrelic.recordCustomEvent('WebhookEvent', {
+    eventType: event.toUpperCase(),
+    ...details,
+    timestamp: new Date().toISOString()
+  });
+};
+
+// Special logging for orphaned payments with high priority in New Relic
+const logOrphanedPayment = (paymentIntent: any) => {
+  const orphanedDetails = {
+    paymentIntentId: paymentIntent.id,
+    amount: paymentIntent.amount / 100, // Convert from cents
+    currency: paymentIntent.currency.toUpperCase(),
+    status: paymentIntent.status,
+    created: new Date(paymentIntent.created * 1000).toISOString(),
+    metadata: paymentIntent.metadata,
+    description: paymentIntent.description,
+    severity: 'HIGH'
+  };
+
+  // Console logging
+  console.log('[WEBHOOK-ORPHANED_PAYMENT]', JSON.stringify(orphanedDetails, null, 2));
+  
+  // New Relic custom event with high priority
+  newrelic.recordCustomEvent('OrphanedPayment', {
+    ...orphanedDetails,
+    alertLevel: 'CRITICAL',
+    requiresInvestigation: true,
+    timestamp: new Date().toISOString()
+  });
+
+  // Also record as an error for alerting
+  newrelic.noticeError(new Error('Orphaned payment detected'), {
+    customAttributes: orphanedDetails
+  });
 };
 
 // Enhanced payment intent matching with multiple fallback strategies
@@ -122,15 +163,8 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
         logWebhookEvent('DONATION_UPDATE_FAILED', { donationId: donation.id, paymentIntentId: paymentIntent.id });
       }
     } else {
-      // Log orphaned payment for manual investigation
-      logWebhookEvent('ORPHANED_PAYMENT', {
-        paymentIntentId: paymentIntent.id,
-        amount: paymentIntent.amount / 100,
-        currency: paymentIntent.currency,
-        created: new Date(paymentIntent.created * 1000),
-        metadata: paymentIntent.metadata,
-        description: paymentIntent.description
-      });
+      // Log orphaned payment with high priority for New Relic alerting
+      logOrphanedPayment(paymentIntent);
     }
   } catch (error: any) {
     logWebhookEvent('HANDLER_ERROR', { 
