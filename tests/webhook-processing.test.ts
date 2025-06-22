@@ -271,8 +271,12 @@ describe('Enhanced Webhook Processing', () => {
 
         const donation = donationResponse.body;
 
+        // Set donation to processing state with payment intent ID for direct matching
+        const paymentIntentId = `pi_test_amount_${amount.toString().replace('.', '_')}`;
+        await storage.updateDonationStatus(donation.id, 'processing', paymentIntentId);
+
         const paymentIntent = createMockPaymentIntent({
-          id: `pi_test_amount_${amount.toString().replace('.', '_')}`,
+          id: paymentIntentId,
           amount: Math.round(amount * 100), // Convert to cents
           metadata: { donationId: donation.id.toString() }
         });
@@ -386,6 +390,9 @@ describe('Enhanced Webhook Processing', () => {
         .expect(201);
 
       const donation = donationResponse.body;
+
+      // Set donation to processing state first
+      await storage.updateDonationStatus(donation.id, 'processing', 'pi_test_duplicate');
 
       const paymentIntent = createMockPaymentIntent({
         id: 'pi_test_duplicate',
