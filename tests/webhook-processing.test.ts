@@ -134,9 +134,10 @@ describe('Enhanced Webhook Processing', () => {
 
       const donation = donationResponse.body;
 
-      // First attempt fails
+      // First attempt fails - use unique payment intent ID to avoid conflicts
+      const uniqueFailedId = `pi_test_failed_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const failedPaymentIntent = createMockPaymentIntent({
-        id: 'pi_test_failed_attempt',
+        id: uniqueFailedId,
         amount: 7500,
         currency: 'eur',
         status: 'failed',
@@ -152,12 +153,12 @@ describe('Enhanced Webhook Processing', () => {
 
       // Verify donation marked as failed
       let updatedDonation = await storage.getDonation(donation.id);
-      console.log(`[TEST-DEBUG] After webhook, donation ${donation.id} status: ${updatedDonation?.status}`);
       expect(updatedDonation?.status).toBe('failed');
 
-      // Second attempt succeeds
+      // Second attempt succeeds - use unique payment intent ID
+      const uniqueSuccessId = `pi_test_success_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const successPaymentIntent = createMockPaymentIntent({
-        id: 'pi_test_success_attempt',
+        id: uniqueSuccessId,
         amount: 7500,
         currency: 'eur',
         status: 'succeeded',
