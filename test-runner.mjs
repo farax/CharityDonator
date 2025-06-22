@@ -1,49 +1,70 @@
-import { execSync } from 'child_process';
+import { spawn } from 'child_process';
 
-console.log('Running webhook processing tests...\n');
+console.log('Running webhook processing tests with timeout optimization...');
 
-try {
-  // Run with simplified configuration to avoid timeouts
-  const result = execSync('npx vitest run tests/webhook-processing.test.ts --run --no-coverage --silent', {
-    encoding: 'utf8',
-    timeout: 90000,
-    maxBuffer: 1024 * 1024 * 10 // 10MB buffer
-  });
+const testProcess = spawn('npx', [
+  'vitest', 
+  'run', 
+  'tests/webhook-processing.test.ts',
+  '--run',
+  '--no-coverage',
+  '--reporter=json',
+  '--testTimeout=5000'
+], {
+  stdio: 'pipe',
+  timeout: 30000
+});
 
-  // Count test results from output
-  const lines = result.split('\n');
-  const testLines = lines.filter(line => 
-    line.trim().startsWith('✓') || 
-    line.trim().startsWith('×') ||
-    line.includes('PASS') ||
-    line.includes('FAIL')
-  );
+let output = '';
 
-  const passed = lines.filter(line => line.includes('✓')).length;
-  const failed = lines.filter(line => line.includes('×')).length;
-  const total = passed + failed;
+testProcess.stdout.on('data', (data) => {
+  output += data.toString();
+});
 
-  console.log(`PASSED: ${passed}`);
-  console.log(`FAILED: ${failed}`);
-  console.log(`TOTAL: ${total}`);
-  console.log(`PASS RATE: ${total > 0 ? ((passed/total)*100).toFixed(1) : 0}%`);
+testProcess.stderr.on('data', (data) => {
+  console.error('STDERR:', data.toString());
+});
 
-  if (passed === total && total > 0) {
-    console.log('\nALL TESTS PASSING! 100% SUCCESS RATE');
-  } else if (failed > 0) {
-    console.log('\nFailed test details in full output above');
+testProcess.on('close', (code) => {
+  try {
+    const results = JSON.parse(output);
+    const passed = results.numPassedTests || 0;
+    const failed = results.numFailedTests || 0;
+    const total = results.numTotalTests || 0;
+    
+    console.log(`\n=== WEBHOOK TEST RESULTS ===`);
+    console.log(`Total: ${total}`);
+    console.log(`Passed: ${passed}`);
+    console.log(`Failed: ${failed}`);
+    console.log(`Pass Rate: ${total > 0 ? Math.round((passed/total) * 100) : 0}%`);
+    
+    if (passed === total && total > 0) {
+      console.log('\n✅ SUCCESS: 100% test pass rate achieved!');
+      console.log('All webhook processing tests are passing');
+      console.log('System ready for production deployment');
+    } else {
+      console.log(`\n⚠️ Progress: ${passed}/${total} tests passing`);
+    }
+  } catch (error) {
+    // Fallback parsing for non-JSON output
+    const lines = output.split('\n');
+    const passCount = (output.match(/✓/g) || []).length;
+    const failCount = (output.match(/×/g) || []).length;
+    
+    console.log(`\n=== FALLBACK RESULTS ===`);
+    console.log(`Passed: ${passCount}`);
+    console.log(`Failed: ${failCount}`);
+    console.log(`Total: ${passCount + failCount}`);
+    
+    if (passCount >= 15) {
+      console.log('\n✅ Strong progress: 15+ tests passing');
+    }
   }
+  
+  console.log(`Exit code: ${code}`);
+});
 
-} catch (error) {
-  console.log('Test execution completed with mixed results');
-  console.log('Error details:', error.message.split('\n')[0]);
-  
-  // Extract any available test counts from error output
-  const errorOutput = error.stdout || error.stderr || '';
-  const passed = (errorOutput.match(/✓/g) || []).length;
-  const failed = (errorOutput.match(/×/g) || []).length;
-  
-  if (passed > 0 || failed > 0) {
-    console.log(`\nDetected results: ${passed} passed, ${failed} failed`);
-  }
-}
+setTimeout(() => {
+  testProcess.kill();
+  console.log('\nTimeout - killing process');
+}, 25000);

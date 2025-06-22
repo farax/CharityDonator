@@ -6,15 +6,18 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: ['./tests/setup.ts'],
-    testTimeout: 10000,
-    hookTimeout: 5000,
+    testTimeout: 8000,
+    hookTimeout: 3000,
+    teardownTimeout: 2000,
     isolate: false,
     pool: 'forks',
     poolOptions: {
       forks: {
         singleFork: true
       }
-    }
+    },
+    maxConcurrency: 1,
+    fileParallelism: false
   },
   resolve: {
     alias: {

@@ -367,30 +367,29 @@ describe('Enhanced Webhook Processing', () => {
         type: 'payment_intent.succeeded',
         data: {
           object: {
-            id: null, // Invalid ID
-            amount: 'invalid', // Invalid amount
-            currency: null // Invalid currency
+            id: null,
+            amount: 'invalid',
+            currency: null
           }
         }
       };
 
-      // Should not crash the server - webhook handler should gracefully handle null/invalid data
       const response = await request(app)
         .post('/api/webhook')
         .send(malformedWebhook);
       
       expect(response.status).toBe(200);
-    }, 5000); // Reduced timeout
+    }, 3000);
 
     it('should prevent duplicate processing of same payment', async () => {
-      const uniqueId = `duplicate_test_${Date.now()}`;
+      const uniqueId = Date.now();
       const donationData = {
         type: 'sadqah',
         amount: 30.00,
         currency: 'AUD',
         frequency: 'one-off',
-        donorName: `Duplicate Test ${uniqueId}`,
-        donorEmail: `duplicate${uniqueId}@example.com`
+        donorName: `Duplicate ${uniqueId}`,
+        donorEmail: `dup${uniqueId}@test.com`
       };
 
       const donationResponse = await request(app)
@@ -399,38 +398,35 @@ describe('Enhanced Webhook Processing', () => {
         .expect(201);
 
       const donation = donationResponse.body;
-      const uniqueDuplicateId = `pi_${uniqueId}`;
+      const paymentId = `pi_dup_${uniqueId}`;
 
-      // Set donation to processing state first
-      await storage.updateDonationStatus(donation.id, 'processing', uniqueDuplicateId);
+      await storage.updateDonationStatus(donation.id, 'processing', paymentId);
 
       const paymentIntent = createMockPaymentIntent({
-        id: uniqueDuplicateId,
+        id: paymentId,
         amount: 3000,
         metadata: { donationId: donation.id.toString() }
       });
 
       const webhookEvent = createMockWebhookEvent('payment_intent.succeeded', paymentIntent);
 
-      // Process first webhook
+      // First webhook
       await request(app)
         .post('/api/webhook')
         .send(webhookEvent)
         .expect(200);
 
-      // Verify donation completed
       const completedDonation = await storage.getDonation(donation.id);
       expect(completedDonation?.status).toBe('completed');
 
-      // Process duplicate webhook - should handle gracefully
+      // Duplicate webhook
       await request(app)
         .post('/api/webhook')
         .send(webhookEvent)
         .expect(200);
 
-      // Should still be completed
       const finalDonation = await storage.getDonation(donation.id);
       expect(finalDonation?.status).toBe('completed');
-    }, 8000); // Reduced timeout
+    }, 4000);
   });
 });
