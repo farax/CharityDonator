@@ -239,7 +239,7 @@ describe('Enhanced Webhook Processing', () => {
         const donation = donationResponse.body;
 
         const paymentIntent = createMockPaymentIntent({
-          id: `pi_test_${currency.toLowerCase()}`,
+          id: `pi_test_${currency.toLowerCase()}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           amount: 2550, // 25.50 in cents
           currency: currency.toLowerCase(),
           metadata: { donationId: donation.id.toString() }
@@ -277,7 +277,7 @@ describe('Enhanced Webhook Processing', () => {
         const donation = donationResponse.body;
 
         // Set donation to processing state with payment intent ID for direct matching
-        const paymentIntentId = `pi_test_amount_${amount.toString().replace('.', '_')}`;
+        const paymentIntentId = `pi_test_amount_${amount.toString().replace('.', '_')}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         await storage.updateDonationStatus(donation.id, 'processing', paymentIntentId);
 
         const paymentIntent = createMockPaymentIntent({
@@ -338,7 +338,7 @@ describe('Enhanced Webhook Processing', () => {
 
       // Process payment
       const paymentIntent = createMockPaymentIntent({
-        id: 'pi_test_case_payment',
+        id: `pi_test_case_payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         amount: 20000,
         metadata: { donationId: donation.id.toString() }
       });
