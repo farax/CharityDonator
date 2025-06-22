@@ -144,3 +144,51 @@ export const contactFormSchema = insertContactMessageSchema.extend({
 });
 
 export type ContactFormData = z.infer<typeof contactFormSchema>;
+
+// Webhook events logging table
+export const webhookEvents = pgTable("webhook_events", {
+  id: serial("id").primaryKey(),
+  eventType: text("event_type").notNull(), // payment_intent.succeeded, etc.
+  stripeEventId: text("stripe_event_id"), // Stripe's event ID
+  paymentIntentId: text("payment_intent_id"),
+  subscriptionId: text("subscription_id"),
+  donationId: integer("donation_id"), // Reference to donations table
+  matchStrategy: text("match_strategy"), // how donation was found
+  status: text("status").notNull(), // processed, orphaned, failed
+  rawData: json("raw_data"), // Full webhook payload
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Orphaned payments tracking table
+export const orphanedPayments = pgTable("orphaned_payments", {
+  id: serial("id").primaryKey(),
+  paymentIntentId: text("payment_intent_id").notNull().unique(),
+  amount: real("amount").notNull(),
+  currency: text("currency").notNull(),
+  status: text("status").notNull().default("unresolved"), // unresolved, resolved, ignored
+  resolvedDonationId: integer("resolved_donation_id"), // If manually linked to donation
+  stripeMetadata: json("stripe_metadata"),
+  description: text("description"),
+  stripeCreatedAt: timestamp("stripe_created_at"),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedBy: text("resolved_by"), // admin username who resolved it
+  notes: text("notes"), // Admin notes about resolution
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertWebhookEventSchema = createInsertSchema(webhookEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertOrphanedPaymentSchema = createInsertSchema(orphanedPayments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertWebhookEvent = z.infer<typeof insertWebhookEventSchema>;
+export type WebhookEvent = typeof webhookEvents.$inferSelect;
+
+export type InsertOrphanedPayment = z.infer<typeof insertOrphanedPaymentSchema>;
+export type OrphanedPayment = typeof orphanedPayments.$inferSelect;

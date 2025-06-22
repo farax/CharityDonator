@@ -7,7 +7,9 @@ import {
   endorsements, type Endorsement, type InsertEndorsement,
   stats, type Stats, type InsertStats,
   cases, type Case, type InsertCase,
-  contactMessages, type ContactMessage, type InsertContactMessage
+  contactMessages, type ContactMessage, type InsertContactMessage,
+  webhookEvents, type WebhookEvent, type InsertWebhookEvent,
+  orphanedPayments, type OrphanedPayment, type InsertOrphanedPayment
 } from "@shared/schema";
 import { db, pool, isDatabaseAvailable } from './db';
 import { eq, and, asc, desc, gt } from 'drizzle-orm';
