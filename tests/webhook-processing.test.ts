@@ -36,11 +36,12 @@ describe('Enhanced Webhook Processing', () => {
       const donation = donationResponse.body;
 
       // Update donation with payment intent ID (set as stripePaymentId for direct matching)
-      await storage.updateDonationStatus(donation.id, 'processing', 'pi_test_direct_match');
+      const uniqueDirectId = `pi_test_direct_match_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      await storage.updateDonationStatus(donation.id, 'processing', uniqueDirectId);
 
       // Simulate webhook with direct ID match
       const paymentIntent = createMockPaymentIntent({
-        id: 'pi_test_direct_match',
+        id: uniqueDirectId,
         amount: 2500
       });
 
@@ -75,11 +76,12 @@ describe('Enhanced Webhook Processing', () => {
       const donation = donationResponse.body;
 
       // Set donation to processing state first for proper matching
-      await storage.updateDonationStatus(donation.id, 'processing', 'pi_test_metadata_match');
+      const uniqueMetadataId = `pi_test_metadata_match_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      await storage.updateDonationStatus(donation.id, 'processing', uniqueMetadataId);
 
       // Simulate webhook with metadata match
       const paymentIntent = createMockPaymentIntent({
-        id: 'pi_test_metadata_match',
+        id: uniqueMetadataId,
         amount: 5000,
         currency: 'usd',
         metadata: { donationId: donation.id.toString() }
@@ -100,7 +102,7 @@ describe('Enhanced Webhook Processing', () => {
     it('should handle orphaned payments gracefully', async () => {
       // Simulate webhook for payment with no matching donation
       const paymentIntent = createMockPaymentIntent({
-        id: 'pi_test_orphaned_payment',
+        id: `pi_test_orphaned_payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         amount: 1000,
         metadata: { donationId: '99999' } // Non-existent donation
       });
