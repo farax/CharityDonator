@@ -108,10 +108,12 @@ const findDonationByPaymentIntent = async (paymentIntent: any): Promise<Donation
   // Strategy 4: Metadata donation ID match (this is the primary issue in tests)
   if (paymentIntent.metadata && paymentIntent.metadata.donationId) {
     const donationId = parseInt(paymentIntent.metadata.donationId);
-    donation = await storage.getDonation(donationId);
-    if (donation) {
-      logWebhookEvent('MATCH_FOUND', { strategy: 'metadata', donationId: donation.id, paymentIntentId: paymentIntent.id });
-      return donation;
+    if (!isNaN(donationId)) {
+      donation = await storage.getDonation(donationId);
+      if (donation) {
+        logWebhookEvent('MATCH_FOUND', { strategy: 'metadata', donationId: donation.id, paymentIntentId: paymentIntent.id });
+        return donation;
+      }
     }
   }
 
@@ -172,14 +174,20 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
     const donation = await findDonationByPaymentIntent(paymentIntent);
     
     if (donation) {
-      // Check if already completed to prevent duplicate processing
+      // Update donation status to completed (storage layer will handle duplicates)
+      const updatedDonation = await storage.updateDonationStatus(donation.id, "completed", paymentIntent.id);
+      
+      // Check if update was successful
+      if (!updatedDonation) {
+        logWebhookEvent('DONATION_UPDATE_FAILED', { donationId: donation.id, paymentIntentId: paymentIntent.id });
+        return;
+      }
+      
+      // If donation was already completed, log but don't duplicate case updates
       if (donation.status === 'completed') {
         logWebhookEvent('ALREADY_COMPLETED', { donationId: donation.id, paymentIntentId: paymentIntent.id });
         return;
       }
-
-      // Update donation status to completed
-      const updatedDonation = await storage.updateDonationStatus(donation.id, "completed", paymentIntent.id);
       
       if (updatedDonation) {
         logWebhookEvent('DONATION_COMPLETED', { 

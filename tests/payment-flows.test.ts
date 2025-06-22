@@ -81,9 +81,18 @@ describe('Payment Flow Integration Tests', () => {
 
     it('should handle multiple currencies (USD, EUR, GBP, INR)', async () => {
       for (const currency of TEST_CONFIG.currencies) {
+        // Use currency-appropriate amounts to meet Stripe minimum requirements
+        const currencyAmounts: Record<string, number> = {
+          'AUD': 1.00,
+          'USD': 1.00,
+          'EUR': 1.00,
+          'GBP': 1.00,
+          'INR': 50.00  // INR requires higher minimum due to conversion rates
+        };
+        
         const donationData = {
           type: 'zakaat',
-          amount: 25.50,
+          amount: currencyAmounts[currency] || 1.00,
           currency,
           frequency: 'one-off',
           donorName: `Test Donor ${currency}`,
