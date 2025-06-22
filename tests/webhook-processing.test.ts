@@ -201,7 +201,7 @@ describe('Enhanced Webhook Processing', () => {
 
       // Simulate subscription created webhook
       const subscription = {
-        id: 'sub_test_monthly',
+        id: `sub_test_monthly_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         status: 'active',
         current_period_end: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60),
         metadata: { donationId: donation.id.toString() }
@@ -399,10 +399,11 @@ describe('Enhanced Webhook Processing', () => {
       const donation = donationResponse.body;
 
       // Set donation to processing state first
-      await storage.updateDonationStatus(donation.id, 'processing', 'pi_test_duplicate');
+      const uniqueDuplicateId = `pi_test_duplicate_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      await storage.updateDonationStatus(donation.id, 'processing', uniqueDuplicateId);
 
       const paymentIntent = createMockPaymentIntent({
-        id: 'pi_test_duplicate',
+        id: uniqueDuplicateId,
         amount: 3000,
         metadata: { donationId: donation.id.toString() }
       });
