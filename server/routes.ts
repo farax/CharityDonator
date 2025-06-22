@@ -714,9 +714,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { amount, currency, donationId } = req.body;
       console.log(`[STRIPE-DEBUG] Payment request: amount=${amount}, currency=${currency}, donationId=${donationId}`);
       
+      // Validate currency and amount
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Invalid amount" });
+      }
+      
+      if (!currency) {
+        return res.status(400).json({ message: "Currency is required" });
+      }
+      
+      // Ensure currency is supported by Stripe
+      const supportedCurrencies = ['aud', 'usd', 'eur', 'gbp', 'inr', 'cad', 'nzd'];
+      const currencyLower = currency.toLowerCase();
+      
+      if (!supportedCurrencies.includes(currencyLower)) {
+        return res.status(400).json({ message: `Currency ${currency} is not supported` });
+      }
+      
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
-        currency: currency.toLowerCase(),
+        currency: currencyLower,
         payment_method_types: ['card'], // Limit to card payments only
         description: 'Donation to Aafiyaa Ltd.', // Set company name in payment authorization text
         statement_descriptor_suffix: 'DONATION', // Text on credit card statement (max 22 chars)

@@ -74,6 +74,9 @@ describe('Enhanced Webhook Processing', () => {
 
       const donation = donationResponse.body;
 
+      // Set donation to processing state first for proper matching
+      await storage.updateDonationStatus(donation.id, 'processing', 'pi_test_metadata_match');
+
       // Simulate webhook with metadata match
       const paymentIntent = createMockPaymentIntent({
         id: 'pi_test_metadata_match',
