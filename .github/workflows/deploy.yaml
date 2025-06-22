@@ -45,6 +45,7 @@ jobs:
           PGDATABASE=${{ vars.PGDATABASE }}
           PGHOST=${{ vars.PGHOST }}
           PGPORT=${{ vars.PGPORT }}
+          VITE_STRIPE_PUBLIC_KEY=${{ vars.VITE_STRIPE_PUBLIC_KEY }}
           EOF"
 
       - name: Write .env file to VPS (for frontend)
