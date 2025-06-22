@@ -174,7 +174,14 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
     const donation = await findDonationByPaymentIntent(paymentIntent);
     
     if (donation) {
-      // Update donation status to completed (storage layer will handle duplicates)
+      // Check if already completed to prevent duplicate processing
+      if (donation.status === 'completed') {
+        logWebhookEvent('ALREADY_COMPLETED', { donationId: donation.id, paymentIntentId: paymentIntent.id });
+        return;
+      }
+
+      // Update donation status to completed
+      console.log(`[WEBHOOK-DEBUG] Updating donation ${donation.id} status from ${donation.status} to completed`);
       const updatedDonation = await storage.updateDonationStatus(donation.id, "completed", paymentIntent.id);
       
       // Check if update was successful
@@ -183,11 +190,7 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
         return;
       }
       
-      // If donation was already completed, log but don't duplicate case updates
-      if (donation.status === 'completed') {
-        logWebhookEvent('ALREADY_COMPLETED', { donationId: donation.id, paymentIntentId: paymentIntent.id });
-        return;
-      }
+      console.log(`[WEBHOOK-DEBUG] Donation ${donation.id} updated successfully, new status: ${updatedDonation.status}`);
       
       if (updatedDonation) {
         logWebhookEvent('DONATION_COMPLETED', { 
@@ -245,10 +248,16 @@ export const handlePaymentIntentFailed = async (paymentIntent: any) => {
     const donation = await findDonationByPaymentIntent(paymentIntent);
     
     if (donation) {
-      // Only update if not already failed
-      if (donation.status !== 'failed') {
-        await storage.updateDonationStatus(donation.id, "failed", paymentIntent.id);
+      // Update donation status to failed
+      console.log(`[WEBHOOK-DEBUG] Updating donation ${donation.id} status from ${donation.status} to failed`);
+      const updatedDonation = await storage.updateDonationStatus(donation.id, "failed", paymentIntent.id);
+      
+      if (updatedDonation) {
+        console.log(`[WEBHOOK-DEBUG] Donation ${donation.id} updated successfully, new status: ${updatedDonation.status}`);
         logWebhookEvent('DONATION_FAILED', { donationId: donation.id, paymentIntentId: paymentIntent.id });
+      } else {
+        console.log(`[WEBHOOK-DEBUG] Failed to update donation ${donation.id}`);
+        logWebhookEvent('DONATION_UPDATE_FAILED', { donationId: donation.id, paymentIntentId: paymentIntent.id });
       }
     } else {
       logWebhookEvent('FAILED_PAYMENT_NO_DONATION', { paymentIntentId: paymentIntent.id });
