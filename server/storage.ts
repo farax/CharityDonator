@@ -256,9 +256,7 @@ export class MemStorage implements IStorage {
   }
   
   async getDonation(id: number): Promise<Donation | undefined> {
-    const donation = this.donations.get(id);
-    console.log(`[STORAGE-DEBUG] Retrieved donation ${id} with status: ${donation?.status || 'NOT_FOUND'}`);
-    return donation;
+    return this.donations.get(id);
   }
   
   async getDonationByStripePaymentId(paymentId: string): Promise<Donation | undefined> {
@@ -281,11 +279,7 @@ export class MemStorage implements IStorage {
   
   async updateDonationStatus(id: number, status: string, paymentId?: string): Promise<Donation | undefined> {
     const donation = this.donations.get(id);
-    if (!donation) {
-      console.log(`[STORAGE-DEBUG] Donation ${id} not found in memory store`);
-      return undefined;
-    }
-    console.log(`[STORAGE-DEBUG] Updating donation ${id} from status '${donation.status}' to '${status}'`);
+    if (!donation) return undefined;
     
     // Extract payment method from the ID if not already set
     let paymentMethod = donation.paymentMethod;
@@ -319,7 +313,6 @@ export class MemStorage implements IStorage {
     }
     
     this.donations.set(id, updatedDonation);
-    console.log(`[STORAGE-DEBUG] Successfully updated donation ${id} in memory store, new status: ${updatedDonation.status}`);
     return updatedDonation;
   }
   
