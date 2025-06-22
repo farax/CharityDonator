@@ -34,14 +34,28 @@ const logWebhookEvent = (event: string, details: any) => {
 
 // Special logging for orphaned payments with high priority in New Relic
 const logOrphanedPayment = (paymentIntent: any) => {
+  // Handle invalid timestamps gracefully
+  let createdDate = new Date();
+  try {
+    if (paymentIntent.created && typeof paymentIntent.created === 'number') {
+      createdDate = new Date(paymentIntent.created * 1000);
+      // Validate the date
+      if (isNaN(createdDate.getTime())) {
+        createdDate = new Date();
+      }
+    }
+  } catch (error) {
+    createdDate = new Date();
+  }
+
   const orphanedDetails = {
     paymentIntentId: paymentIntent.id,
     amount: paymentIntent.amount / 100, // Convert from cents
-    currency: paymentIntent.currency.toUpperCase(),
+    currency: paymentIntent.currency?.toUpperCase() || 'UNKNOWN',
     status: paymentIntent.status,
-    created: new Date(paymentIntent.created * 1000).toISOString(),
-    metadata: paymentIntent.metadata,
-    description: paymentIntent.description,
+    created: createdDate.toISOString(),
+    metadata: paymentIntent.metadata || {},
+    description: paymentIntent.description || null,
     severity: 'HIGH'
   };
 
@@ -178,10 +192,25 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
         // Update case amount if donation is for a specific case
         if (donation.caseId) {
           try {
-            await storage.updateCaseAmountCollected(donation.caseId, donation.amount);
-            logWebhookEvent('CASE_AMOUNT_UPDATED', { caseId: donation.caseId, amount: donation.amount });
+            const updatedCase = await storage.updateCaseAmountCollected(donation.caseId, donation.amount);
+            if (updatedCase) {
+              logWebhookEvent('CASE_AMOUNT_UPDATED', { 
+                caseId: donation.caseId, 
+                amount: donation.amount,
+                newTotal: updatedCase.amountCollected
+              });
+            } else {
+              logWebhookEvent('CASE_UPDATE_ERROR', { 
+                caseId: donation.caseId, 
+                error: 'Case not found or update failed'
+              });
+            }
           } catch (caseError: any) {
-            logWebhookEvent('CASE_UPDATE_ERROR', { caseId: donation.caseId, error: caseError.message });
+            logWebhookEvent('CASE_UPDATE_ERROR', { 
+              caseId: donation.caseId, 
+              error: caseError.message,
+              amount: donation.amount
+            });
           }
         }
       } else {

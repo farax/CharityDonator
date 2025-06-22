@@ -35,7 +35,7 @@ describe('Enhanced Webhook Processing', () => {
 
       const donation = donationResponse.body;
 
-      // Update donation with payment intent ID
+      // Update donation with payment intent ID (set as stripePaymentId for direct matching)
       await storage.updateDonationStatus(donation.id, 'processing', 'pi_test_direct_match');
 
       // Simulate webhook with direct ID match
@@ -297,10 +297,9 @@ describe('Enhanced Webhook Processing', () => {
       const caseData = {
         title: 'Test Medical Case',
         description: 'Test case for webhook processing',
-        targetAmount: 1000.00,
-        amountCollected: 0.00,
-        status: 'active',
-        category: 'medical'
+        imageUrl: '/images/test-case.jpg',
+        amountRequired: 1000.00,
+        active: true
       };
 
       const caseResponse = await request(app)
