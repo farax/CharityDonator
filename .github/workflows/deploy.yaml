@@ -28,11 +28,9 @@ jobs:
           PORT=3000
           SESSION_SECRET=${{ secrets.SESSION_SECRET }}
           STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
-          VITE_STRIPE_PUBLIC_KEY=${{ vars.VITE_STRIPE_PUBLIC_KEY }}
           STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
           PAYPAL_CLIENT_ID=${{ secrets.PAYPAL_CLIENT_ID }}
           PAYPAL_SECRET_KEY=${{ secrets.PAYPAL_SECRET_KEY }}
-          VITE_PAYPAL_CLIENT_ID=${{ vars.VITE_PAYPAL_CLIENT_ID }}
           SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}
           SMTP_HOST=smtp.gmail.com
           SMTP_PORT=587
@@ -41,9 +39,6 @@ jobs:
           EMAIL_FROM=${{ vars.EMAIL_FROM }}
           EMAIL_TO=${{ vars.EMAIL_TO }}
           NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY }}
-          VITE_NEW_RELIC_ACCOUNT_ID=${{ vars.VITE_NEW_RELIC_ACCOUNT_ID }}
-          VITE_NEW_RELIC_APPLICATION_ID=${{ vars.VITE_NEW_RELIC_APPLICATION_ID }}
-          VITE_NEW_RELIC_BROWSER_LICENSE_KEY=${{ vars.VITE_NEW_RELIC_BROWSER_LICENSE_KEY }}
           DATABASE_URL=${{ secrets.DATABASE_URL }}
           PGUSER=${{ secrets.PGUSER }}
           PGPASSWORD=${{ secrets.PGPASSWORD }}
@@ -60,6 +55,8 @@ jobs:
           VITE_NEW_RELIC_ACCOUNT_ID=${{ vars.VITE_NEW_RELIC_ACCOUNT_ID }}
           VITE_NEW_RELIC_APPLICATION_ID=${{ vars.VITE_NEW_RELIC_APPLICATION_ID }}
           VITE_NEW_RELIC_BROWSER_LICENSE_KEY=${{ vars.VITE_NEW_RELIC_BROWSER_LICENSE_KEY }}
+          VITE_TAWK_TO_PROPERTY_ID=${{ vars.VITE_TAWK_TO_PROPERTY_ID }}
+          VITE_TAWK_TO_WIDGET_ID=${{ vars.VITE_TAWK_TO_WIDGET_ID }}
           EOF"
 
       - name: Run deploy script on VPS
