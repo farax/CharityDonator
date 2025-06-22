@@ -4,10 +4,10 @@ import { storage } from '../server/storage';
 // Test configuration
 export const TEST_CONFIG = {
   stripe: {
-    // Using Stripe test keys for integration tests
-    secretKey: 'sk_test_4eC39HqLyjWDarjtT1zdp7dc', // Stripe's official test key
-    publicKey: 'pk_test_TYooMQauvdEDq54NiTphI7jx', // Stripe's official test key
-    webhookSecret: 'whsec_test_webhook_secret'
+    // Using environment variables for test keys to avoid exposing secrets
+    secretKey: process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder',
+    publicKey: process.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_placeholder',
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test_placeholder'
   },
   currencies: ['AUD', 'USD', 'EUR', 'GBP', 'INR'],
   amounts: [5.00, 25.50, 100.00, 1000.00],
@@ -50,8 +50,7 @@ beforeEach(async () => {
 beforeAll(async () => {
   // Set test environment
   process.env.NODE_ENV = 'test';
-  process.env.STRIPE_SECRET_KEY = TEST_CONFIG.stripe.secretKey;
-  process.env.STRIPE_WEBHOOK_SECRET = TEST_CONFIG.stripe.webhookSecret;
+  // Environment variables for Stripe keys should be set in CI/CD or local test environment
 });
 
 afterAll(async () => {
