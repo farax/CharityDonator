@@ -543,7 +543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).json({ error: "Failed to create PayPal order" });
         }
         
-        const orderData = await orderResponse.json();
+        const orderData = await orderResponse.json() as any;
         console.log('[PAYPAL] Order created:', orderData.id);
         
         // If donationId was provided, update the donation record with PayPal order ID
@@ -597,12 +597,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).json({ error: "Failed to capture PayPal order" });
         }
         
-        const captureData = await captureResponse.json();
+        const captureData = await captureResponse.json() as any;
         console.log('[PAYPAL] Order captured successfully:', captureData.id);
         
         // Find the donation associated with this order ID
         const donations = await storage.getDonations();
-        const donation = donations.find(d => d.paymentId === orderId);
+        const donation = donations.find(d => d.stripePaymentId === orderId);
         
         if (donation) {
           console.log(`[PAYPAL] Found donation ${donation.id} for order ${orderId}`);
@@ -897,7 +897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.updateDonationStatus(
             donation.id, 
             'processing', 
-            null
+            undefined
           );
         }
       }
@@ -940,7 +940,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           donationType: donation.type,
           currency,
           amount: amount.toString(),
-          userId: user ? user.id.toString() : undefined
+          userId: user?.id ? user.id.toString() : ''
         }
       });
       
@@ -951,7 +951,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Safely extract the current_period_end timestamp (if it exists)
       if (subscription && typeof subscription === 'object' && 'current_period_end' in subscription) {
-        const periodEnd = subscription.current_period_end;
+        const periodEnd = (subscription as any).current_period_end;
         if (periodEnd && typeof periodEnd === 'number') {
           nextPaymentDate = new Date(periodEnd * 1000); // Convert UNIX timestamp to Date
           console.log('Next payment date set to:', nextPaymentDate);
@@ -981,7 +981,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.updateDonationStatus(
             donation.id,
             updatedDonation.status,
-            updatedDonation.stripePaymentId
+            updatedDonation.stripePaymentId || undefined
           );
         }
       }
@@ -993,7 +993,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create a payment method and attach it to the customer if we don't have a payment intent
       let paymentIntent;
       
-      const paymentIntentId = typeof invoice.payment_intent === 'string' ? invoice.payment_intent : undefined;
+      const paymentIntentId = typeof typeof (invoice.payment_intent as any) === 'string' ? (invoice.payment_intent as string) : (invoice.payment_intent as any)?.id;
       
       if (!paymentIntentId) {
         console.log('No payment intent found - creating one for this invoice specifically');
@@ -1004,7 +1004,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('Invoice manually paid:', paidInvoice.id, 'Status:', paidInvoice.status);
           
           // If invoice payment creates a payment intent, retrieve it
-          const paidInvoicePaymentIntent = paidInvoice.payment_intent;
+          const paidInvoicePaymentIntent = paidInvoice.payment_intent as any;
           
           if (paidInvoicePaymentIntent) {
             const paidPaymentIntentId = typeof paidInvoicePaymentIntent === 'string' 
@@ -1563,7 +1563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'stripe',
           subscription.id,
           subscription.status,
-          new Date((subscription.current_period_end || 0) * 1000)
+          new Date(((subscription as any).current_period_end || 0) * 1000)
         );
         
         console.log(`Updated donation ${donation.id} with subscription ${subscription.id}`);
@@ -1591,7 +1591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'stripe',
           subscription.id,
           subscription.status,
-          new Date((subscription.current_period_end || 0) * 1000)
+          new Date(((subscription as any).current_period_end || 0) * 1000)
         );
         
         console.log(`Updated donation ${donation.id} subscription status to ${subscription.status}`);
@@ -1659,7 +1659,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'stripe',
           invoice.subscription,
           subscription.status,
-          new Date((subscription.current_period_end || 0) * 1000)
+          new Date(((subscription as any).current_period_end || 0) * 1000)
         );
         
         // If this is for a case, update the case's amount collected
@@ -1700,7 +1700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'stripe',
             invoice.subscription,
             subscription.status,
-            new Date((subscription.current_period_end || 0) * 1000)
+            new Date(((subscription as any).current_period_end || 0) * 1000)
           );
           
           console.log(`Updated donation ${donation.id} subscription status to ${subscription.status} due to failed payment`);
