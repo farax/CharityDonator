@@ -5,6 +5,7 @@ import { Case } from '@shared/schema';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { useDonation } from '@/components/DonationContext';
 import { useCurrency } from '@/hooks/useCurrency';
 import Header from '@/components/Header';
@@ -108,7 +109,15 @@ export default function ActiveCases() {
               {cases.map((caseItem) => (
                 <Card key={caseItem.id} className="h-full flex flex-col">
                   <CardHeader>
-                    <CardTitle>{caseItem.title}</CardTitle>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <CardTitle className="flex-1">{caseItem.title}</CardTitle>
+                      <Badge 
+                        variant="secondary" 
+                        className="bg-green-100 text-green-800 border-green-200 font-medium"
+                      >
+                        ✓ Zakaat Eligible
+                      </Badge>
+                    </div>
                     <CardDescription>Case ID: {caseItem.id}</CardDescription>
                   </CardHeader>
                   <CardContent className="flex-grow">
