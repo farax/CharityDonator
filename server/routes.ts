@@ -1276,6 +1276,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/cases/:id", async (req, res) => {
     try {
       const caseId = parseInt(req.params.id);
+      
+      // Check if the ID is valid
+      if (isNaN(caseId) || caseId <= 0) {
+        return res.status(404).json({ message: "Case not found" });
+      }
+      
       const caseItem = await storage.getCase(caseId);
       
       if (!caseItem) {

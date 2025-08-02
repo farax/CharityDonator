@@ -41,5 +41,65 @@ waitForPort = 5000
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 37733
+externalPort = 8000
+
+[[ports]]
+localPort = 39485
+externalPort = 6800
+
+[[ports]]
+localPort = 40833
+externalPort = 6000
+
+[[ports]]
+localPort = 41513
+externalPort = 3000
+
+[[ports]]
+localPort = 41827
+externalPort = 5173
+
+[[ports]]
+localPort = 42037
+externalPort = 3002
+
+[[ports]]
+localPort = 42159
+externalPort = 5000
+
+[[ports]]
+localPort = 42341
+externalPort = 8081
+
+[[ports]]
+localPort = 44053
+externalPort = 3001
+
+[[ports]]
+localPort = 45123
+externalPort = 9000
+
+[[ports]]
+localPort = 45199
+externalPort = 4200
+
+[[ports]]
+localPort = 45685
+externalPort = 8008
+
+[[ports]]
+localPort = 45815
+externalPort = 3003
+
+[[ports]]
+localPort = 46431
+externalPort = 8080
+
+[[ports]]
+localPort = 46537
+externalPort = 8099
+
 [agent]
 integrations = ["javascript_websocket==1.0.0", "javascript_paypal==1.0.0", "javascript_sendgrid==1.0.0"]

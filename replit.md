@@ -29,6 +29,7 @@ Preferred communication style: Simple, everyday language.
 - **Fallback Storage**: In-memory storage for development and testing environments
 - **Schema Management**: Drizzle Kit for database migrations and schema updates
 - **Data Models**: Users, donations, cases, endorsements, statistics, contact messages, and webhook events
+- **Case Management**: Full CRUD operations for donation cases with status management and progress tracking
 
 ### Payment Processing Architecture
 - **Primary Provider**: Stripe for credit card processing with support for multiple currencies
@@ -41,6 +42,7 @@ Preferred communication style: Simple, everyday language.
 - **Admin Authentication**: Session-based authentication for administrative access
 - **Security**: Environment variable separation for test and production API keys
 - **Access Control**: Role-based access to administrative functions and donation management
+- **Admin Portal**: Comprehensive case management interface with create, edit, delete, and status toggle capabilities
 
 ### Analytics and Monitoring
 - **Performance Monitoring**: New Relic integration for application performance monitoring
@@ -66,6 +68,7 @@ Preferred communication style: Simple, everyday language.
 - **PostgreSQL**: Production database with SSL support
 - **Environment Configuration**: Comprehensive environment variable management for different deployment stages
 - **Testing Framework**: Vitest for unit and integration testing with payment flow validation
+- **Case Management Testing**: Comprehensive test suite covering CRUD operations, API endpoints, and integration workflows
 
 ### Third-Party Integrations
 - **Social Media**: Facebook integration for community engagement

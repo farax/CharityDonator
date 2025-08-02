@@ -34,6 +34,11 @@ export const insertCaseSchema = createInsertSchema(cases).omit({
   id: true,
   amountCollected: true,
   createdAt: true,
+}).extend({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  imageUrl: z.string().url("Must be a valid URL"),
+  amountRequired: z.number().min(1, "Amount must be at least 1"),
 });
 
 export const donations = pgTable("donations", {
