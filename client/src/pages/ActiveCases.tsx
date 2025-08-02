@@ -143,7 +143,7 @@ export default function ActiveCases() {
                             variant="secondary" 
                             className="bg-blue-100 text-blue-800 border-blue-200 font-medium"
                           >
-                            🔄 Recurring Available
+                            🔄 Recurring monthly donation
                           </Badge>
                         )}
                         <Button
