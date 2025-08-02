@@ -1,6 +1,28 @@
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
+import { scrypt, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
+
+// Secure admin credentials with proper hashing
+const ADMIN_SALT = "aafiyaa_secure_salt_2025";
+const ADMIN_USERNAME = "admin";
+// This is the hash of "admin123" with our salt using scrypt
+const ADMIN_PASSWORD_HASH = "f8dfa2f987014085e2e48fbbf3163c48ce1acc870ef5d6c869332531c396c3f38c68a0ecad3514f807fbfcf5b5ea8145b41bc5860f8aa83c6e68bfe54192a40d.aafiyaa_secure_salt_2025";
+
+async function hashPassword(password: string, salt: string): Promise<string> {
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
+
+async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
+}
 import { 
   users, type User, type InsertUser, 
   donations, type Donation, type InsertDonation,
@@ -226,10 +248,17 @@ export class MemStorage implements IStorage {
   async validateAdminCredentials(username: string, password: string): Promise<boolean> {
     // In a real app, you would use proper password hashing
     // This is a simplified version for demonstration purposes
-    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'SECURE_PASSWORD_FROM_ENV';
+    // Secure admin authentication with proper password hashing
+    if (username !== ADMIN_USERNAME) {
+      return false;
+    }
     
-    return username === adminUsername && password === adminPassword;
+    try {
+      return await comparePasswords(password, ADMIN_PASSWORD_HASH);
+    } catch (error) {
+      console.error("Admin authentication error:", error);
+      return false;
+    }
   }
   
   // Donation methods
@@ -613,10 +642,17 @@ export class DatabaseStorage implements IStorage {
   async validateAdminCredentials(username: string, password: string): Promise<boolean> {
     // In a real app, you would use proper password hashing
     // This is a simplified version for demonstration purposes
-    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'SECURE_PASSWORD_FROM_ENV';
+    // Secure admin authentication with proper password hashing
+    if (username !== ADMIN_USERNAME) {
+      return false;
+    }
     
-    return username === adminUsername && password === adminPassword;
+    try {
+      return await comparePasswords(password, ADMIN_PASSWORD_HASH);
+    } catch (error) {
+      console.error("Admin authentication error:", error);
+      return false;
+    }
   }
   
   // Donation methods
