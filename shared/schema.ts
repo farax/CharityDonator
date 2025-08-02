@@ -65,6 +65,15 @@ export const donations = pgTable("donations", {
 export const insertDonationSchema = createInsertSchema(donations).omit({
   id: true,
   createdAt: true,
+}).extend({
+  type: z.enum(["zakaat", "sadqah", "interest"], {
+    required_error: "Please select a donation type",
+  }),
+  amount: z.number().min(0.01, "Amount must be at least 0.01"),
+  currency: z.string().min(3, "Currency must be a valid 3-letter code"),
+  frequency: z.enum(["one-off", "weekly", "monthly"], {
+    required_error: "Please select a frequency",
+  }),
 });
 
 export const endorsements = pgTable("endorsements", {
