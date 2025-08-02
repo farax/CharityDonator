@@ -114,6 +114,16 @@ export default function ActiveCases() {
                   <CardContent className="flex-grow">
                     <p className="text-gray-700 mb-4">{caseItem.description}</p>
                     
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                      <p className="text-sm text-blue-800">
+                        <strong>For proof of case:</strong> Contact us at{' '}
+                        <a href="mailto:info@aafiyaa.com" className="text-blue-600 hover:underline">
+                          info@aafiyaa.com
+                        </a>{' '}
+                        OR leave your email/number in the chat at the bottom right of the page.
+                      </p>
+                    </div>
+                    
                     <div className="space-y-2 mt-4">
                       <div className="flex justify-between text-sm">
                         <span className="font-medium text-gray-500">Progress</span>
