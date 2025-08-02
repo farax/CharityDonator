@@ -30,8 +30,9 @@ import { Loader2 } from 'lucide-react';
 const caseFormSchema = insertCaseSchema.extend({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
-  imageUrl: z.string().url('Must be a valid URL'),
   amountRequired: z.number().min(1, 'Amount must be at least 1'),
+}).omit({
+  imageUrl: true,
 });
 
 type CaseFormValues = z.infer<typeof caseFormSchema>;
@@ -56,13 +57,11 @@ export default function CaseManagementForm({
     defaultValues: caseToEdit ? {
       title: caseToEdit.title,
       description: caseToEdit.description,
-      imageUrl: caseToEdit.imageUrl,
       amountRequired: caseToEdit.amountRequired,
       active: caseToEdit.active,
     } : {
       title: '',
       description: '',
-      imageUrl: '',
       amountRequired: 0,
       active: true,
     },
@@ -173,22 +172,7 @@ export default function CaseManagementForm({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="imageUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Image URL</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="https://example.com/image.jpg" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
 
             <FormField
               control={form.control}
