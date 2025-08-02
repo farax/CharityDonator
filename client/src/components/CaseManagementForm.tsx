@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -54,13 +54,7 @@ export default function CaseManagementForm({
 
   const form = useForm<CaseFormValues>({
     resolver: zodResolver(caseFormSchema),
-    defaultValues: caseToEdit ? {
-      title: caseToEdit.title,
-      description: caseToEdit.description,
-      amountRequired: caseToEdit.amountRequired,
-      active: caseToEdit.active,
-      recurringAllowed: caseToEdit.recurringAllowed,
-    } : {
+    defaultValues: {
       title: '',
       description: '',
       amountRequired: 0,
@@ -68,6 +62,27 @@ export default function CaseManagementForm({
       recurringAllowed: false,
     },
   });
+
+  // Reset form when caseToEdit changes
+  useEffect(() => {
+    if (caseToEdit) {
+      form.reset({
+        title: caseToEdit.title,
+        description: caseToEdit.description,
+        amountRequired: caseToEdit.amountRequired,
+        active: caseToEdit.active,
+        recurringAllowed: caseToEdit.recurringAllowed,
+      });
+    } else {
+      form.reset({
+        title: '',
+        description: '',
+        amountRequired: 0,
+        active: true,
+        recurringAllowed: false,
+      });
+    }
+  }, [caseToEdit, form]);
 
   // Create case mutation
   const createMutation = useMutation({
