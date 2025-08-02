@@ -5,6 +5,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useDonation } from "@/components/DonationContext";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -299,9 +300,16 @@ export default function DonationWidget() {
             {/* Frequency Selection (Only visible for Sadqah) */}
             {type === "sadqah" && (
               <div className="mb-6">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                  Payment Frequency
-                </h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold text-gray-700">
+                    Payment Frequency
+                  </h3>
+                  {(frequency === "weekly" || frequency === "monthly") && (
+                    <Badge className="bg-blue-100 text-blue-800 border-blue-200 font-medium">
+                      🔄 Recurring Donation
+                    </Badge>
+                  )}
+                </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div
                     className={`rounded-lg border p-3 cursor-pointer text-center transition-all ${
@@ -548,7 +556,9 @@ export default function DonationWidget() {
               className="w-full bg-primary hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-md transition duration-150"
               onClick={handleDonateClick}
             >
-              Donate Now
+              {frequency === "weekly" ? "🔄 Set up Weekly Donation" : 
+               frequency === "monthly" ? "🔄 Set up Monthly Donation" : 
+               "Donate Now"}
             </Button>
           </div>
         </CardContent>

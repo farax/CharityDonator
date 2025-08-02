@@ -24,6 +24,13 @@ export default function ActiveCases() {
     convertAmount
   } = useCurrency();
   
+  // Fetch active zakaat cases
+  const { data: cases, isLoading, error } = useQuery<Case[]>({
+    queryKey: ['/api/active-zakaat-cases'],
+    staleTime: 10000, // Consider data stale after 10 seconds
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+  });
+
   // Check if we returned from a payment page (potential donation complete)
   useEffect(() => {
     // If navigating to this page from another page, refresh the case data
@@ -59,13 +66,6 @@ export default function ActiveCases() {
       }
     }
   }, [cases]);
-  
-  // Fetch active zakaat cases
-  const { data: cases, isLoading, error } = useQuery<Case[]>({
-    queryKey: ['/api/active-zakaat-cases'],
-    staleTime: 10000, // Consider data stale after 10 seconds
-    refetchOnWindowFocus: true, // Refetch when window regains focus
-  });
 
   // Handle donate button click for a specific case
   const handleDonateClick = (caseItem: Case) => {
@@ -141,7 +141,7 @@ export default function ActiveCases() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const url = new URL(window.location);
+                            const url = new URL(window.location.href);
                             url.hash = `case-${caseItem.id}`;
                             navigator.clipboard.writeText(url.toString());
                           }}
