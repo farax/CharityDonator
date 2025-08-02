@@ -1303,6 +1303,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update a case (admin only)
+  app.put("/api/cases/:id", async (req, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const caseData = insertCaseSchema.partial().parse(req.body);
+      
+      const updatedCase = await storage.updateCase(caseId, caseData);
+      
+      if (!updatedCase) {
+        return res.status(404).json({ message: "Case not found" });
+      }
+      
+      res.json(updatedCase);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        res.status(400).json({ message: validationError.message });
+      } else {
+        res.status(500).json({ message: "Failed to update case" });
+      }
+    }
+  });
+
+  // Delete a case (admin only)
+  app.delete("/api/cases/:id", async (req, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const deleted = await storage.deleteCase(caseId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Case not found" });
+      }
+      
+      res.json({ message: "Case deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete case" });
+    }
+  });
+
+  // Toggle case status (admin only)
+  app.patch("/api/cases/:id/toggle-status", async (req, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const updatedCase = await storage.toggleCaseStatus(caseId);
+      
+      if (!updatedCase) {
+        return res.status(404).json({ message: "Case not found" });
+      }
+      
+      res.json(updatedCase);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to toggle case status" });
+    }
+  });
+
   // Update amount collected for a case
   app.patch("/api/cases/:id/amount-collected", async (req, res) => {
     try {

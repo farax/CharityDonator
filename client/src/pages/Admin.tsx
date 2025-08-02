@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Calendar } from 'lucide-react';
+import { Loader2, Calendar, Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import Header from '@/components/Header';
@@ -14,6 +14,9 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import CaseManagementForm from '@/components/CaseManagementForm';
+import CaseManagementTable from '@/components/CaseManagementTable';
+import { type Case } from '@shared/schema';
 
 interface Donation {
   id: number;
@@ -85,6 +88,10 @@ export default function Admin() {
   const [monthlyPatients, setMonthlyPatients] = useState<string>('');
   const [statsUpdateMessage, setStatsUpdateMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   
+  // For case management
+  const [caseFormOpen, setCaseFormOpen] = useState(false);
+  const [caseToEdit, setCaseToEdit] = useState<Case | null>(null);
+  
   // Fetch payment history
   const { 
     data: paymentHistory, 
@@ -113,6 +120,16 @@ export default function Admin() {
     refetch: refetchClinicStats
   } = useQuery<ClinicStats>({
     queryKey: ['/api/stats']
+  });
+
+  // Fetch all cases for management
+  const {
+    data: cases = [],
+    isLoading: isLoadingCases,
+    error: casesError
+  } = useQuery<Case[]>({
+    queryKey: ['/api/cases'],
+    refetchInterval: 30000 // Refresh every 30 seconds
   });
   
   // Check for authentication status and redirect if unauthorized
@@ -214,6 +231,22 @@ export default function Admin() {
     }
   };
 
+  // Case management functions
+  const handleCreateCase = () => {
+    setCaseToEdit(null);
+    setCaseFormOpen(true);
+  };
+
+  const handleEditCase = (caseItem: Case) => {
+    setCaseToEdit(caseItem);
+    setCaseFormOpen(true);
+  };
+
+  const handleCaseFormClose = () => {
+    setCaseFormOpen(false);
+    setCaseToEdit(null);
+  };
+
   if (isLoadingHistory || isLoadingStats || isLoadingClinicStats) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -303,6 +336,7 @@ export default function Admin() {
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="transactions">Transactions</TabsTrigger>
               <TabsTrigger value="statistics">Statistics</TabsTrigger>
+              <TabsTrigger value="cases">Cases</TabsTrigger>
               <TabsTrigger value="manage-stats">Manage Stats</TabsTrigger>
             </TabsList>
             
@@ -753,9 +787,45 @@ export default function Admin() {
                 </CardContent>
               </Card>
             </TabsContent>
+            
+            <TabsContent value="cases" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">Case Management</h2>
+                  <p className="text-muted-foreground">Manage donation cases and fundraising campaigns</p>
+                </div>
+                <Button onClick={handleCreateCase}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create New Case
+                </Button>
+              </div>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>All Cases</CardTitle>
+                  <CardDescription>
+                    View and manage all donation cases. Total cases: {cases.length}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <CaseManagementTable
+                    cases={cases}
+                    isLoading={isLoadingCases}
+                    onEditCase={handleEditCase}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
         </div>
       </main>
+      
+      {/* Case Management Form Modal */}
+      <CaseManagementForm
+        open={caseFormOpen}
+        onOpenChange={handleCaseFormClose}
+        caseToEdit={caseToEdit}
+      />
       
       <Footer />
     </div>

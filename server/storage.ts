@@ -62,7 +62,10 @@ export interface IStorage {
   getActiveZakaatCases(): Promise<Case[]>;
   getCase(id: number): Promise<Case | undefined>;
   createCase(caseData: InsertCase): Promise<Case>;
+  updateCase(id: number, caseData: Partial<InsertCase>): Promise<Case | undefined>;
   updateCaseAmountCollected(id: number, additionalAmount: number): Promise<Case | undefined>;
+  deleteCase(id: number): Promise<boolean>;
+  toggleCaseStatus(id: number): Promise<Case | undefined>;
   
   // Contact message methods
   createContactMessage(message: InsertContactMessage): Promise<ContactMessage>;
@@ -464,6 +467,19 @@ export class MemStorage implements IStorage {
     return newCase;
   }
   
+  async updateCase(id: number, caseData: Partial<InsertCase>): Promise<Case | undefined> {
+    const caseItem = this.casesList.get(id);
+    if (!caseItem) return undefined;
+    
+    const updatedCase: Case = {
+      ...caseItem,
+      ...caseData
+    };
+    
+    this.casesList.set(id, updatedCase);
+    return updatedCase;
+  }
+
   async updateCaseAmountCollected(id: number, additionalAmount: number): Promise<Case | undefined> {
     const caseItem = this.casesList.get(id);
     if (!caseItem) return undefined;
@@ -471,6 +487,23 @@ export class MemStorage implements IStorage {
     const updatedCase: Case = {
       ...caseItem,
       amountCollected: caseItem.amountCollected + additionalAmount
+    };
+    
+    this.casesList.set(id, updatedCase);
+    return updatedCase;
+  }
+
+  async deleteCase(id: number): Promise<boolean> {
+    return this.casesList.delete(id);
+  }
+
+  async toggleCaseStatus(id: number): Promise<Case | undefined> {
+    const caseItem = this.casesList.get(id);
+    if (!caseItem) return undefined;
+    
+    const updatedCase: Case = {
+      ...caseItem,
+      active: !caseItem.active
     };
     
     this.casesList.set(id, updatedCase);
@@ -850,6 +883,18 @@ export class DatabaseStorage implements IStorage {
     return newCase;
   }
   
+  async updateCase(id: number, caseData: Partial<InsertCase>): Promise<Case | undefined> {
+    if (!db) return undefined;
+    
+    const [updatedCase] = await db
+      .update(cases)
+      .set(caseData)
+      .where(eq(cases.id, id))
+      .returning();
+      
+    return updatedCase;
+  }
+
   async updateCaseAmountCollected(id: number, additionalAmount: number): Promise<Case | undefined> {
     if (!db) return undefined;
     
@@ -864,6 +909,33 @@ export class DatabaseStorage implements IStorage {
     const [updatedCase] = await db
       .update(cases)
       .set({ amountCollected: newAmountCollected })
+      .where(eq(cases.id, id))
+      .returning();
+      
+    return updatedCase;
+  }
+
+  async deleteCase(id: number): Promise<boolean> {
+    if (!db) return false;
+    
+    const result = await db
+      .delete(cases)
+      .where(eq(cases.id, id));
+      
+    return result.rowCount > 0;
+  }
+
+  async toggleCaseStatus(id: number): Promise<Case | undefined> {
+    if (!db) return undefined;
+    
+    // First get the current case
+    const caseItem = await this.getCase(id);
+    if (!caseItem) return undefined;
+    
+    // Toggle the active status
+    const [updatedCase] = await db
+      .update(cases)
+      .set({ active: !caseItem.active })
       .where(eq(cases.id, id))
       .returning();
       
