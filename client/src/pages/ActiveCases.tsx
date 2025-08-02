@@ -15,6 +15,7 @@ export default function ActiveCases() {
   const { setType, setSelectedCase } = useDonation();
   const queryClient = useQueryClient();
   const [location] = useLocation();
+  const [copiedCaseId, setCopiedCaseId] = useState<number | null>(null);
   
   // Use the currency hook for proper currency formatting and conversion
   const { 
@@ -148,15 +149,17 @@ export default function ActiveCases() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
+                          onClick={async () => {
                             const url = new URL(window.location.href);
                             url.hash = `case-${caseItem.id}`;
-                            navigator.clipboard.writeText(url.toString());
+                            await navigator.clipboard.writeText(url.toString());
+                            setCopiedCaseId(caseItem.id);
+                            setTimeout(() => setCopiedCaseId(null), 2000);
                           }}
                           className="h-6 px-2 text-xs"
-                          title="Copy direct link to this case"
+                          title={copiedCaseId === caseItem.id ? "Copied!" : "Copy direct link to this case"}
                         >
-                          🔗
+                          {copiedCaseId === caseItem.id ? "✓" : "🔗"}
                         </Button>
                       </div>
                     </div>
