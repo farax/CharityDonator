@@ -49,5 +49,9 @@ externalPort = 3000
 localPort = 5002
 externalPort = 3001
 
+[[ports]]
+localPort = 5003
+externalPort = 3002
+
 [agent]
 integrations = ["javascript_websocket==1.0.0", "javascript_paypal==1.0.0", "javascript_sendgrid==1.0.0"]

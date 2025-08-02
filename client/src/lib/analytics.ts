@@ -240,18 +240,20 @@ export function trackDonation(
 export function initNewRelicBrowserAgent(accountId: string, licenseKey: string, applicationId: string): void {
   if (typeof window !== 'undefined' && !document.getElementById('newrelic-browser-agent')) {
     // Use the official New Relic approach with the current browser agent script
-    (function(w,d,t,r,u) {
-      var f, n, i;
+    (function(w: any, d: any, t: any, r: any, u: any) {
+      let f: any, n: any;
       w[u] = w[u] || function() {
-        (w[u].q = w[u].q || []).push(arguments)
+        (w[u].q = w[u].q || []).push(arguments);
       };
       f = function() {
-        var s = d.createElement(t);
+        const s = d.createElement(t) as HTMLScriptElement;
         s.id = 'newrelic-browser-agent';
         s.async = true;
         s.src = r;
-        var x = d.getElementsByTagName(t)[0];
-        x.parentNode.insertBefore(s, x);
+        const x = d.getElementsByTagName(t)[0];
+        if (x && x.parentNode) {
+          x.parentNode.insertBefore(s, x);
+        }
       };
       
       if (d.readyState === 'complete') {
@@ -262,8 +264,8 @@ export function initNewRelicBrowserAgent(accountId: string, licenseKey: string, 
             f();
           }
         };
-        if (w.attachEvent) {
-          w.attachEvent('onload', n);
+        if ((w as any).attachEvent) {
+          (w as any).attachEvent('onload', n);
         } else {
           w.addEventListener('load', n, false);
         }

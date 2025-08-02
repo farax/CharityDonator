@@ -490,6 +490,7 @@ export class MemStorage implements IStorage {
       id,
       amountCollected: 0,
       active: caseData.active !== undefined ? caseData.active : true,
+      recurringAllowed: caseData.recurringAllowed ?? false,
       createdAt: new Date()
     };
     this.casesList.set(id, newCase);
@@ -958,7 +959,7 @@ export class DatabaseStorage implements IStorage {
       .delete(cases)
       .where(eq(cases.id, id));
       
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async toggleCaseStatus(id: number): Promise<Case | undefined> {
