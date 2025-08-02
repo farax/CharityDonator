@@ -40,6 +40,25 @@ export default function ActiveCases() {
     
     return () => clearInterval(intervalId);
   }, [queryClient, location]);
+
+  // Scroll to specific case if hash is present in URL
+  useEffect(() => {
+    if (cases && window.location.hash) {
+      const hash = window.location.hash.substring(1); // Remove the #
+      const element = document.getElementById(hash);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.style.border = '2px solid #10b981';
+          element.style.borderRadius = '8px';
+          setTimeout(() => {
+            element.style.border = '';
+            element.style.borderRadius = '';
+          }, 3000);
+        }, 100);
+      }
+    }
+  }, [cases]);
   
   // Fetch active zakaat cases
   const { data: cases, isLoading, error } = useQuery<Case[]>({
@@ -107,16 +126,31 @@ export default function ActiveCases() {
           {cases && cases.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {cases.map((caseItem) => (
-                <Card key={caseItem.id} className="h-full flex flex-col">
+                <Card key={caseItem.id} className="h-full flex flex-col" id={`case-${caseItem.id}`}>
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <CardTitle className="flex-1">{caseItem.title}</CardTitle>
-                      <Badge 
-                        variant="secondary" 
-                        className="bg-green-100 text-green-800 border-green-200 font-medium"
-                      >
-                        ✓ Zakaat Eligible
-                      </Badge>
+                      <div className="flex gap-2">
+                        <Badge 
+                          variant="secondary" 
+                          className="bg-green-100 text-green-800 border-green-200 font-medium"
+                        >
+                          ✓ Zakaat Eligible
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const url = new URL(window.location);
+                            url.hash = `case-${caseItem.id}`;
+                            navigator.clipboard.writeText(url.toString());
+                          }}
+                          className="h-6 px-2 text-xs"
+                          title="Copy direct link to this case"
+                        >
+                          🔗
+                        </Button>
+                      </div>
                     </div>
                     <CardDescription>Case ID: {caseItem.id}</CardDescription>
                   </CardHeader>
