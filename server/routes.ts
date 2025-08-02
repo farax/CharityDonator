@@ -275,8 +275,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const response = await fetch(`https://ipapi.co/${ipAddress}/json/`);
         const ipData = await response.json();
         
-        if (ipData.currency && !ipData.error) {
-          return res.json({ currency: ipData.currency, source: 'ip-api' });
+        if ((ipData as any).currency && !(ipData as any).error) {
+          return res.json({ currency: (ipData as any).currency, source: 'ip-api' });
         }
       } catch (geoError) {
         console.error('Geolocation API error:', geoError);
@@ -1181,7 +1181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get the subscription from Stripe
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const subscription = await stripe!.subscriptions.retrieve(subscriptionId);
       console.log(`Admin attempting to finalize subscription ${subscriptionId}, current status: ${subscription.status}`);
       
       // Only process incomplete subscriptions
@@ -1193,14 +1193,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get the latest invoice
-      const invoice = await stripe.invoices.retrieve(subscription.latest_invoice as string);
+      const invoice = await stripe!.invoices.retrieve(subscription.latest_invoice as string);
       
       // Pay the invoice to activate the subscription
-      const paidInvoice = await stripe.invoices.pay(invoice.id);
+      const paidInvoice = await stripe!.invoices.pay(invoice.id);
       console.log('Invoice manually paid by admin:', paidInvoice.id, 'Status:', paidInvoice.status);
       
       // Get the updated subscription
-      const updatedSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const updatedSubscription = await stripe!.subscriptions.retrieve(subscriptionId);
       
       res.json({
         message: "Subscription finalized successfully",
