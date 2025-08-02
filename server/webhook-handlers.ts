@@ -6,16 +6,8 @@
 import { storage } from './storage';
 import type { Donation } from '@shared/schema';
 
-// New Relic integration - safe import with fallback
+// New Relic disabled for production build compatibility - all tracking handled client-side
 let newrelic: any = null;
-try {
-  // Use dynamic require for New Relic in production, fallback in development
-  if (process.env.NODE_ENV === 'production' && process.env.NEW_RELIC_LICENSE_KEY) {
-    newrelic = require('newrelic');
-  }
-} catch (error) {
-  console.warn('New Relic not available:', error);
-}
 
 // Enhanced logging for webhook events with New Relic integration
 const logWebhookEvent = (event: string, details: any) => {

@@ -28,15 +28,9 @@ import config from "./config";
 import { sendContactFormEmail, verifyEmailService } from "./email-service";
 
 // New Relic integration - safe import with fallback
+// New Relic tracking is disabled on server-side to avoid production build issues
+// All analytics tracking is handled by the client-side browser agent
 let newrelic: any = null;
-try {
-  // Use dynamic require for New Relic in production, fallback in development
-  if (process.env.NODE_ENV === 'production' && process.env.NEW_RELIC_LICENSE_KEY) {
-    newrelic = require('newrelic');
-  }
-} catch (error) {
-  console.warn('New Relic not available:', error);
-}
 
 // Initialize Stripe with the secret key with enhanced logging
 let stripe: Stripe | undefined;

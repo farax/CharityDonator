@@ -13,18 +13,9 @@ export const logPaymentAccess = (eventType: string, data: any) => {
       ...data
     });
   } else if (process.env.NODE_ENV !== 'test') {
-    // Server-side New Relic logging
-    try {
-      const newrelic = require('newrelic');
-      newrelic.recordCustomEvent('PaymentAccess', {
-        eventType,
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV,
-        ...data
-      });
-    } catch (error) {
-      console.log(`[PAYMENT-LOG-${eventType}]`, JSON.stringify(data, null, 2));
-    }
+    // Server-side New Relic is disabled to avoid production build issues
+    // All analytics tracking is handled by the client-side browser agent
+    console.log(`[PAYMENT-LOG-${eventType}]`, JSON.stringify(data, null, 2));
   }
 };
 
