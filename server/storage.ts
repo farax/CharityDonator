@@ -227,7 +227,7 @@ export class MemStorage implements IStorage {
     // In a real app, you would use proper password hashing
     // This is a simplified version for demonstration purposes
     const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'SECURE_PASSWORD_FROM_ENV';
     
     return username === adminUsername && password === adminPassword;
   }
@@ -614,7 +614,7 @@ export class DatabaseStorage implements IStorage {
     // In a real app, you would use proper password hashing
     // This is a simplified version for demonstration purposes
     const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'SECURE_PASSWORD_FROM_ENV';
     
     return username === adminUsername && password === adminPassword;
   }
