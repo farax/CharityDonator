@@ -59,11 +59,13 @@ export default function CaseManagementForm({
       description: caseToEdit.description,
       amountRequired: caseToEdit.amountRequired,
       active: caseToEdit.active,
+      recurringAllowed: caseToEdit.recurringAllowed,
     } : {
       title: '',
       description: '',
       amountRequired: 0,
       active: true,
+      recurringAllowed: false,
     },
   });
 
@@ -206,6 +208,29 @@ export default function CaseManagementForm({
                     </FormLabel>
                     <div className="text-sm text-muted-foreground">
                       Enable this case for donations
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="recurringAllowed"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">
+                      Allow Recurring Donations
+                    </FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Enable weekly/monthly recurring donations for this case
                     </div>
                   </div>
                   <FormControl>

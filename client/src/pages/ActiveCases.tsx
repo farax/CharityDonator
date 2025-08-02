@@ -130,13 +130,21 @@ export default function ActiveCases() {
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <CardTitle className="flex-1">{caseItem.title}</CardTitle>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <Badge 
                           variant="secondary" 
                           className="bg-green-100 text-green-800 border-green-200 font-medium"
                         >
                           ✓ Zakaat Eligible
                         </Badge>
+                        {caseItem.recurringAllowed && (
+                          <Badge 
+                            variant="secondary" 
+                            className="bg-blue-100 text-blue-800 border-blue-200 font-medium"
+                          >
+                            🔄 Recurring Available
+                          </Badge>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"

@@ -27,6 +27,7 @@ export const cases = pgTable("cases", {
   amountRequired: real("amount_required").notNull(),
   amountCollected: real("amount_collected").notNull().default(0),
   active: boolean("active").notNull().default(true),
+  recurringAllowed: boolean("recurring_allowed").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

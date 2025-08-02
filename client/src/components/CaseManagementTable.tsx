@@ -139,6 +139,7 @@ export default function CaseManagementTable({
             <TableRow>
               <TableHead>Title</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Recurring</TableHead>
               <TableHead>Progress</TableHead>
               <TableHead>Amount Required</TableHead>
               <TableHead>Amount Collected</TableHead>
@@ -158,6 +159,17 @@ export default function CaseManagementTable({
                   <Badge variant={caseItem.active ? 'default' : 'secondary'}>
                     {caseItem.active ? 'Active' : 'Inactive'}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  {caseItem.recurringAllowed ? (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                      🔄 Yes
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-gray-500">
+                      No
+                    </Badge>
+                  )}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-2">
