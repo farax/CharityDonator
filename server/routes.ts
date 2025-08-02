@@ -993,18 +993,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create a payment method and attach it to the customer if we don't have a payment intent
       let paymentIntent;
       
-      const paymentIntentId = typeof typeof (invoice.payment_intent as any) === 'string' ? (invoice.payment_intent as string) : (invoice.payment_intent as any)?.id;
+      const invoiceData = invoice as any;
+      const paymentIntentId = typeof invoiceData.payment_intent === 'string' 
+        ? invoiceData.payment_intent 
+        : invoiceData.payment_intent?.id;
       
       if (!paymentIntentId) {
         console.log('No payment intent found - creating one for this invoice specifically');
         
         try {
           // Pay the invoice explicitly to move the subscription to active state
-          const paidInvoice = await stripe.invoices.pay(invoice.id);
+          const paidInvoice = await stripe.invoices.pay(invoice.id!);
           console.log('Invoice manually paid:', paidInvoice.id, 'Status:', paidInvoice.status);
           
           // If invoice payment creates a payment intent, retrieve it
-          const paidInvoicePaymentIntent = paidInvoice.payment_intent as any;
+          const paidInvoiceData = paidInvoice as any;
+          const paidInvoicePaymentIntent = paidInvoiceData.payment_intent;
           
           if (paidInvoicePaymentIntent) {
             const paidPaymentIntentId = typeof paidInvoicePaymentIntent === 'string' 
@@ -1196,7 +1200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const invoice = await stripe!.invoices.retrieve(subscription.latest_invoice as string);
       
       // Pay the invoice to activate the subscription
-      const paidInvoice = await stripe!.invoices.pay(invoice.id);
+      const paidInvoice = await stripe!.invoices.pay(invoice.id!);
       console.log('Invoice manually paid by admin:', paidInvoice.id, 'Status:', paidInvoice.status);
       
       // Get the updated subscription
