@@ -31,8 +31,7 @@ const caseFormSchema = insertCaseSchema.extend({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   amountRequired: z.number().min(1, 'Amount must be at least 1'),
-}).omit({
-  imageUrl: true,
+  imageUrl: z.string().optional(),
 });
 
 type CaseFormValues = z.infer<typeof caseFormSchema>;
@@ -60,6 +59,7 @@ export default function CaseManagementForm({
       amountRequired: 0,
       active: true,
       recurringAllowed: false,
+      imageUrl: '',
     },
   });
 
@@ -72,6 +72,7 @@ export default function CaseManagementForm({
         amountRequired: caseToEdit.amountRequired,
         active: caseToEdit.active,
         recurringAllowed: caseToEdit.recurringAllowed,
+        imageUrl: caseToEdit.imageUrl || '',
       });
     } else {
       form.reset({
@@ -80,6 +81,7 @@ export default function CaseManagementForm({
         amountRequired: 0,
         active: true,
         recurringAllowed: false,
+        imageUrl: '',
       });
     }
   }, [caseToEdit, form]);
@@ -134,10 +136,16 @@ export default function CaseManagementForm({
   });
 
   const onSubmit = (data: CaseFormValues) => {
+    // Add placeholder image URL if none provided
+    const formData = {
+      ...data,
+      imageUrl: data.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image'
+    };
+    
     if (isEditing) {
-      updateMutation.mutate(data);
+      updateMutation.mutate(formData);
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(formData);
     }
   };
 

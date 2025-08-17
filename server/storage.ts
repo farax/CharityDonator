@@ -488,6 +488,7 @@ export class MemStorage implements IStorage {
     const newCase: Case = {
       ...caseData,
       id,
+      imageUrl: caseData.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image',
       amountCollected: 0,
       active: caseData.active !== undefined ? caseData.active : true,
       recurringAllowed: caseData.recurringAllowed ?? false,
@@ -915,6 +916,7 @@ export class DatabaseStorage implements IStorage {
     if (!db) throw new Error('Database not available');
     const [newCase] = await db.insert(cases).values({
       ...insertCase,
+      imageUrl: insertCase.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image',
       amountCollected: 0
     }).returning();
     return newCase;

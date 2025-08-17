@@ -23,7 +23,7 @@ export const cases = pgTable("cases", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  imageUrl: text("image_url").notNull(),
+  imageUrl: text("image_url"),
   amountRequired: real("amount_required").notNull(),
   amountCollected: real("amount_collected").notNull().default(0),
   active: boolean("active").notNull().default(true),
@@ -38,7 +38,7 @@ export const insertCaseSchema = createInsertSchema(cases).omit({
 }).extend({
   title: z.string().min(1, "Title is required"),
   description: z.string().min(10, "Description must be at least 10 characters"),
-  imageUrl: z.string().url("Must be a valid URL"),
+  imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   amountRequired: z.number().min(1, "Amount must be at least 1"),
 });
 
