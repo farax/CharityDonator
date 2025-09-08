@@ -353,7 +353,19 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         </div>
       )}
       
-      <PaymentElement />
+      <PaymentElement 
+        options={{
+          fields: {
+            billingDetails: 'auto'
+          },
+          defaultValues: {
+            billingDetails: {
+              email: '',
+              name: ''
+            }
+          }
+        }}
+      />
       
       <Button 
         type="submit" 
