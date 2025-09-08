@@ -372,6 +372,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { donationId, status, paymentMethod, paymentId, email, name } = req.body;
       
+      console.log(`[UPDATE-DONATION-STATUS] Request data:`, {
+        donationId, status, paymentMethod, paymentId, 
+        email: email || '(empty)', 
+        name: name || '(empty)'
+      });
+      
       if (!donationId || !status) {
         return res.status(400).json({ message: "Missing required fields" });
       }
@@ -381,7 +387,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update email and name if provided
       if (donation && (email || name)) {
+        console.log(`[UPDATE-DONATION-STATUS] Updating donor info:`, { 
+          donationId, 
+          email: email || '(empty)', 
+          name: name || '(empty)' 
+        });
         donation = await storage.updateDonationDonor(donationId, name || donation.name || '', email || donation.email || '');
+        console.log(`[UPDATE-DONATION-STATUS] Updated donation:`, { 
+          id: donation?.id, 
+          email: donation?.email || '(empty)', 
+          name: donation?.name || '(empty)' 
+        });
       }
       
       if (!donation) {
@@ -389,9 +405,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Generate PDF receipt when donation is completed
+      console.log(`[RECEIPT-CHECK] Donation ${donationId} status: ${status}, email: ${donation.email || '(empty)'}`);
       if (status === 'completed' && donation.email) {
         try {
-          console.log(`Generating PDF receipt for completed donation ${donationId}`);
+          console.log(`[RECEIPT-GENERATION] Starting PDF receipt generation for donation ${donationId}`);
           
           // Generate unique receipt number
           const receiptNumber = generateReceiptNumber();

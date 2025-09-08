@@ -218,6 +218,18 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           variant: "destructive",
         });
       } else {
+        // Extract billing details from the payment intent
+        const billingDetails = paymentIntent.payment_method?.billing_details || {};
+        const paymentEmail = billingDetails.email || email;
+        const paymentName = billingDetails.name || name;
+        
+        console.log('[PAYMENT-SUCCESS] Billing details:', { 
+          email: paymentEmail || '(empty)', 
+          name: paymentName || '(empty)',
+          fromIntent: billingDetails,
+          fromState: { email, name }
+        });
+        
         // Update donation status manually to ensure it's marked completed
         try {
           if (paymentIntent && donationDetails?.id) {
@@ -226,8 +238,8 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
               status: "completed",
               paymentMethod: "stripe",
               paymentId: paymentIntent.id,
-              email: email,
-              name: name
+              email: paymentEmail,
+              name: paymentName
             });
             console.log("Donation status updated to completed", paymentIntent.id);
             
