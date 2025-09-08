@@ -185,9 +185,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if the PDF file exists
-      const fs = require('fs').promises;
+      const fs = await import('fs');
       try {
-        await fs.access(receipt.filePath);
+        await fs.promises.access(receipt.filePath);
       } catch (error) {
         return res.status(404).json({ message: "Receipt file not found" });
       }
@@ -197,7 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="aafiyaa-receipt-${receipt.receiptNumber}.pdf"`);
       
       // Stream the PDF file
-      const path = require('path');
+      const path = await import('path');
       const absolutePath = path.resolve(receipt.filePath);
       res.sendFile(absolutePath);
 
