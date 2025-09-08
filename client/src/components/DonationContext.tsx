@@ -78,7 +78,6 @@ export function DonationProvider({ children }: { children: React.ReactNode }) {
       const presets = getPresetsForCurrency(currency);
       setAmount(presets.tier1);
       setIsCustomAmount(false); // Ensure we're using preset, not custom
-      console.log(`Setting default amount: ${presets.tier1} for currency: ${currency}`);
     }
   }, [currency]); // Only depend on currency changes
 
@@ -86,7 +85,6 @@ export function DonationProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const presets = getPresetsForCurrency(currency);
     setAmount(presets.tier1);
-    console.log(`Setting initial amount: ${presets.tier1} for currency: ${currency}`);
   }, []); // Run once on mount
 
   // Effect to update destination project based on donation type

@@ -216,7 +216,7 @@ export const receipts = pgTable("receipts", {
   amount: real("amount").notNull(),
   currency: text("currency").notNull(),
   donorName: text("donor_name"),
-  donorEmail: text("donor_email").notNull(),
+  donorEmail: text("donor_email"),
   donationType: text("donation_type").notNull(), // zakaat, sadqah, interest
   caseId: integer("case_id"), // If donation was for specific case
   filePath: text("file_path"), // Path to generated PDF
