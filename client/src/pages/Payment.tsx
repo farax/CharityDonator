@@ -225,7 +225,9 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
               donationId: donationDetails.id,
               status: "completed",
               paymentMethod: "stripe",
-              paymentId: paymentIntent.id
+              paymentId: paymentIntent.id,
+              email: email,
+              name: name
             });
             console.log("Donation status updated to completed", paymentIntent.id);
             

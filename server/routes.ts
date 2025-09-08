@@ -370,14 +370,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update donation status
   app.post("/api/update-donation-status", async (req, res) => {
     try {
-      const { donationId, status, paymentMethod, paymentId } = req.body;
+      const { donationId, status, paymentMethod, paymentId, email, name } = req.body;
       
       if (!donationId || !status) {
         return res.status(400).json({ message: "Missing required fields" });
       }
       
       const payment_id = paymentId || `${paymentMethod}_${Date.now()}`;
-      const donation = await storage.updateDonationStatus(donationId, status, payment_id);
+      let donation = await storage.updateDonationStatus(donationId, status, payment_id);
+      
+      // Update email and name if provided
+      if (donation && (email || name)) {
+        donation = await storage.updateDonationDonor(donationId, name || donation.name || '', email || donation.email || '');
+      }
       
       if (!donation) {
         return res.status(404).json({ message: "Donation not found" });
