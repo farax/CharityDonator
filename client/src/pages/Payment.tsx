@@ -164,7 +164,8 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           name: name,
           caseId: donationDetails.caseId,
           caseTitle: donationDetails.caseTitle,
-          destinationProject: donationDetails.destinationProject
+          destinationProject: donationDetails.destinationProject,
+          donationId: donationDetails.id
         };
         localStorage.setItem('donationSuccess', JSON.stringify(successData));
         
@@ -282,11 +283,12 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           currency: donationDetails.currency,
           type: donationDetails.type,
           frequency: donationDetails.frequency,
-          email: email,
-          name: name,
+          email: paymentEmail,
+          name: paymentName,
           caseId: donationDetails.caseId,
           caseTitle: donationDetails.caseTitle,
-          destinationProject: donationDetails.destinationProject
+          destinationProject: donationDetails.destinationProject,
+          donationId: donationDetails.id
         };
         localStorage.setItem('donationSuccess', JSON.stringify(successData));
         

@@ -160,6 +160,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch exchange rates" });
     }
   });
+
+  // Download PDF receipt for a specific donation
+  app.get("/api/download-receipt/:donationId", async (req, res) => {
+    try {
+      const donationId = parseInt(req.params.donationId);
+      
+      if (isNaN(donationId)) {
+        return res.status(400).json({ message: "Invalid donation ID" });
+      }
+
+      // Get the donation details
+      const donation = await storage.getDonation(donationId);
+      if (!donation) {
+        return res.status(404).json({ message: "Donation not found" });
+      }
+
+      // Find the receipt for this donation
+      const receipts = await storage.getReceiptsByDonationId(donationId);
+      const receipt = receipts.find(r => r.status === 'sent' || r.status === 'generated');
+      
+      if (!receipt || !receipt.filePath) {
+        return res.status(404).json({ message: "Receipt not found or not ready yet" });
+      }
+
+      // Check if the PDF file exists
+      const fs = require('fs').promises;
+      try {
+        await fs.access(receipt.filePath);
+      } catch (error) {
+        return res.status(404).json({ message: "Receipt file not found" });
+      }
+
+      // Set appropriate headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="aafiyaa-receipt-${receipt.receiptNumber}.pdf"`);
+      
+      // Stream the PDF file
+      const path = require('path');
+      const absolutePath = path.resolve(receipt.filePath);
+      res.sendFile(absolutePath);
+
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      res.status(500).json({ message: "Error downloading receipt" });
+    }
+  });
   
   // Contact form API endpoints
   app.post("/api/contact", async (req, res) => {
