@@ -178,11 +178,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Find the receipt for this donation
       const receipts = await storage.getReceiptsByDonationId(donationId);
-      console.log(`[DOWNLOAD-DEBUG] Found ${receipts.length} receipts for donation ${donationId}:`, receipts.map(r => ({id: r.id, status: r.status, filePath: r.filePath})));
       const receipt = receipts.find(r => r.filePath && (r.status === 'sent' || r.status === 'generated' || r.status === 'failed'));
       
       if (!receipt || !receipt.filePath) {
-        console.log(`[DOWNLOAD-DEBUG] No valid receipt found. Receipt:`, receipt);
         return res.status(404).json({ message: "Receipt not found or not ready yet" });
       }
 
