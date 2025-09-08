@@ -355,13 +355,25 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
       
       <PaymentElement 
         options={{
-          fields: {
-            billingDetails: 'auto'
+          layout: {
+            type: 'accordion',
+            defaultCollapsed: false,
+            radios: false,
+            spacedAccordionItems: false
           },
-          defaultValues: {
+          fields: {
             billingDetails: {
-              email: '',
-              name: ''
+              name: 'required',
+              email: 'required',
+              phone: 'never',
+              address: {
+                line1: 'never',
+                line2: 'never',
+                city: 'never',
+                state: 'never',
+                postalCode: 'never',
+                country: 'never'
+              }
             }
           }
         }}

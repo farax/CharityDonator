@@ -37,6 +37,18 @@ function formatCurrency(amount: number, currency: string): string {
   }).format(amount);
 }
 
+// Load logo as base64
+async function getLogoBase64(): Promise<string> {
+  try {
+    const logoPath = path.join(process.cwd(), 'server', 'assets', 'aafiyaa-logo.png');
+    const logoBuffer = await fs.readFile(logoPath);
+    return logoBuffer.toString('base64');
+  } catch (error) {
+    console.error('Error loading logo:', error);
+    return '';
+  }
+}
+
 // Format date for receipt
 function formatDate(date: Date): string {
   return date.toLocaleDateString('en-AU', {
@@ -69,9 +81,10 @@ function getFrequencyLabel(frequency: string): string {
 }
 
 // Generate HTML receipt template
-function generateReceiptHTML(data: ReceiptData): string {
+async function generateReceiptHTML(data: ReceiptData): Promise<string> {
   const { donation, receiptNumber, caseTitle } = data;
   const currentDate = new Date();
+  const logoBase64 = await getLogoBase64();
   
   return `
     <!DOCTYPE html>
@@ -113,22 +126,15 @@ function generateReceiptHTML(data: ReceiptData): string {
         
         .logo-icon {
           display: inline-block;
-          width: 60px;
-          height: 60px;
-          background: #14b8a6;
-          border-radius: 50%;
+          width: 80px;
+          height: 80px;
           margin-bottom: 15px;
-          position: relative;
         }
         
-        .logo-icon::before {
-          content: '♡';
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          color: white;
-          font-size: 30px;
+        .logo-icon img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
         }
         
         .org-name {
@@ -302,9 +308,10 @@ function generateReceiptHTML(data: ReceiptData): string {
         <!-- Header with Logo and Organization Info -->
         <div class="header">
           <div class="logo-section">
-            <div class="logo-icon"></div>
-            <div class="org-name">AAFIYAA</div>
-            <div class="org-name" style="font-size: 20px; color: #6b7280; font-weight: normal;">Charity Clinics</div>
+            <div class="logo-icon">
+              <img src="data:image/png;base64,${logoBase64}" alt="Aafiyaa Logo" />
+            </div>
+            <div class="org-name">Aafiyaa LTD</div>
             <div class="org-tagline">Healthcare & Compassion</div>
           </div>
           
@@ -388,7 +395,7 @@ function generateReceiptHTML(data: ReceiptData): string {
         <div class="tax-info">
           <h3 class="tax-title">Tax Deduction Information</h3>
           <p class="tax-text">
-            This receipt confirms your charitable donation to Aafiyaa Charity Clinics. 
+            This receipt confirms your charitable donation to Aafiyaa LTD. 
             Your contribution is tax-deductible to the extent allowed by law. Please consult 
             with your tax advisor regarding the deductibility of your charitable contributions. 
             Keep this receipt for your tax records.
@@ -403,7 +410,7 @@ function generateReceiptHTML(data: ReceiptData): string {
         
         <!-- Footer -->
         <div class="footer">
-          <p><strong>Aafiyaa Charity Clinics</strong></p>
+          <p><strong>Aafiyaa LTD</strong></p>
           <div class="contact-info">
             <p>Email: info@aafiyaa.com | Website: www.aafiyaa.com</p>
             <p>This is an official receipt for tax purposes. Please retain for your records.</p>
@@ -445,7 +452,7 @@ export async function generatePDFReceipt(receiptData: ReceiptData): Promise<stri
     await page.setViewport({ width: 1200, height: 1600 });
     
     // Generate HTML content
-    const htmlContent = generateReceiptHTML(receiptData);
+    const htmlContent = await generateReceiptHTML(receiptData);
     
     // Set HTML content
     await page.setContent(htmlContent, { 
