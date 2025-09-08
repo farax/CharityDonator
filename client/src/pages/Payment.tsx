@@ -154,10 +154,24 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           description: `Thank you for your recurring donation! Your first payment has been processed, and you'll be charged ${donationDetails.currency} ${donationDetails.amount} ${donationDetails.frequency}.`,
         });
         
-        // Redirect to homepage after successful setup
+        // Store donation details for success page
+        const successData = {
+          amount: donationDetails.amount,
+          currency: donationDetails.currency,
+          type: donationDetails.type,
+          frequency: donationDetails.frequency,
+          email: email,
+          name: name,
+          caseId: donationDetails.caseId,
+          caseTitle: donationDetails.caseTitle,
+          destinationProject: donationDetails.destinationProject
+        };
+        localStorage.setItem('donationSuccess', JSON.stringify(successData));
+        
+        // Redirect to success page after successful setup
         setTimeout(() => {
-          setLocation('/');
-        }, 3000);
+          setLocation('/donation-success');
+        }, 2000);
         
       } catch (error: any) {
         // Track subscription failure
@@ -248,9 +262,23 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           variant: "success",
         });
         
-        // Redirect to homepage after successful payment
+        // Store donation details for success page
+        const successData = {
+          amount: donationDetails.amount,
+          currency: donationDetails.currency,
+          type: donationDetails.type,
+          frequency: donationDetails.frequency,
+          email: email,
+          name: name,
+          caseId: donationDetails.caseId,
+          caseTitle: donationDetails.caseTitle,
+          destinationProject: donationDetails.destinationProject
+        };
+        localStorage.setItem('donationSuccess', JSON.stringify(successData));
+        
+        // Redirect to success page after successful payment
         setTimeout(() => {
-          setLocation('/');
+          setLocation('/donation-success');
         }, 2000);
       }
     }
