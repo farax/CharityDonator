@@ -5,6 +5,107 @@
 
 import { storage } from './storage';
 import type { Donation } from '@shared/schema';
+import { generatePDFReceipt, generateReceiptNumber } from './pdf-receipt-service';
+import { sendPDFReceipt } from './email-service';
+
+// Helper function to generate and send PDF receipt
+async function processReceiptGeneration(donation: Donation): Promise<void> {
+  try {
+    // Skip if no email provided
+    if (!donation.email) {
+      console.log(`Skipping receipt generation for donation ${donation.id}: No email provided`);
+      return;
+    }
+
+    // Generate unique receipt number
+    const receiptNumber = generateReceiptNumber();
+    
+    // Get case title if donation is for a specific case
+    let caseTitle = undefined;
+    if (donation.caseId) {
+      try {
+        const caseData = await storage.getCase(donation.caseId);
+        caseTitle = caseData?.title;
+      } catch (error) {
+        console.warn(`Could not retrieve case title for case ${donation.caseId}:`, error);
+      }
+    }
+
+    // Create receipt record in database
+    const receiptData = {
+      donationId: donation.id,
+      receiptNumber,
+      amount: donation.amount,
+      currency: donation.currency,
+      donorName: donation.name || null,
+      donorEmail: donation.email,
+      donationType: donation.type,
+      caseId: donation.caseId || null,
+      status: 'pending' as const
+    };
+
+    const receipt = await storage.createReceipt(receiptData);
+    console.log(`Receipt record created: ${receipt.id} for donation ${donation.id}`);
+
+    // Generate PDF receipt
+    try {
+      const pdfPath = await generatePDFReceipt({
+        donation,
+        receiptNumber,
+        caseTitle
+      });
+
+      // Update receipt status to generated
+      await storage.updateReceiptStatus(receipt.id, 'generated', pdfPath);
+      console.log(`PDF receipt generated: ${pdfPath}`);
+
+      // Send email with PDF attachment
+      const emailSent = await sendPDFReceipt(donation, receiptNumber, pdfPath, caseTitle);
+      
+      if (emailSent) {
+        // Update receipt status to sent
+        await storage.updateReceiptSentAt(receipt.id);
+        console.log(`PDF receipt emailed successfully to ${donation.email}`);
+        
+        logWebhookEvent('RECEIPT_SENT', {
+          donationId: donation.id,
+          receiptId: receipt.id,
+          receiptNumber,
+          email: donation.email
+        });
+      } else {
+        // Update receipt status to failed
+        await storage.updateReceiptStatus(receipt.id, 'failed', pdfPath, 'Email sending failed');
+        console.error(`Failed to send PDF receipt email for donation ${donation.id}`);
+        
+        logWebhookEvent('RECEIPT_SEND_FAILED', {
+          donationId: donation.id,
+          receiptId: receipt.id,
+          receiptNumber,
+          error: 'Email sending failed'
+        });
+      }
+    } catch (pdfError: any) {
+      // Update receipt status to failed with error message
+      await storage.updateReceiptStatus(receipt.id, 'failed', undefined, pdfError.message);
+      console.error(`Failed to generate PDF receipt for donation ${donation.id}:`, pdfError);
+      
+      logWebhookEvent('RECEIPT_GENERATION_FAILED', {
+        donationId: donation.id,
+        receiptId: receipt.id,
+        receiptNumber,
+        error: pdfError.message
+      });
+    }
+  } catch (error: any) {
+    console.error(`Error in receipt generation process for donation ${donation.id}:`, error);
+    
+    logWebhookEvent('RECEIPT_PROCESS_ERROR', {
+      donationId: donation.id,
+      error: error.message
+    });
+  }
+}
 
 // New Relic disabled for production build compatibility - all tracking handled client-side
 let newrelic: any = null;
@@ -229,6 +330,14 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
             });
           }
         }
+        
+        // Generate and send PDF receipt
+        try {
+          await processReceiptGeneration(updatedDonation);
+        } catch (receiptError: any) {
+          console.error(`Receipt generation failed for donation ${donation.id}:`, receiptError);
+          // Don't fail the entire payment process if receipt generation fails
+        }
       } else {
         logWebhookEvent('DONATION_UPDATE_FAILED', { donationId: donation.id, paymentIntentId: paymentIntent.id });
       }
@@ -431,6 +540,20 @@ export const handleInvoicePaymentSucceeded = async (invoice: any) => {
         // Update case amount if applicable
         if (donation.caseId) {
           await storage.updateCaseAmountCollected(donation.caseId, invoice.amount_paid / 100);
+        }
+        
+        // Generate and send PDF receipt for recurring payment
+        try {
+          // Create a donation object for receipt generation (recurring payments use original donation data)
+          const receiptDonation = {
+            ...donation,
+            amount: invoice.amount_paid / 100, // Use the actual payment amount
+            createdAt: new Date(invoice.created * 1000) // Use invoice date
+          };
+          await processReceiptGeneration(receiptDonation);
+        } catch (receiptError: any) {
+          console.error(`Receipt generation failed for recurring donation ${donation.id}:`, receiptError);
+          // Don't fail the entire payment process if receipt generation fails
         }
       }
     }

@@ -5,6 +5,8 @@
 import nodemailer from 'nodemailer';
 import { ContactMessage, Donation } from '@shared/schema';
 import config from './config';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 // Variable to hold the transporter
 let transporter: nodemailer.Transporter;
@@ -308,6 +310,234 @@ Aafiyaa Charity Clinics Team
   } catch (error) {
     console.error('Error sending subscription confirmation email:', error);
     return false;
+  }
+}
+
+/**
+ * Send PDF receipt email with attachment
+ */
+export async function sendPDFReceipt(
+  donation: Donation, 
+  receiptNumber: string, 
+  pdfPath: string,
+  caseTitle?: string
+): Promise<boolean> {
+  try {
+    // Skip if no transporter or no recipient email
+    if (!transporter || !donation.email) {
+      console.log(`PDF receipt email sending skipped: ${!transporter ? 'No transporter' : 'No recipient email'}`);
+      return false;
+    }
+
+    // Check if PDF file exists
+    try {
+      await fs.access(pdfPath);
+    } catch (error) {
+      console.error('PDF file not found:', pdfPath);
+      return false;
+    }
+
+    // Format amount with currency
+    const formattedAmount = new Intl.NumberFormat('en-AU', {
+      style: 'currency',
+      currency: donation.currency || 'AUD'
+    }).format(donation.amount);
+
+    // Determine donation type and frequency labels
+    const donationTypeLabel = getDonationTypeLabel(donation.type);
+    const frequencyLabel = getFrequencyLabel(donation.frequency);
+    
+    // Format date
+    const donationDate = new Date(donation.createdAt).toLocaleString('en-AU', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // Create email content
+    const emailContent = {
+      from: `"Aafiyaa Charity Clinics" <${config.EMAIL.FROM}>`,
+      to: donation.email,
+      subject: `Your Donation Receipt - ${receiptNumber}`,
+      text: `
+Dear ${donation.name || 'Valued Supporter'},
+
+Thank you for your generous donation to Aafiyaa Charity Clinics!
+
+Your donation receipt is attached as a PDF file for your records.
+
+Donation Details:
+- Receipt Number: ${receiptNumber}
+- Amount: ${formattedAmount}
+- Type: ${donationTypeLabel}
+- Frequency: ${frequencyLabel}
+- Date: ${donationDate}
+${caseTitle ? `- Supporting Case: ${caseTitle}` : ''}
+${donation.destinationProject ? `- Destination: ${donation.destinationProject}` : ''}
+
+This receipt is valid for tax deduction purposes. Please consult with your tax advisor regarding the deductibility of your charitable contributions.
+
+Your support helps us provide essential healthcare services to communities in need around the world.
+
+Thank you again for your generosity!
+
+With gratitude,
+The Aafiyaa Charity Clinics Team
+
+---
+This receipt has been electronically generated and is valid without a signature.
+Please retain this email and the attached PDF for your tax records.
+`,
+      html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #14b8a6; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { padding: 30px; border: 1px solid #eee; border-top: none; border-radius: 0 0 8px 8px; }
+    .receipt-info { background-color: #f0fdfa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #14b8a6; }
+    .receipt-number { font-size: 18px; font-weight: bold; color: #14b8a6; margin-bottom: 10px; }
+    .donation-details { background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    .detail-row { display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; }
+    .detail-label { font-weight: 600; color: #374151; }
+    .detail-value { color: #1f2937; }
+    .amount-highlight { text-align: center; background: linear-gradient(135deg, #14b8a6, #10b981); color: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    .amount-text { font-size: 28px; font-weight: bold; margin: 0; }
+    .tax-info { background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .tax-info h3 { color: #065f46; margin: 0 0 10px 0; }
+    .tax-info p { color: #047857; margin: 0; }
+    .attachment-note { background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 15px; margin: 20px 0; }
+    .attachment-note h4 { color: #92400e; margin: 0 0 5px 0; }
+    .attachment-note p { color: #d97706; margin: 0; font-size: 14px; }
+    .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e7eb; color: #6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🏥 Aafiyaa Charity Clinics</h1>
+      <p style="margin: 5px 0 0 0; opacity: 0.9;">Healthcare & Compassion</p>
+    </div>
+    
+    <div class="content">
+      <h2 style="color: #1f2937; margin-top: 0;">Thank You for Your Generous Donation!</h2>
+      
+      <div class="receipt-info">
+        <div class="receipt-number">Receipt Number: ${receiptNumber}</div>
+        <p style="margin: 0; color: #047857;">Your official donation receipt is attached as a PDF file.</p>
+      </div>
+      
+      <div class="amount-highlight">
+        <div class="amount-text">${formattedAmount}</div>
+        <p style="margin: 5px 0 0 0; opacity: 0.9;">Total Donation Amount</p>
+      </div>
+      
+      <div class="donation-details">
+        <h3 style="margin: 0 0 15px 0; color: #374151;">Donation Summary</h3>
+        <div class="detail-row">
+          <span class="detail-label">Type:</span>
+          <span class="detail-value">${donationTypeLabel}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Frequency:</span>
+          <span class="detail-value">${frequencyLabel}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Date:</span>
+          <span class="detail-value">${donationDate}</span>
+        </div>
+        ${donation.name ? `
+        <div class="detail-row">
+          <span class="detail-label">Donor:</span>
+          <span class="detail-value">${donation.name}</span>
+        </div>
+        ` : ''}
+        ${caseTitle ? `
+        <div class="detail-row">
+          <span class="detail-label">Supporting Case:</span>
+          <span class="detail-value">${caseTitle}</span>
+        </div>
+        ` : ''}
+        ${donation.destinationProject ? `
+        <div class="detail-row">
+          <span class="detail-label">Destination:</span>
+          <span class="detail-value">${donation.destinationProject}</span>
+        </div>
+        ` : ''}
+      </div>
+      
+      <div class="attachment-note">
+        <h4>📎 Receipt Attached</h4>
+        <p>Your official PDF receipt is attached to this email. This document is valid for tax deduction purposes and should be retained for your records.</p>
+      </div>
+      
+      <div class="tax-info">
+        <h3>Tax Deduction Information</h3>
+        <p>This receipt confirms your charitable donation to Aafiyaa Charity Clinics. Your contribution is tax-deductible to the extent allowed by law. Please consult with your tax advisor regarding the deductibility of your charitable contributions.</p>
+      </div>
+      
+      <p style="margin: 30px 0 20px 0; text-align: center; color: #6b7280;">
+        Your support helps us provide essential healthcare services to communities in need around the world.
+      </p>
+      
+      <p style="text-align: center; font-weight: 600; color: #14b8a6;">
+        Thank you for making a difference! 🙏
+      </p>
+    </div>
+    
+    <div class="footer">
+      <p><strong>Aafiyaa Charity Clinics</strong><br>
+      Email: info@aafiyaa.com | Website: www.aafiyaa.com</p>
+      <p style="margin-top: 15px; font-size: 12px;">
+        This receipt has been electronically generated and is valid without a signature.<br>
+        Please retain this email and the attached PDF for your tax records.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+      attachments: [
+        {
+          filename: `receipt_${receiptNumber}.pdf`,
+          path: pdfPath,
+          contentType: 'application/pdf'
+        }
+      ]
+    };
+
+    // Send the email
+    const info = await transporter.sendMail(emailContent);
+    console.log(`PDF receipt email sent successfully: ${info.messageId} to ${donation.email}`);
+    return true;
+    
+  } catch (error) {
+    console.error('Error sending PDF receipt email:', error);
+    return false;
+  }
+}
+
+// Helper functions for donation labels
+function getDonationTypeLabel(type: string): string {
+  switch (type.toLowerCase()) {
+    case 'zakaat': return 'Zakaat';
+    case 'sadqah': return 'Sadqah';
+    case 'interest': return 'Interest';
+    default: return type;
+  }
+}
+
+function getFrequencyLabel(frequency: string): string {
+  switch (frequency.toLowerCase()) {
+    case 'one-off': return 'One-time donation';
+    case 'weekly': return 'Weekly recurring donation';
+    case 'monthly': return 'Monthly recurring donation';
+    default: return frequency;
   }
 }
 

@@ -31,7 +31,8 @@ import {
   cases, type Case, type InsertCase,
   contactMessages, type ContactMessage, type InsertContactMessage,
   webhookEvents, type WebhookEvent, type InsertWebhookEvent,
-  orphanedPayments, type OrphanedPayment, type InsertOrphanedPayment
+  orphanedPayments, type OrphanedPayment, type InsertOrphanedPayment,
+  receipts, type Receipt, type InsertReceipt
 } from "@shared/schema";
 import { db, pool, isDatabaseAvailable } from './db';
 import { eq, and, asc, desc, gt } from 'drizzle-orm';
@@ -94,6 +95,15 @@ export interface IStorage {
   getContactMessages(): Promise<ContactMessage[]>;
   getContactMessage(id: number): Promise<ContactMessage | undefined>;
   markContactMessageAsRead(id: number): Promise<ContactMessage | undefined>;
+  
+  // Receipt methods
+  createReceipt(receipt: InsertReceipt): Promise<Receipt>;
+  getReceipt(id: number): Promise<Receipt | undefined>;
+  getReceiptByNumber(receiptNumber: string): Promise<Receipt | undefined>;
+  getReceiptsByDonationId(donationId: number): Promise<Receipt[]>;
+  updateReceiptStatus(id: number, status: string, filePath?: string, errorMessage?: string): Promise<Receipt | undefined>;
+  updateReceiptSentAt(id: number): Promise<Receipt | undefined>;
+  getReceipts(): Promise<Receipt[]>;
 }
 
 const MemoryStore = createMemoryStore(session);
@@ -104,6 +114,7 @@ export class MemStorage implements IStorage {
   private endorsementsList: Map<number, Endorsement>;
   private casesList: Map<number, Case>;
   private contactMessagesList: Map<number, ContactMessage>;
+  private receiptsList: Map<number, Receipt>;
   private statsData: Stats | undefined;
   
   // Session store for admin authentication
@@ -114,6 +125,7 @@ export class MemStorage implements IStorage {
   private endorsementCurrentId: number;
   private caseCurrentId: number;
   private contactMessageCurrentId: number;
+  private receiptCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -121,12 +133,14 @@ export class MemStorage implements IStorage {
     this.endorsementsList = new Map();
     this.casesList = new Map();
     this.contactMessagesList = new Map();
+    this.receiptsList = new Map();
     
     this.userCurrentId = 1;
     this.donationCurrentId = 1;
     this.endorsementCurrentId = 1;
     this.caseCurrentId = 1;
     this.contactMessageCurrentId = 1;
+    this.receiptCurrentId = 1;
     
     // Initialize memory store for session data
     this.sessionStore = new MemoryStore({
@@ -573,6 +587,75 @@ export class MemStorage implements IStorage {
     
     this.contactMessagesList.set(id, updatedMessage);
     return updatedMessage;
+  }
+  
+  // Receipt methods
+  async createReceipt(receiptData: InsertReceipt): Promise<Receipt> {
+    const id = this.receiptCurrentId++;
+    const receipt: Receipt = {
+      ...receiptData,
+      id,
+      createdAt: new Date()
+    };
+    this.receiptsList.set(id, receipt);
+    return receipt;
+  }
+  
+  async getReceipt(id: number): Promise<Receipt | undefined> {
+    return this.receiptsList.get(id);
+  }
+  
+  async getReceiptByNumber(receiptNumber: string): Promise<Receipt | undefined> {
+    for (const receipt of this.receiptsList.values()) {
+      if (receipt.receiptNumber === receiptNumber) {
+        return receipt;
+      }
+    }
+    return undefined;
+  }
+  
+  async getReceiptsByDonationId(donationId: number): Promise<Receipt[]> {
+    const receipts: Receipt[] = [];
+    for (const receipt of this.receiptsList.values()) {
+      if (receipt.donationId === donationId) {
+        receipts.push(receipt);
+      }
+    }
+    return receipts;
+  }
+  
+  async updateReceiptStatus(id: number, status: string, filePath?: string, errorMessage?: string): Promise<Receipt | undefined> {
+    const receipt = this.receiptsList.get(id);
+    if (!receipt) return undefined;
+    
+    const updatedReceipt: Receipt = {
+      ...receipt,
+      status,
+      filePath: filePath || receipt.filePath,
+      errorMessage: errorMessage || receipt.errorMessage,
+      generatedAt: status === 'generated' ? new Date() : receipt.generatedAt
+    };
+    
+    this.receiptsList.set(id, updatedReceipt);
+    return updatedReceipt;
+  }
+  
+  async updateReceiptSentAt(id: number): Promise<Receipt | undefined> {
+    const receipt = this.receiptsList.get(id);
+    if (!receipt) return undefined;
+    
+    const updatedReceipt: Receipt = {
+      ...receipt,
+      status: 'sent',
+      sentAt: new Date()
+    };
+    
+    this.receiptsList.set(id, updatedReceipt);
+    return updatedReceipt;
+  }
+  
+  async getReceipts(): Promise<Receipt[]> {
+    return Array.from(this.receiptsList.values());
   }
 }
 
@@ -1023,6 +1106,99 @@ export class DatabaseStorage implements IStorage {
       .returning();
       
     return updatedMessage;
+  }
+  
+  // Receipt methods
+  async createReceipt(receiptData: InsertReceipt): Promise<Receipt> {
+    if (!db) throw new Error('Database not available');
+    const [receipt] = await db
+      .insert(receipts)
+      .values({
+        ...receiptData,
+        createdAt: new Date()
+      })
+      .returning();
+      
+    return receipt;
+  }
+  
+  async getReceipt(id: number): Promise<Receipt | undefined> {
+    if (!db) return undefined;
+    const [receipt] = await db
+      .select()
+      .from(receipts)
+      .where(eq(receipts.id, id));
+      
+    return receipt;
+  }
+  
+  async getReceiptByNumber(receiptNumber: string): Promise<Receipt | undefined> {
+    if (!db) return undefined;
+    const [receipt] = await db
+      .select()
+      .from(receipts)
+      .where(eq(receipts.receiptNumber, receiptNumber));
+      
+    return receipt;
+  }
+  
+  async getReceiptsByDonationId(donationId: number): Promise<Receipt[]> {
+    if (!db) return [];
+    return await db
+      .select()
+      .from(receipts)
+      .where(eq(receipts.donationId, donationId))
+      .orderBy(desc(receipts.createdAt));
+  }
+  
+  async updateReceiptStatus(id: number, status: string, filePath?: string, errorMessage?: string): Promise<Receipt | undefined> {
+    if (!db) return undefined;
+    
+    const updateData: any = { 
+      status,
+      generatedAt: status === 'generated' ? new Date() : undefined
+    };
+    
+    if (filePath !== undefined) updateData.filePath = filePath;
+    if (errorMessage !== undefined) updateData.errorMessage = errorMessage;
+    
+    // Remove undefined values
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined) {
+        delete updateData[key];
+      }
+    });
+    
+    const [updatedReceipt] = await db
+      .update(receipts)
+      .set(updateData)
+      .where(eq(receipts.id, id))
+      .returning();
+      
+    return updatedReceipt;
+  }
+  
+  async updateReceiptSentAt(id: number): Promise<Receipt | undefined> {
+    if (!db) return undefined;
+    
+    const [updatedReceipt] = await db
+      .update(receipts)
+      .set({ 
+        status: 'sent',
+        sentAt: new Date()
+      })
+      .where(eq(receipts.id, id))
+      .returning();
+      
+    return updatedReceipt;
+  }
+  
+  async getReceipts(): Promise<Receipt[]> {
+    if (!db) return [];
+    return await db
+      .select()
+      .from(receipts)
+      .orderBy(desc(receipts.createdAt));
   }
 }
 
