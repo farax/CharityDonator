@@ -452,7 +452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Generate PDF receipt when donation is completed
       console.log(`[RECEIPT-CHECK] Donation ${donationId} status: ${status}, email: ${donation.email || '(empty)'}`);
-      if (status === 'completed' && donation.email) {
+      if (status === 'completed') {
         try {
           console.log(`[RECEIPT-GENERATION] Starting PDF receipt generation for donation ${donationId}`);
           
