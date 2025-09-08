@@ -359,7 +359,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
             billingDetails: {
               name: 'auto',
               email: 'auto',
-              address: 'never'
+              address: 'auto'
             }
           }
         }}
