@@ -207,3 +207,30 @@ export type WebhookEvent = typeof webhookEvents.$inferSelect;
 
 export type InsertOrphanedPayment = z.infer<typeof insertOrphanedPaymentSchema>;
 export type OrphanedPayment = typeof orphanedPayments.$inferSelect;
+
+// PDF Receipts tracking table
+export const receipts = pgTable("receipts", {
+  id: serial("id").primaryKey(),
+  donationId: integer("donation_id").notNull(), // Reference to donations table
+  receiptNumber: text("receipt_number").notNull().unique(), // Unique receipt identifier
+  amount: real("amount").notNull(),
+  currency: text("currency").notNull(),
+  donorName: text("donor_name"),
+  donorEmail: text("donor_email").notNull(),
+  donationType: text("donation_type").notNull(), // zakaat, sadqah, interest
+  caseId: integer("case_id"), // If donation was for specific case
+  filePath: text("file_path"), // Path to generated PDF
+  status: text("status").notNull().default("pending"), // pending, generated, sent, failed
+  generatedAt: timestamp("generated_at"),
+  sentAt: timestamp("sent_at"),
+  errorMessage: text("error_message"), // If generation or sending failed
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertReceiptSchema = createInsertSchema(receipts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertReceipt = z.infer<typeof insertReceiptSchema>;
+export type Receipt = typeof receipts.$inferSelect;
