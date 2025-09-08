@@ -78,7 +78,7 @@ export function DonationProvider({ children }: { children: React.ReactNode }) {
       const presets = getPresetsForCurrency(currency);
       setAmount(presets.tier1);
     }
-  }, [currency, amount]);
+  }, [currency]); // Remove amount from dependencies to prevent infinite loop
 
   // Effect to update destination project based on donation type
   useEffect(() => {
