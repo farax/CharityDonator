@@ -73,12 +73,21 @@ export function DonationProvider({ children }: { children: React.ReactNode }) {
   
   // Initialize with currency based on location and set default amount to tier1
   useEffect(() => {
-    // When currency changes, set the amount to tier1 if no amount is selected yet
-    if (amount === 0 && currency) {
+    // Always set amount to tier1 when currency changes (user hasn't manually selected anything yet)
+    if (currency && (amount === 0 || !isCustomAmount)) {
       const presets = getPresetsForCurrency(currency);
       setAmount(presets.tier1);
+      setIsCustomAmount(false); // Ensure we're using preset, not custom
+      console.log(`Setting default amount: ${presets.tier1} for currency: ${currency}`);
     }
-  }, [currency]); // Remove amount from dependencies to prevent infinite loop
+  }, [currency]); // Only depend on currency changes
+
+  // Set initial amount when component mounts
+  useEffect(() => {
+    const presets = getPresetsForCurrency(currency);
+    setAmount(presets.tier1);
+    console.log(`Setting initial amount: ${presets.tier1} for currency: ${currency}`);
+  }, []); // Run once on mount
 
   // Effect to update destination project based on donation type
   useEffect(() => {
