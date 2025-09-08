@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Payment from "@/pages/Payment";
+import DonationSuccess from "@/pages/DonationSuccess";
 import Admin from "@/pages/Admin";
 import AdminLogin from "@/pages/AdminLogin";
 import GetInvolved from "@/pages/GetInvolved";
@@ -43,6 +44,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/payment" component={Payment} />
+      <Route path="/donation-success" component={DonationSuccess} />
       <Route path="/active-cases" component={ActiveCases} />
       <Route path="/get-involved" component={GetInvolved} />
       <Route path="/about" component={AboutUs} />
