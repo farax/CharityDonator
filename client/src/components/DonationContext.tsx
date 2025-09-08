@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Case } from '@shared/schema';
+import { getPresetsForCurrency } from '@/lib/donationPresets';
 
 type DonationType = 'zakaat' | 'sadqah' | 'interest';
 type FrequencyType = 'one-off' | 'weekly' | 'monthly';
@@ -70,11 +71,14 @@ export function DonationProvider({ children }: { children: React.ReactNode }) {
     'SAR', 'MYR', 'RON', 'TRY', 'PKR'  // Added PKR for Pakistan
   ];
   
-  // Initialize with currency based on location (handled by CurrencySelector component)
+  // Initialize with currency based on location and set default amount to tier1
   useEffect(() => {
-    // Currency is automatically set based on the user's location via API
-    // This initialization is handled by the CurrencySelector component
-  }, []);
+    // When currency changes, set the amount to tier1 if no amount is selected yet
+    if (amount === 0 && currency) {
+      const presets = getPresetsForCurrency(currency);
+      setAmount(presets.tier1);
+    }
+  }, [currency, amount]);
 
   // Effect to update destination project based on donation type
   useEffect(() => {
