@@ -362,19 +362,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
             spacedAccordionItems: false
           },
           fields: {
-            billingDetails: {
-              name: 'required',
-              email: 'required',
-              phone: 'never',
-              address: {
-                line1: 'never',
-                line2: 'never',
-                city: 'never',
-                state: 'never',
-                postalCode: 'never',
-                country: 'never'
-              }
-            }
+            billingDetails: 'auto'
           }
         }}
       />
