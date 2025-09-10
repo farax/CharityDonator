@@ -221,15 +221,21 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           variant: "destructive",
         });
       } else {
-        // Use manual form data for donor information
-        const paymentEmail = email;
-        const paymentName = `${firstName} ${lastName}`.trim();
+        // Extract billing details from Stripe PaymentElement
+        const billingDetails = paymentIntent.payment_method?.billing_details || {};
+        const paymentEmail = billingDetails.email || '';
+        const paymentName = billingDetails.name || '';
+        
+        // Parse name into first and last name
+        const nameParts = paymentName.trim().split(' ');
+        const paymentFirstName = nameParts[0] || '';
+        const paymentLastName = nameParts.slice(1).join(' ') || '';
         
         console.log('[PAYMENT-SUCCESS] Donor details:', { 
           email: paymentEmail || '(empty)', 
           name: paymentName || '(empty)',
-          firstName,
-          lastName
+          firstName: paymentFirstName || '(empty)',
+          lastName: paymentLastName || '(empty)'
         });
         
         // Update donation status manually to ensure it's marked completed
@@ -241,7 +247,9 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
               paymentMethod: "stripe",
               paymentId: paymentIntent.id,
               email: paymentEmail,
-              name: paymentName
+              name: paymentName,
+              firstName: paymentFirstName,
+              lastName: paymentLastName
             });
             console.log("Donation status updated to completed", paymentIntent.id);
             
@@ -311,59 +319,10 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Donor Information Form - Always Required */}
-      <div className="bg-gray-50 p-4 rounded-md mb-4 border border-gray-200">
-        <h3 className="font-medium text-gray-800 mb-2">Donor Information</h3>
-        <p className="text-sm text-gray-600 mb-4">We need your details to send you a donation receipt.</p>
-        
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address *
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md text-sm"
-              placeholder="your@email.com"
-              required
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                First Name *
-              </label>
-              <input
-                type="text"
-                id="firstName"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                placeholder="John"
-                required
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                Last Name *
-              </label>
-              <input
-                type="text"
-                id="lastName"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                placeholder="Doe"
-                required
-              />
-            </div>
-          </div>
-        </div>
+      {/* Info message about Stripe Link */}
+      <div className="bg-blue-50 p-4 rounded-md mb-4 border border-blue-200">
+        <h3 className="font-medium text-blue-800 mb-2">📧 Receipt Information Required</h3>
+        <p className="text-sm text-blue-600">Please fill in your email and name in the payment form below to receive your donation receipt.</p>
       </div>
 
       {donationDetails && isSubscription && (
@@ -386,11 +345,12 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
             spacedAccordionItems: false
           },
           fields: {
-            billingDetails: 'never'
-          },
-          wallets: {
-            applePay: 'never',
-            googlePay: 'never'
+            billingDetails: {
+              name: 'required',
+              email: 'required',
+              phone: 'auto',
+              address: 'never'
+            }
           }
         }}
       />
@@ -398,7 +358,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
       <Button 
         type="submit" 
         className="w-full py-3" 
-        disabled={!stripe || isLoading || !email || !firstName || !lastName}
+        disabled={!stripe || isLoading}
       >
         {isLoading ? (
           <>
