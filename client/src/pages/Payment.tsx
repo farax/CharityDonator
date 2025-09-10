@@ -221,10 +221,10 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           variant: "destructive",
         });
       } else {
-        // Extract billing details from Stripe PaymentElement
+        // Get billing details from Stripe (if available) and fallback to our form
         const billingDetails = paymentIntent.payment_method?.billing_details || {};
-        const paymentEmail = billingDetails.email || '';
-        const paymentName = billingDetails.name || '';
+        const paymentEmail = billingDetails.email || email; // Use our form email as fallback
+        const paymentName = billingDetails.name || ''; // Get name from Stripe if available
         
         // Parse name into first and last name
         const nameParts = paymentName.trim().split(' ');
@@ -319,10 +319,18 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Info message about Stripe Link */}
+      {/* Email Collection - Minimal backup for receipt */}
       <div className="bg-blue-50 p-4 rounded-md mb-4 border border-blue-200">
-        <h3 className="font-medium text-blue-800 mb-2">📧 Receipt Information Required</h3>
-        <p className="text-sm text-blue-600">Please fill in your email and name in the payment form below to receive your donation receipt.</p>
+        <h3 className="font-medium text-blue-800 mb-2">📧 Receipt Email</h3>
+        <p className="text-sm text-blue-600 mb-3">We'll send your donation receipt to this email address:</p>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full p-2 border border-blue-300 rounded-md text-sm"
+          placeholder="your@email.com"
+          required
+        />
       </div>
 
       {donationDetails && isSubscription && (
@@ -343,9 +351,6 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
             defaultCollapsed: false,
             radios: false,
             spacedAccordionItems: false
-          },
-          fields: {
-            billingDetails: 'auto'
           }
         }}
       />
@@ -353,7 +358,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
       <Button 
         type="submit" 
         className="w-full py-3" 
-        disabled={!stripe || isLoading}
+        disabled={!stripe || isLoading || !email}
       >
         {isLoading ? (
           <>
