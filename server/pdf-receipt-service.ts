@@ -21,12 +21,9 @@ async function ensureReceiptsDir() {
 
 // Generate unique receipt number
 export function generateReceiptNumber(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
-  return `AC-${year}${month}${day}-${timestamp}`;
+  const timestamp = Date.now().toString().slice(-4); // Last 4 digits of timestamp
+  const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  return `AAFY-${timestamp}${randomNum}`;
 }
 
 // Format currency amount
