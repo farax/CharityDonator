@@ -363,11 +363,11 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   };
 
   // Validation helpers for optional receipt
-  const hasEmail = linkAuthEmail && linkAuthEmail.trim();
-  const hasName = name && name.trim();
+  const hasEmail = linkAuthEmail && linkAuthEmail.trim() && linkAuthEmail.includes('@') && linkAuthEmail.includes('.');
+  const hasName = name && name.trim() && name.length > 2;
   const wantsReceipt = hasEmail || hasName;
   
-  // If they want a receipt, both fields are required
+  // If they want a receipt, both fields are required and valid
   const missingFields = [];
   if (wantsReceipt && !hasEmail) missingFields.push('email address');
   if (wantsReceipt && !hasName) missingFields.push('full name');
@@ -442,6 +442,28 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
             </p>
           </div>
         )}
+        
+        {/* Show helpful message if fields have content but aren't valid */}
+        {(linkAuthEmail && !hasEmail) || (name && !hasName) ? (
+          <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md flex items-center justify-between">
+            <p className="text-sm text-yellow-700">
+              💡 Complete both fields for receipt, or clear both for anonymous donation
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setLinkAuthEmail('');
+                setName('');
+                // Clear the Link Auth element
+                const linkAuthInput = document.querySelector('#link-auth input') as HTMLInputElement;
+                if (linkAuthInput) linkAuthInput.value = '';
+              }}
+              className="text-xs text-yellow-800 underline hover:no-underline"
+            >
+              Clear fields
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <Button 
