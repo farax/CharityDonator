@@ -56,7 +56,9 @@ export const donations = pgTable("donations", {
   nextPaymentDate: timestamp("next_payment_date"), // Next scheduled payment date for subscriptions
   createdAt: timestamp("created_at").notNull().defaultNow(),
   email: text("email"),
-  name: text("name"),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  name: text("name"), // Keep for backwards compatibility
   userId: integer("user_id"), // Link to a user for recurring payments
   paymentMethod: text("payment_method"), // 'stripe', 'apple_pay', 'paypal'
   caseId: integer("case_id"), // For case-specific donations

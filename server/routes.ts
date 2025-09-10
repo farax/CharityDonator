@@ -416,7 +416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update donation status
   app.post("/api/update-donation-status", async (req, res) => {
     try {
-      const { donationId, status, paymentMethod, paymentId, email, name } = req.body;
+      const { donationId, status, paymentMethod, paymentId, email, name, firstName, lastName } = req.body;
       
       console.log(`[UPDATE-DONATION-STATUS] Request data:`, {
         donationId, status, paymentMethod, paymentId, 
@@ -438,7 +438,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: email || '(empty)', 
           name: name || '(empty)' 
         });
-        donation = await storage.updateDonationDonor(donationId, name || donation.name || '', email || donation.email || '');
+        const finalFirstName = firstName || (name ? name.split(' ')[0] : '');
+        const finalLastName = lastName || (name ? name.split(' ').slice(1).join(' ') : '');
+        const finalName = name || `${firstName || ''} ${lastName || ''}`.trim();
+        
+        donation = await storage.updateDonationDonor(
+          donationId, 
+          finalName, 
+          email || donation.email || '',
+          finalFirstName,
+          finalLastName
+        );
         console.log(`[UPDATE-DONATION-STATUS] Updated donation:`, { 
           id: donation?.id, 
           email: donation?.email || '(empty)', 

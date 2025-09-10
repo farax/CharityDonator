@@ -66,7 +66,7 @@ export interface IStorage {
     subscriptionStatus: string, 
     nextPaymentDate?: Date | null
   ): Promise<Donation | undefined>;
-  updateDonationDonor(id: number, name: string, email: string): Promise<Donation | undefined>;
+  updateDonationDonor(id: number, name: string, email: string, firstName?: string, lastName?: string): Promise<Donation | undefined>;
   updateDonationAmount(id: number, amount: number): Promise<Donation | undefined>;
   getDonations(): Promise<Donation[]>;
   getDonationsByUserId(userId: number): Promise<Donation[]>;
@@ -418,14 +418,16 @@ export class MemStorage implements IStorage {
     );
   }
   
-  async updateDonationDonor(id: number, name: string, email: string): Promise<Donation | undefined> {
+  async updateDonationDonor(id: number, name: string, email: string, firstName?: string, lastName?: string): Promise<Donation | undefined> {
     const donation = this.donations.get(id);
     if (!donation) return undefined;
     
     const updatedDonation: Donation = {
       ...donation,
       name,
-      email
+      email,
+      firstName: firstName || null,
+      lastName: lastName || null
     };
     
     // Update the donation in the map
@@ -895,12 +897,17 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(donations.createdAt));
   }
   
-  async updateDonationDonor(id: number, name: string, email: string): Promise<Donation | undefined> {
+  async updateDonationDonor(id: number, name: string, email: string, firstName?: string, lastName?: string): Promise<Donation | undefined> {
     if (!db) return undefined;
     
     const [updatedDonation] = await db
       .update(donations)
-      .set({ name, email })
+      .set({ 
+        name, 
+        email,
+        firstName: firstName || null,
+        lastName: lastName || null
+      })
       .where(eq(donations.id, id))
       .returning();
       

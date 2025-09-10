@@ -42,6 +42,8 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [name, setName] = useState('');
   const [donationDetails, setDonationDetails] = useState<any>(null);
   
@@ -219,16 +221,15 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           variant: "destructive",
         });
       } else {
-        // Extract billing details from the payment intent
-        const billingDetails = paymentIntent.payment_method?.billing_details || {};
-        const paymentEmail = billingDetails.email || email;
-        const paymentName = billingDetails.name || name;
+        // Use manual form data for donor information
+        const paymentEmail = email;
+        const paymentName = `${firstName} ${lastName}`.trim();
         
-        console.log('[PAYMENT-SUCCESS] Billing details:', { 
+        console.log('[PAYMENT-SUCCESS] Donor details:', { 
           email: paymentEmail || '(empty)', 
           name: paymentName || '(empty)',
-          fromIntent: billingDetails,
-          fromState: { email, name }
+          firstName,
+          lastName
         });
         
         // Update donation status manually to ensure it's marked completed
@@ -310,6 +311,61 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Donor Information Form - Always Required */}
+      <div className="bg-gray-50 p-4 rounded-md mb-4 border border-gray-200">
+        <h3 className="font-medium text-gray-800 mb-2">Donor Information</h3>
+        <p className="text-sm text-gray-600 mb-4">We need your details to send you a donation receipt.</p>
+        
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              Email Address *
+            </label>
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md text-sm"
+              placeholder="your@email.com"
+              required
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                First Name *
+              </label>
+              <input
+                type="text"
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                placeholder="John"
+                required
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                Last Name *
+              </label>
+              <input
+                type="text"
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                placeholder="Doe"
+                required
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {donationDetails && isSubscription && (
         <div className="bg-blue-50 p-4 rounded-md mb-4 border border-blue-100">
           <h3 className="font-medium text-blue-800 mb-2">Recurring Payment Setup</h3>
@@ -318,38 +374,6 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
             <p className="mt-1">Your card will be charged today and then every {donationDetails.frequency === 'weekly' ? 'week' : 'month'} thereafter.</p>
           </div>
           
-          {/* Email for subscription notifications */}
-          <div className="space-y-4 mb-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email (for payment receipts)
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                placeholder="your@email.com"
-                required
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name (for payment records)
-              </label>
-              <input
-                type="text"
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                placeholder="Your Name"
-                required
-              />
-            </div>
-          </div>
         </div>
       )}
       
@@ -370,7 +394,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
       <Button 
         type="submit" 
         className="w-full py-3" 
-        disabled={!stripe || isLoading || (isSubscription && (!email || !name))}
+        disabled={!stripe || isLoading || !email || !firstName || !lastName}
       >
         {isLoading ? (
           <>
