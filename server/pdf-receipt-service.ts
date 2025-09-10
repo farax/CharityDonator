@@ -81,6 +81,7 @@ function getFrequencyLabel(frequency: string): string {
 async function generateReceiptHTML(data: ReceiptData): Promise<string> {
   const { donation, receiptNumber } = data;
   const currentDate = new Date();
+  const logoBase64 = await getLogoBase64();
   
   // Format payment method display
   const paymentMethodDisplay = donation.paymentMethod ? 
@@ -133,18 +134,31 @@ async function generateReceiptHTML(data: ReceiptData): Promise<string> {
         
         .company-info {
           flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        
+        .logo-section {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          margin-bottom: 20px;
+        }
+        
+        .company-logo {
+          width: 120px;
+          height: 120px;
+          margin-bottom: 12px;
+          object-fit: contain;
         }
         
         .company-name {
-          font-size: 16px;
+          font-size: 18px;
           font-weight: 600;
           color: #1f2937;
-          margin-bottom: 8px;
-        }
-        
-        .company-address {
-          color: #6b7280;
-          line-height: 1.6;
+          text-transform: uppercase;
+          letter-spacing: 1px;
         }
         
         .receipt-title {
@@ -292,12 +306,9 @@ async function generateReceiptHTML(data: ReceiptData): Promise<string> {
         <!-- Header with company info and receipt title -->
         <div class="header">
           <div class="company-info">
-            <div class="company-name">Aafiyaa LTD</div>
-            <div class="company-address">
-              122 Westminster Street<br>
-              Tallawong<br>
-              NSW 2762<br>
-              Australia
+            <div class="logo-section">
+              ${logoBase64 ? `<img src="data:image/png;base64,${logoBase64}" alt="Aafiyaa Logo" class="company-logo" />` : ''}
+              <div class="company-name">Aafiyaa LTD</div>
             </div>
           </div>
           
