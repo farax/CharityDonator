@@ -61,20 +61,33 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   useEffect(() => {
     if (!stripe || !elements) return;
 
-    // Create Link Authentication Element for reliable email capture
-    const linkAuth = elements.create('linkAuthentication');
-    linkAuth.on('change', (event) => {
-      const email = event.value.email;
-      if (email) {
-        setLinkAuthEmail(email);
-        console.log('[LINK-AUTH] Email captured:', email);
-      }
-    });
-    linkAuth.mount('#link-auth');
+    // Check if element is already mounted to prevent duplicate creation
+    const linkAuthContainer = document.getElementById('link-auth');
+    if (!linkAuthContainer || linkAuthContainer.hasChildNodes()) return;
 
-    return () => {
-      linkAuth.unmount();
-    };
+    try {
+      // Create Link Authentication Element for reliable email capture
+      const linkAuth = elements.create('linkAuthentication');
+      linkAuth.on('change', (event) => {
+        const email = event.value.email;
+        if (email) {
+          setLinkAuthEmail(email);
+          console.log('[LINK-AUTH] Email captured:', email);
+        }
+      });
+      linkAuth.mount('#link-auth');
+
+      return () => {
+        try {
+          linkAuth.unmount();
+        } catch (error) {
+          // Element may already be unmounted
+          console.log('[LINK-AUTH] Element already unmounted');
+        }
+      };
+    } catch (error) {
+      console.log('[LINK-AUTH] Element creation skipped (may already exist)');
+    }
   }, [stripe, elements]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -128,7 +141,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           currency: donationDetails.currency,
           email: email,
           name: name,
-          paymentMethodId: setupIntent.payment_method,
+          paymentMethodId: typeof setupIntent.payment_method === 'string' ? setupIntent.payment_method : setupIntent.payment_method.id,
           frequency: donationDetails.frequency
         });
         
@@ -242,9 +255,12 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         });
       } else {
         // Get billing details from Stripe and our form
-        const billingDetails = paymentIntent.payment_method?.billing_details || {};
-        const paymentEmail = linkAuthEmail || billingDetails.email || '';
-        const paymentName = name || billingDetails.name || '';
+        const paymentMethod = typeof paymentIntent.payment_method === 'string' 
+          ? null 
+          : paymentIntent.payment_method;
+        const billingDetails = paymentMethod?.billing_details || {};
+        const paymentEmail = linkAuthEmail || billingDetails?.email || '';
+        const paymentName = name || billingDetails?.name || '';
         
         // Parse name into first and last name
         const nameParts = paymentName.trim().split(' ');
@@ -337,33 +353,15 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
     return frequency.charAt(0).toUpperCase() + frequency.slice(1);
   };
 
+  // Validation helpers
+  const missingFields = [];
+  if (!linkAuthEmail) missingFields.push('email address');
+  if (!name) missingFields.push('full name');
+  
+  const isFormValid = linkAuthEmail && name;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Link Authentication Element for email + Name field */}
-      <div className="bg-blue-50 p-4 rounded-md mb-4 border border-blue-200">
-        <h3 className="font-medium text-blue-800 mb-2">📧 Receipt Information</h3>
-        <p className="text-sm text-blue-600 mb-3">Enter your details to receive your donation receipt:</p>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-blue-700 mb-1">Email Address</label>
-            <div id="link-auth"></div>
-          </div>
-          
-          <div>
-            <label htmlFor="donor-name" className="block text-sm font-medium text-blue-700 mb-1">Full Name</label>
-            <input
-              type="text"
-              id="donor-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full p-2 border border-blue-300 rounded-md text-sm"
-              placeholder="John Doe"
-              required
-            />
-          </div>
-        </div>
-      </div>
 
       {donationDetails && isSubscription && (
         <div className="bg-blue-50 p-4 rounded-md mb-4 border border-blue-100">
@@ -387,16 +385,53 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         }}
       />
       
+      {/* Link Authentication Element for email + Name field - moved to bottom */}
+      <div className="bg-blue-50 p-4 rounded-md mb-4 border border-blue-200">
+        <h3 className="font-medium text-blue-800 mb-2">📧 Receipt Information</h3>
+        <p className="text-sm text-blue-600 mb-3">Enter your details to receive your donation receipt:</p>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-blue-700 mb-1">Email Address</label>
+            <div id="link-auth"></div>
+          </div>
+          
+          <div>
+            <label htmlFor="donor-name" className="block text-sm font-medium text-blue-700 mb-1">Full Name</label>
+            <input
+              type="text"
+              id="donor-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full p-2 border border-blue-300 rounded-md text-sm"
+              placeholder="John Doe"
+              required
+            />
+          </div>
+        </div>
+        
+        {/* Validation message */}
+        {!isFormValid && (
+          <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded-md">
+            <p className="text-sm text-orange-700">
+              Please fill in the missing {missingFields.length === 1 ? 'field' : 'fields'}: {missingFields.join(' and ')}
+            </p>
+          </div>
+        )}
+      </div>
+
       <Button 
         type="submit" 
         className="w-full py-3" 
-        disabled={!stripe || isLoading || !linkAuthEmail || !name}
+        disabled={!stripe || isLoading || !isFormValid}
       >
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Processing
           </>
+        ) : !isFormValid ? (
+          "Please complete receipt information above"
         ) : (
           isSubscription ? 'Set Up Recurring Donation' : 'Complete Donation'
         )}
