@@ -73,43 +73,30 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   useEffect(() => {
     if (!stripe || !elements) return;
 
-    // Only show Link Auth Element if user wants a receipt
+    // Always mount Link Auth Element in the tax receipt section only
     const linkAuthContainer = document.getElementById('link-auth');
     if (!linkAuthContainer) return;
 
-    if (wantsReceipt) {
-      // Show Link Auth Element for receipt generation
-      if (!linkAuthContainer.hasChildNodes()) {
-        try {
-          const linkAuth = elements.create('linkAuthentication');
-          linkAuth.on('change', (event) => {
-            const email = event.value.email;
-            if (email) {
-              setLinkAuthEmail(email);
-              console.log('[LINK-AUTH] Email captured:', email);
-            } else {
-              setLinkAuthEmail('');
-            }
-          });
-          linkAuth.mount('#link-auth');
-          console.log('[LINK-AUTH] Element mounted for receipt generation');
-        } catch (error) {
-          console.log('[LINK-AUTH] Element creation skipped (may already exist)');
-        }
-      }
-    } else {
-      // Hide Link Auth Element for anonymous donations
-      if (linkAuthContainer.hasChildNodes()) {
-        try {
-          linkAuthContainer.innerHTML = '';
-          setLinkAuthEmail('');
-          console.log('[LINK-AUTH] Element removed for anonymous donation');
-        } catch (error) {
-          console.log('[LINK-AUTH] Element cleanup failed:', error);
-        }
+    // Mount the Link Auth Element only once in our designated container
+    if (!linkAuthContainer.hasChildNodes()) {
+      try {
+        const linkAuth = elements.create('linkAuthentication');
+        linkAuth.on('change', (event) => {
+          const email = event.value.email;
+          if (email) {
+            setLinkAuthEmail(email);
+            console.log('[LINK-AUTH] Email captured:', email);
+          } else {
+            setLinkAuthEmail('');
+          }
+        });
+        linkAuth.mount('#link-auth');
+        console.log('[LINK-AUTH] Element mounted in tax receipt section');
+      } catch (error) {
+        console.log('[LINK-AUTH] Element creation skipped (may already exist)');
       }
     }
-  }, [stripe, elements, wantsReceipt]);
+  }, [stripe, elements]);
 
   // Helper function to handle successful payments (both regular and anonymous)
   const handlePaymentSuccess = async (paymentIntent: any, email: string, fullName: string) => {
