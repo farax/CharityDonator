@@ -73,6 +73,8 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         if (email) {
           setLinkAuthEmail(email);
           console.log('[LINK-AUTH] Email captured:', email);
+        } else {
+          setLinkAuthEmail('');
         }
       });
       linkAuth.mount('#link-auth');
@@ -89,6 +91,109 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
       console.log('[LINK-AUTH] Element creation skipped (may already exist)');
     }
   }, [stripe, elements]);
+
+  // Helper function to handle successful payments (both regular and anonymous)
+  const handlePaymentSuccess = async (paymentIntent: any, email: string, fullName: string) => {
+    // Get billing details from Stripe and our form (optional for receipt)
+    const paymentMethod = typeof paymentIntent.payment_method === 'string' 
+      ? null 
+      : paymentIntent.payment_method;
+    const billingDetails = paymentMethod?.billing_details || {};
+    const paymentEmail = email || billingDetails?.email || '';
+    const paymentName = fullName || billingDetails?.name || '';
+    
+    // Only use receipt data if both email and name are provided and valid
+    const hasReceiptData = paymentEmail && paymentName && paymentEmail.includes('@') && paymentEmail.includes('.') && paymentName.length > 2;
+    console.log('[PAYMENT-SUCCESS] Receipt data status:', { 
+      hasReceiptData, 
+      email: paymentEmail || '(empty)', 
+      name: paymentName || '(empty)' 
+    });
+    
+    // Parse name into first and last name
+    const nameParts = paymentName.trim().split(' ');
+    const paymentFirstName = nameParts[0] || '';
+    const paymentLastName = nameParts.slice(1).join(' ') || '';
+    
+    console.log('[PAYMENT-SUCCESS] Donor details:', { 
+      email: paymentEmail || '(empty)', 
+      name: paymentName || '(empty)',
+      firstName: paymentFirstName || '(empty)',
+      lastName: paymentLastName || '(empty)',
+      anonymous: !hasReceiptData
+    });
+    
+    // Update donation status manually to ensure it's marked completed
+    try {
+      if (paymentIntent && donationDetails?.id) {
+        await apiRequest("POST", "/api/update-donation-status", {
+          donationId: donationDetails.id,
+          status: "completed",
+          paymentMethod: "stripe",
+          paymentId: paymentIntent.id,
+          email: hasReceiptData ? paymentEmail : null,
+          name: hasReceiptData ? paymentName : null,
+          firstName: hasReceiptData ? paymentFirstName : null,
+          lastName: hasReceiptData ? paymentLastName : null,
+          skipReceipt: !hasReceiptData
+        });
+        console.log("Donation status updated to completed", paymentIntent.id);
+        
+        // Also directly notify about payment success to update case amount
+        if (donationDetails.caseId) {
+          await apiRequest("POST", "/api/stripe-payment-success", {
+            donationId: donationDetails.id,
+            paymentIntentId: paymentIntent.id
+          });
+          console.log("Case amount updated via direct notification", donationDetails.caseId);
+        }
+      }
+    } catch (updateError) {
+      console.error("Failed to update donation status:", updateError);
+      // Continue with success path even if status update fails
+    }
+    
+    // Track payment success
+    trackEvent({
+      category: 'Payment',
+      action: 'Success',
+      label: 'Stripe',
+      value: donationDetails?.amount,
+      attributes: {
+        paymentMethod: 'stripe',
+        donationId: donationDetails?.id?.toString(),
+        frequency: donationDetails?.frequency
+      }
+    });
+    
+    toast({
+      title: "Payment Successful",
+      description: hasReceiptData 
+        ? "Thank you for your generous donation! Your receipt will be emailed to you." 
+        : "Thank you for your generous anonymous donation!",
+      variant: "success",
+    });
+    
+    // Store donation details for success page
+    const successData = {
+      amount: donationDetails.amount,
+      currency: donationDetails.currency,
+      type: donationDetails.type,
+      frequency: donationDetails.frequency,
+      email: paymentEmail,
+      name: paymentName,
+      caseId: donationDetails.caseId,
+      caseTitle: donationDetails.caseTitle,
+      destinationProject: donationDetails.destinationProject,
+      donationId: donationDetails.id
+    };
+    localStorage.setItem('donationSuccess', JSON.stringify(successData));
+    
+    // Redirect to success page after successful payment
+    setTimeout(() => {
+      setLocation('/donation-success');
+    }, 2000);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -236,6 +341,61 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
       });
 
       if (error) {
+        // Check if it's an email validation error but we want anonymous donation
+        const isEmailError = error.code === 'incomplete_email' && !wantsReceipt;
+        
+        if (isEmailError) {
+          // For anonymous donations, we can ignore email validation errors
+          console.log('[ANONYMOUS-PAYMENT] Proceeding with anonymous donation despite email validation error');
+          
+          // Clear the link auth email to ensure anonymous processing
+          setLinkAuthEmail('');
+          
+          // Try again with elements that don't require email validation
+          try {
+            // Get card element directly for payment without email requirement
+            const cardElement = elements.getElement('card');
+            if (!cardElement) {
+              throw new Error('Card element not found');
+            }
+            
+            // Create payment method without email validation
+            const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
+              type: 'card',
+              card: cardElement,
+            });
+            
+            if (pmError) {
+              throw new Error(pmError.message);
+            }
+            
+            // Confirm payment with just the payment method
+            const { error: confirmError, paymentIntent: confirmedIntent } = await stripe.confirmCardPayment(
+              donationDetails?.clientSecret || '',
+              {
+                payment_method: paymentMethod.id,
+              }
+            );
+            
+            if (confirmError) {
+              throw new Error(confirmError.message);
+            }
+            
+            // Process successful anonymous payment
+            const processedIntent = confirmedIntent;
+            console.log('[ANONYMOUS-PAYMENT] Successfully processed anonymous donation');
+            
+            // Continue with success flow using the confirmed payment intent
+            if (processedIntent) {
+              await handlePaymentSuccess(processedIntent, '', ''); // Empty email and name for anonymous
+              return;
+            }
+          } catch (retryError: any) {
+            console.error('[ANONYMOUS-PAYMENT] Retry failed:', retryError.message);
+            // Fall through to normal error handling
+          }
+        }
+        
         // Track payment failure
         trackEvent({
           category: 'Payment',
@@ -254,102 +414,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           variant: "destructive",
         });
       } else {
-        // Get billing details from Stripe and our form (optional for receipt)
-        const paymentMethod = typeof paymentIntent.payment_method === 'string' 
-          ? null 
-          : paymentIntent.payment_method;
-        const billingDetails = paymentMethod?.billing_details || {};
-        const paymentEmail = linkAuthEmail || billingDetails?.email || '';
-        const paymentName = name || billingDetails?.name || '';
-        
-        // Only use receipt data if both email and name are provided
-        const hasReceiptData = paymentEmail && paymentName;
-        console.log('[PAYMENT-SUCCESS] Receipt data status:', { 
-          hasReceiptData, 
-          email: paymentEmail || '(empty)', 
-          name: paymentName || '(empty)' 
-        });
-        
-        // Parse name into first and last name
-        const nameParts = paymentName.trim().split(' ');
-        const paymentFirstName = nameParts[0] || '';
-        const paymentLastName = nameParts.slice(1).join(' ') || '';
-        
-        console.log('[PAYMENT-SUCCESS] Donor details:', { 
-          email: paymentEmail || '(empty)', 
-          name: paymentName || '(empty)',
-          firstName: paymentFirstName || '(empty)',
-          lastName: paymentLastName || '(empty)'
-        });
-        
-        // Update donation status manually to ensure it's marked completed
-        try {
-          if (paymentIntent && donationDetails?.id) {
-            await apiRequest("POST", "/api/update-donation-status", {
-              donationId: donationDetails.id,
-              status: "completed",
-              paymentMethod: "stripe",
-              paymentId: paymentIntent.id,
-              email: hasReceiptData ? paymentEmail : null,
-              name: hasReceiptData ? paymentName : null,
-              firstName: hasReceiptData ? paymentFirstName : null,
-              lastName: hasReceiptData ? paymentLastName : null,
-              skipReceipt: !hasReceiptData
-            });
-            console.log("Donation status updated to completed", paymentIntent.id);
-            
-            // Also directly notify about payment success to update case amount
-            if (donationDetails.caseId) {
-              await apiRequest("POST", "/api/stripe-payment-success", {
-                donationId: donationDetails.id,
-                paymentIntentId: paymentIntent.id
-              });
-              console.log("Case amount updated via direct notification", donationDetails.caseId);
-            }
-          }
-        } catch (updateError) {
-          console.error("Failed to update donation status:", updateError);
-          // Continue with success path even if status update fails
-        }
-        
-        // Track payment success
-        trackEvent({
-          category: 'Payment',
-          action: 'Success',
-          label: 'Stripe',
-          value: donationDetails?.amount,
-          attributes: {
-            paymentMethod: 'stripe',
-            donationId: donationDetails?.id?.toString(),
-            frequency: donationDetails?.frequency
-          }
-        });
-        
-        toast({
-          title: "Payment Successful",
-          description: "Thank you for your generous donation!",
-          variant: "success",
-        });
-        
-        // Store donation details for success page
-        const successData = {
-          amount: donationDetails.amount,
-          currency: donationDetails.currency,
-          type: donationDetails.type,
-          frequency: donationDetails.frequency,
-          email: paymentEmail,
-          name: paymentName,
-          caseId: donationDetails.caseId,
-          caseTitle: donationDetails.caseTitle,
-          destinationProject: donationDetails.destinationProject,
-          donationId: donationDetails.id
-        };
-        localStorage.setItem('donationSuccess', JSON.stringify(successData));
-        
-        // Redirect to success page after successful payment
-        setTimeout(() => {
-          setLocation('/donation-success');
-        }, 2000);
+        await handlePaymentSuccess(paymentIntent, linkAuthEmail, name);
       }
     }
     
