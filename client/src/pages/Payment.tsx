@@ -345,12 +345,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
             spacedAccordionItems: false
           },
           fields: {
-            billingDetails: {
-              name: 'required',
-              email: 'required',
-              phone: 'auto',
-              address: 'never'
-            }
+            billingDetails: 'auto'
           }
         }}
       />
