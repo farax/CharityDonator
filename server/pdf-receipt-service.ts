@@ -79,9 +79,13 @@ function getFrequencyLabel(frequency: string): string {
 
 // Generate HTML receipt template
 async function generateReceiptHTML(data: ReceiptData): Promise<string> {
-  const { donation, receiptNumber, caseTitle } = data;
+  const { donation, receiptNumber } = data;
   const currentDate = new Date();
-  const logoBase64 = await getLogoBase64();
+  
+  // Format payment method display
+  const paymentMethodDisplay = donation.paymentMethod ? 
+    `${donation.paymentMethod.toUpperCase()} - ${donation.stripePaymentId ? donation.stripePaymentId.slice(-4) : '****'}` :
+    'CARD - ****';
   
   return `
     <!DOCTYPE html>
@@ -91,326 +95,238 @@ async function generateReceiptHTML(data: ReceiptData): Promise<string> {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Donation Receipt - ${receiptNumber}</title>
       <style>
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        
         body {
-          font-family: 'Arial', sans-serif;
-          line-height: 1.6;
-          color: #333;
-          background: white;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          line-height: 1.5;
+          color: #374151;
+          background: #f9fafb;
+          margin: 0;
+          padding: 40px 20px;
         }
         
-        .container {
-          max-width: 800px;
+        .receipt-container {
+          max-width: 600px;
           margin: 0 auto;
-          padding: 40px;
+          background: white;
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
         
         .header {
-          text-align: center;
-          margin-bottom: 40px;
-          border-bottom: 3px solid #14b8a6;
-          padding-bottom: 30px;
+          background: linear-gradient(135deg, #14b8a6 0%, #10b981 100%);
+          padding: 40px 40px 20px 40px;
+          color: white;
+          position: relative;
         }
         
-        .logo-section {
-          margin-bottom: 20px;
+        .header::after {
+          content: '';
+          position: absolute;
+          bottom: -10px;
+          left: 0;
+          right: 0;
+          height: 20px;
+          background: white;
+          transform: skewY(-1deg);
+          transform-origin: left;
         }
         
-        .logo-icon {
-          display: inline-block;
-          width: 80px;
-          height: 80px;
-          margin-bottom: 15px;
-        }
-        
-        .logo-icon img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-        }
-        
-        .org-name {
-          font-size: 32px;
-          font-weight: bold;
-          color: #14b8a6;
-          margin-bottom: 5px;
-        }
-        
-        .org-tagline {
-          font-size: 14px;
-          color: #6b7280;
-          text-transform: uppercase;
-          letter-spacing: 2px;
-        }
-        
-        .receipt-title {
+        .logo-circle {
+          width: 60px;
+          height: 60px;
+          background: white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 20px auto;
           font-size: 28px;
           font-weight: bold;
-          color: #1f2937;
-          margin: 30px 0 10px 0;
+          color: #14b8a6;
         }
         
-        .receipt-subtitle {
-          font-size: 16px;
-          color: #6b7280;
-        }
-        
-        .receipt-info {
-          display: flex;
-          justify-content: space-between;
-          margin: 30px 0;
-          padding: 20px;
-          background: #f8fafc;
-          border-radius: 8px;
+        .header-title {
+          text-align: center;
+          font-size: 24px;
+          font-weight: 600;
+          margin-bottom: 8px;
         }
         
         .receipt-number {
-          font-weight: bold;
-          color: #14b8a6;
-        }
-        
-        .receipt-date {
-          color: #6b7280;
-        }
-        
-        .donation-details {
-          margin: 30px 0;
-        }
-        
-        .section-title {
-          font-size: 20px;
-          font-weight: bold;
-          color: #1f2937;
-          margin-bottom: 20px;
-          border-bottom: 2px solid #e5e7eb;
-          padding-bottom: 10px;
-        }
-        
-        .details-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 20px;
-          margin-bottom: 20px;
-        }
-        
-        .detail-item {
-          padding: 15px;
-          background: #f9fafb;
-          border-radius: 6px;
-          border-left: 4px solid #14b8a6;
-        }
-        
-        .detail-label {
-          font-size: 12px;
-          color: #6b7280;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          margin-bottom: 5px;
-        }
-        
-        .detail-value {
-          font-size: 16px;
-          font-weight: 600;
-          color: #1f2937;
-        }
-        
-        .amount-highlight {
-          grid-column: 1 / -1;
           text-align: center;
-          padding: 25px;
-          background: linear-gradient(135deg, #14b8a6, #10b981);
-          color: white;
-          border-radius: 8px;
-          margin: 20px 0;
-        }
-        
-        .amount-label {
           font-size: 16px;
           opacity: 0.9;
-          margin-bottom: 5px;
         }
         
-        .amount-value {
-          font-size: 36px;
-          font-weight: bold;
+        .content {
+          padding: 40px;
         }
         
-        .tax-info {
-          background: #ecfdf5;
-          border: 1px solid #a7f3d0;
-          border-radius: 8px;
+        .info-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 30px;
+          margin-bottom: 40px;
+        }
+        
+        .info-item {
+          text-align: left;
+        }
+        
+        .info-label {
+          font-size: 14px;
+          color: #6b7280;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 8px;
+        }
+        
+        .info-value {
+          font-size: 16px;
+          color: #111827;
+          font-weight: 600;
+        }
+        
+        .summary-section {
+          margin-bottom: 30px;
+        }
+        
+        .summary-title {
+          font-size: 18px;
+          color: #111827;
+          font-weight: 600;
+          margin-bottom: 20px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        
+        .summary-line {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 15px 0;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .summary-line:last-child {
+          border-bottom: 2px solid #14b8a6;
+          font-weight: 600;
+          color: #111827;
+        }
+        
+        .summary-description {
+          font-size: 16px;
+        }
+        
+        .summary-amount {
+          font-size: 16px;
+          font-weight: 600;
+        }
+        
+        .tax-notice {
+          background: #f0f9ff;
+          border: 1px solid #bae6fd;
+          border-radius: 6px;
           padding: 20px;
           margin: 30px 0;
         }
         
-        .tax-title {
-          font-size: 18px;
-          font-weight: bold;
-          color: #065f46;
-          margin-bottom: 10px;
+        .tax-notice p {
+          margin: 0;
+          font-size: 14px;
+          color: #0369a1;
+          line-height: 1.6;
         }
         
-        .tax-text {
-          color: #047857;
+        .contact-section {
+          text-align: center;
+          padding: 20px 0;
+          border-top: 1px solid #e5e7eb;
+          margin-top: 30px;
           font-size: 14px;
-          line-height: 1.6;
+          color: #6b7280;
+        }
+        
+        .contact-section p {
+          margin: 5px 0;
         }
         
         .footer {
           text-align: center;
-          margin-top: 50px;
-          padding-top: 30px;
-          border-top: 2px solid #e5e7eb;
-          color: #6b7280;
-          font-size: 14px;
+          font-size: 12px;
+          color: #9ca3af;
+          margin-top: 30px;
+          line-height: 1.6;
         }
         
-        .contact-info {
-          margin-top: 20px;
-        }
-        
-        .thank-you {
-          background: #fef3f2;
-          border: 1px solid #fecaca;
-          border-radius: 8px;
-          padding: 20px;
-          margin: 30px 0;
-          text-align: center;
-        }
-        
-        .thank-you h3 {
-          color: #dc2626;
-          font-size: 20px;
-          margin-bottom: 10px;
-        }
-        
-        .thank-you p {
-          color: #7f1d1d;
-          font-size: 16px;
+        .footer p {
+          margin: 10px 0;
         }
         
         @media print {
-          body { margin: 0; }
-          .container { padding: 20px; }
+          body {
+            background: white;
+            padding: 0;
+          }
+          .receipt-container {
+            box-shadow: none;
+            max-width: none;
+          }
         }
       </style>
     </head>
     <body>
-      <div class="container">
-        <!-- Header with Logo and Organization Info -->
+      <div class="receipt-container">
         <div class="header">
-          <div class="logo-section">
-            <div class="logo-icon">
-              <img src="data:image/png;base64,${logoBase64}" alt="Aafiyaa Logo" />
+          <div class="logo-circle">A</div>
+          <h1 class="header-title">Donation Receipt from Aafiyaa LTD</h1>
+          <p class="receipt-number">Receipt #${receiptNumber}</p>
+        </div>
+        
+        <div class="content">
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">Amount Donated</div>
+              <div class="info-value">${formatCurrency(donation.amount, donation.currency)}</div>
             </div>
-            <div class="org-name">Aafiyaa LTD</div>
-            <div class="org-tagline">Healthcare & Compassion</div>
+            <div class="info-item">
+              <div class="info-label">Date Donated</div>
+              <div class="info-value">${new Date(donation.createdAt).toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Payment Method</div>
+              <div class="info-value">${paymentMethodDisplay}</div>
+            </div>
           </div>
           
-          <h1 class="receipt-title">Official Donation Receipt</h1>
-          <p class="receipt-subtitle">Tax Deductible Charitable Donation</p>
-        </div>
-        
-        <!-- Receipt Information -->
-        <div class="receipt-info">
-          <div>
-            <strong>Receipt Number:</strong><br>
-            <span class="receipt-number">${receiptNumber}</span>
-          </div>
-          <div style="text-align: right;">
-            <strong>Date Issued:</strong><br>
-            <span class="receipt-date">${formatDate(currentDate)}</span>
-          </div>
-        </div>
-        
-        <!-- Donation Details -->
-        <div class="donation-details">
-          <h2 class="section-title">Donation Details</h2>
-          
-          <div class="amount-highlight">
-            <div class="amount-label">Total Donation Amount</div>
-            <div class="amount-value">${formatCurrency(donation.amount, donation.currency)}</div>
+          <div class="summary-section">
+            <h2 class="summary-title">Summary</h2>
+            <div class="summary-line">
+              <span class="summary-description">[${getDonationTypeLabel(donation.type)}] Donation to Aafiyaa LTD</span>
+              <span class="summary-amount">${formatCurrency(donation.amount, donation.currency)}</span>
+            </div>
+            <div class="summary-line">
+              <span class="summary-description">Total Amount Donated</span>
+              <span class="summary-amount">${formatCurrency(donation.amount, donation.currency)}</span>
+            </div>
           </div>
           
-          <div class="details-grid">
-            <div class="detail-item">
-              <div class="detail-label">Donation Type</div>
-              <div class="detail-value">${getDonationTypeLabel(donation.type)}</div>
-            </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Frequency</div>
-              <div class="detail-value">${getFrequencyLabel(donation.frequency)}</div>
-            </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Payment Method</div>
-              <div class="detail-value">${donation.paymentMethod || 'Online Payment'}</div>
-            </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Transaction Date</div>
-              <div class="detail-value">${formatDate(new Date(donation.createdAt))}</div>
-            </div>
-            
-            ${donation.name ? `
-            <div class="detail-item">
-              <div class="detail-label">Donor Name</div>
-              <div class="detail-value">${donation.name}</div>
-            </div>
-            ` : ''}
-            
-            ${donation.email ? `
-            <div class="detail-item">
-              <div class="detail-label">Email Address</div>
-              <div class="detail-value">${donation.email}</div>
-            </div>
-            ` : ''}
-            
-            ${caseTitle ? `
-            <div class="detail-item" style="grid-column: 1 / -1;">
-              <div class="detail-label">Supporting Case</div>
-              <div class="detail-value">${caseTitle}</div>
-            </div>
-            ` : ''}
-            
-            ${donation.destinationProject ? `
-            <div class="detail-item" style="grid-column: 1 / -1;">
-              <div class="detail-label">Destination Project</div>
-              <div class="detail-value">${donation.destinationProject}</div>
-            </div>
-            ` : ''}
+          <div class="tax-notice">
+            <p>This donation is tax-deductible. Please retain this receipt for your tax records.</p>
           </div>
-        </div>
-        
-        <!-- Tax Information -->
-        <div class="tax-info">
-          <h3 class="tax-title">Tax Deduction Information</h3>
-          <p class="tax-text">
-            This receipt confirms your charitable donation to Aafiyaa LTD. 
-            Your contribution is tax-deductible to the extent allowed by law. Please consult 
-            with your tax advisor regarding the deductibility of your charitable contributions. 
-            Keep this receipt for your tax records.
-          </p>
-        </div>
-        
-        <!-- Thank You Message -->
-        <div class="thank-you">
-          <h3>Thank You for Your Generosity!</h3>
-          <p>Your donation helps us provide essential healthcare services to communities in need around the world.</p>
-        </div>
-        
-        <!-- Footer -->
-        <div class="footer">
-          <p><strong>Aafiyaa LTD</strong></p>
-          <div class="contact-info">
-            <p>Email: info@aafiyaa.com | Website: www.aafiyaa.com</p>
-            <p>This is an official receipt for tax purposes. Please retain for your records.</p>
+          
+          <div class="contact-section">
+            <p>If you have any questions, contact us at <strong>info@aafiyaa.com</strong> or visit <strong>aafiyaa.org</strong></p>
+          </div>
+          
+          <div class="footer">
+            <p>Something wrong with this email? View it in your browser.</p>
+            <p>You're receiving this email because you made a donation to Aafiyaa LTD. Aafiyaa partners with Stripe to provide secure payment processing.</p>
+            <p><strong>Aafiyaa LTD, ABN: 47684746987</strong></p>
+            <p>Application Name: Aafiyaa Donation Platform<br>
+            Transaction ID: ${donation.stripePaymentId || 'N/A'}</p>
           </div>
         </div>
       </div>
