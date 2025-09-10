@@ -241,10 +241,10 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           variant: "destructive",
         });
       } else {
-        // Get billing details from Stripe and Link Auth
+        // Get billing details from Stripe and our form
         const billingDetails = paymentIntent.payment_method?.billing_details || {};
-        const paymentEmail = billingDetails.email || linkAuthEmail || '';
-        const paymentName = billingDetails.name || '';
+        const paymentEmail = linkAuthEmail || billingDetails.email || '';
+        const paymentName = name || billingDetails.name || '';
         
         // Parse name into first and last name
         const nameParts = paymentName.trim().split(' ');
@@ -339,11 +339,30 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Link Authentication Element for email */}
+      {/* Link Authentication Element for email + Name field */}
       <div className="bg-blue-50 p-4 rounded-md mb-4 border border-blue-200">
-        <h3 className="font-medium text-blue-800 mb-2">📧 Email for Receipt</h3>
-        <p className="text-sm text-blue-600 mb-3">Enter your email to receive your donation receipt:</p>
-        <div id="link-auth"></div>
+        <h3 className="font-medium text-blue-800 mb-2">📧 Receipt Information</h3>
+        <p className="text-sm text-blue-600 mb-3">Enter your details to receive your donation receipt:</p>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-blue-700 mb-1">Email Address</label>
+            <div id="link-auth"></div>
+          </div>
+          
+          <div>
+            <label htmlFor="donor-name" className="block text-sm font-medium text-blue-700 mb-1">Full Name</label>
+            <input
+              type="text"
+              id="donor-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full p-2 border border-blue-300 rounded-md text-sm"
+              placeholder="John Doe"
+              required
+            />
+          </div>
+        </div>
       </div>
 
       {donationDetails && isSubscription && (
@@ -371,7 +390,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
       <Button 
         type="submit" 
         className="w-full py-3" 
-        disabled={!stripe || isLoading}
+        disabled={!stripe || isLoading || !linkAuthEmail || !name}
       >
         {isLoading ? (
           <>
