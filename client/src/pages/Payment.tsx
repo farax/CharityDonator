@@ -280,7 +280,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
             subscriptionData.clientSecret,
             { 
-              payment_method: setupIntent.payment_method
+              payment_method: typeof setupIntent.payment_method === 'string' ? setupIntent.payment_method : setupIntent.payment_method.id
             }
           );
           
