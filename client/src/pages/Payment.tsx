@@ -386,7 +386,11 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
             spacedAccordionItems: false
           },
           fields: {
-            billingDetails: 'auto'
+            billingDetails: 'never'
+          },
+          wallets: {
+            applePay: 'never',
+            googlePay: 'never'
           }
         }}
       />
