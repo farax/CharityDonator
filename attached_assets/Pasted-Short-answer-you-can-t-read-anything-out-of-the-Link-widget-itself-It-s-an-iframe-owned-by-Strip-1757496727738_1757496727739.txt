@@ -1,0 +1,88 @@
+Short answer: you can’t “read” anything out of the Link widget itself. It’s an iframe owned by Stripe (for PCI + privacy), so there’s no API to scrape the email/phone/name as the user types.
+
+Here’s how to get that data the supported ways:
+
+# If you use **Stripe Checkout**
+
+* Read it after checkout from the Session or via a webhook.
+* The values you want are in `checkout.session.customer_details` and/or the PaymentIntent’s `charges.data[0].billing_details`.
+
+**Webhook (recommended):**
+
+```js
+// Node/Express example
+app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), (req, res) => {
+  const event = stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], process.env.STRIPE_WEBHOOK_SECRET);
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    // Email/phone/name if collected
+    const email = session.customer_details?.email;
+    const phone = session.customer_details?.phone;
+    const name  = session.customer_details?.name;
+    // You can also fetch the PaymentIntent to inspect payment method details.
+  }
+  res.json({ received: true });
+});
+```
+
+**On demand (server-side):**
+
+```js
+const session = await stripe.checkout.sessions.retrieve(sessionId);
+const { email, phone, name } = session.customer_details || {};
+```
+
+# If you use **Payment Element**
+
+You still can’t read from the Link widget directly. Use one of these:
+
+**A) Collect it yourself and pass it at confirm time**
+
+```js
+// Client
+const elements = stripe.elements({ clientSecret });
+const paymentElement = elements.create('payment');
+paymentElement.mount('#payment-element');
+
+const email = document.querySelector('#email').value;
+const phone = document.querySelector('#phone').value;
+const name  = document.querySelector('#name').value;
+
+await stripe.confirmPayment({
+  elements,
+  confirmParams: {
+    payment_method_data: {
+      billing_details: { email, phone, name }
+    }
+  }
+});
+```
+
+Then on your server, retrieve from the PaymentIntent:
+
+```js
+const pi = await stripe.paymentIntents.retrieve(paymentIntentId, {
+  expand: ['latest_charge.payment_method'],
+});
+const pm = pi.latest_charge.payment_method;
+const { email, phone, name } = pm.billing_details || {};
+```
+
+**B) Use the Link Authentication Element (email only)**
+If you want Stripe to handle email/login UX, mount this separate element; it *does* emit the user’s email to your code:
+
+```js
+const linkAuth = elements.create('linkAuthentication');
+linkAuth.on('change', (event) => {
+  const email = event.value.email; // you can store/use this
+});
+linkAuth.mount('#link-auth');
+```
+
+(Phone and name are not exposed via this element—collect those yourself if you need them.)
+
+# TL;DR
+
+* You cannot programmatically pull data out of the Link “Save my information” box while the user is on the page.
+* Get data **after** payment (webhooks / retrieve Session or PaymentIntent), or **collect it yourself** and pass it via `billing_details`, or use **Link Authentication Element** for email.
