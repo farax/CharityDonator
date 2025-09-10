@@ -416,7 +416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update donation status
   app.post("/api/update-donation-status", async (req, res) => {
     try {
-      const { donationId, status, paymentMethod, paymentId, email, name, firstName, lastName } = req.body;
+      const { donationId, status, paymentMethod, paymentId, email, name, firstName, lastName, skipReceipt } = req.body;
       
       console.log(`[UPDATE-DONATION-STATUS] Request data:`, {
         donationId, status, paymentMethod, paymentId, 
@@ -460,9 +460,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Donation not found" });
       }
       
-      // Generate PDF receipt when donation is completed
-      console.log(`[RECEIPT-CHECK] Donation ${donationId} status: ${status}, email: ${donation.email || '(empty)'}`);
-      if (status === 'completed') {
+      // Generate PDF receipt when donation is completed (only if receipt data provided)
+      console.log(`[RECEIPT-CHECK] Donation ${donationId} status: ${status}, email: ${donation.email || '(empty)'}, skipReceipt: ${skipReceipt || false}`);
+      if (status === 'completed' && !skipReceipt && donation.email && donation.name) {
         try {
           console.log(`[RECEIPT-GENERATION] Starting PDF receipt generation for donation ${donationId}`);
           
@@ -523,6 +523,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error(`Receipt generation failed for donation ${donationId}:`, receiptError);
           // Don't fail the entire payment process if receipt generation fails
         }
+      } else if (status === 'completed' && (skipReceipt || !donation.email || !donation.name)) {
+        console.log(`[RECEIPT-SKIP] PDF receipt generation skipped for donation ${donationId} - anonymous donation`);
       }
       
       res.status(200).json({ success: true, donation });

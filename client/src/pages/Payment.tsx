@@ -254,13 +254,21 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           variant: "destructive",
         });
       } else {
-        // Get billing details from Stripe and our form
+        // Get billing details from Stripe and our form (optional for receipt)
         const paymentMethod = typeof paymentIntent.payment_method === 'string' 
           ? null 
           : paymentIntent.payment_method;
         const billingDetails = paymentMethod?.billing_details || {};
         const paymentEmail = linkAuthEmail || billingDetails?.email || '';
         const paymentName = name || billingDetails?.name || '';
+        
+        // Only use receipt data if both email and name are provided
+        const hasReceiptData = paymentEmail && paymentName;
+        console.log('[PAYMENT-SUCCESS] Receipt data status:', { 
+          hasReceiptData, 
+          email: paymentEmail || '(empty)', 
+          name: paymentName || '(empty)' 
+        });
         
         // Parse name into first and last name
         const nameParts = paymentName.trim().split(' ');
@@ -282,10 +290,11 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
               status: "completed",
               paymentMethod: "stripe",
               paymentId: paymentIntent.id,
-              email: paymentEmail,
-              name: paymentName,
-              firstName: paymentFirstName,
-              lastName: paymentLastName
+              email: hasReceiptData ? paymentEmail : null,
+              name: hasReceiptData ? paymentName : null,
+              firstName: hasReceiptData ? paymentFirstName : null,
+              lastName: hasReceiptData ? paymentLastName : null,
+              skipReceipt: !hasReceiptData
             });
             console.log("Donation status updated to completed", paymentIntent.id);
             
@@ -353,12 +362,17 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
     return frequency.charAt(0).toUpperCase() + frequency.slice(1);
   };
 
-  // Validation helpers
-  const missingFields = [];
-  if (!linkAuthEmail) missingFields.push('email address');
-  if (!name) missingFields.push('full name');
+  // Validation helpers for optional receipt
+  const hasEmail = linkAuthEmail && linkAuthEmail.trim();
+  const hasName = name && name.trim();
+  const wantsReceipt = hasEmail || hasName;
   
-  const isFormValid = linkAuthEmail && name;
+  // If they want a receipt, both fields are required
+  const missingFields = [];
+  if (wantsReceipt && !hasEmail) missingFields.push('email address');
+  if (wantsReceipt && !hasName) missingFields.push('full name');
+  
+  const isFormValid = !wantsReceipt || (hasEmail && hasName);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -387,8 +401,11 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
       
       {/* Link Authentication Element for email + Name field - moved to bottom */}
       <div className="bg-blue-50 p-4 rounded-md mb-4 border border-blue-200">
-        <h3 className="font-medium text-blue-800 mb-2">📧 Receipt Information</h3>
-        <p className="text-sm text-blue-600 mb-3">Enter your details to receive your donation receipt:</p>
+        <h3 className="font-medium text-blue-800 mb-2">📧 Tax Receipt (Optional)</h3>
+        <div className="bg-blue-100 p-3 rounded-md mb-3 border border-blue-300">
+          <p className="text-sm font-medium text-blue-800 mb-1">💡 Want a receipt for tax claims or personal records?</p>
+          <p className="text-sm text-blue-700">Fill in both fields below to receive an official PDF receipt via email. Leave blank to donate anonymously.</p>
+        </div>
         
         <div className="space-y-4">
           <div>
@@ -405,16 +422,23 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
               onChange={(e) => setName(e.target.value)}
               className="w-full p-2 border border-blue-300 rounded-md text-sm"
               placeholder="John Doe"
-              required
             />
           </div>
         </div>
         
         {/* Validation message */}
-        {!isFormValid && (
+        {wantsReceipt && !isFormValid && (
           <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded-md">
             <p className="text-sm text-orange-700">
-              Please fill in the missing {missingFields.length === 1 ? 'field' : 'fields'}: {missingFields.join(' and ')}
+              📋 For receipt generation, please fill in the missing {missingFields.length === 1 ? 'field' : 'fields'}: {missingFields.join(' and ')}
+            </p>
+          </div>
+        )}
+        
+        {!wantsReceipt && (
+          <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-sm text-green-700">
+              ✅ Anonymous donation - no receipt will be generated
             </p>
           </div>
         )}
@@ -431,7 +455,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
             Processing
           </>
         ) : !isFormValid ? (
-          "Please complete receipt information above"
+          "Please complete receipt fields above"
         ) : (
           isSubscription ? 'Set Up Recurring Donation' : 'Complete Donation'
         )}
