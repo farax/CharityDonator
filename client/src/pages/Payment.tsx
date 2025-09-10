@@ -58,39 +58,58 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
     }
   }, []);
 
+  // Validation helpers for optional receipt (moved before useEffect)
+  const hasEmail = linkAuthEmail && linkAuthEmail.trim() && linkAuthEmail.includes('@') && linkAuthEmail.includes('.');
+  const hasName = name && name.trim() && name.length > 2;
+  const wantsReceipt = hasEmail || hasName;
+  
+  // If they want a receipt, both fields are required and valid
+  const missingFields = [];
+  if (wantsReceipt && !hasEmail) missingFields.push('email address');
+  if (wantsReceipt && !hasName) missingFields.push('full name');
+  
+  const isFormValid = !wantsReceipt || (hasEmail && hasName);
+
   useEffect(() => {
     if (!stripe || !elements) return;
 
-    // Check if element is already mounted to prevent duplicate creation
+    // Only show Link Auth Element if user wants a receipt
     const linkAuthContainer = document.getElementById('link-auth');
-    if (!linkAuthContainer || linkAuthContainer.hasChildNodes()) return;
+    if (!linkAuthContainer) return;
 
-    try {
-      // Create Link Authentication Element for reliable email capture
-      const linkAuth = elements.create('linkAuthentication');
-      linkAuth.on('change', (event) => {
-        const email = event.value.email;
-        if (email) {
-          setLinkAuthEmail(email);
-          console.log('[LINK-AUTH] Email captured:', email);
-        } else {
-          setLinkAuthEmail('');
-        }
-      });
-      linkAuth.mount('#link-auth');
-
-      return () => {
+    if (wantsReceipt) {
+      // Show Link Auth Element for receipt generation
+      if (!linkAuthContainer.hasChildNodes()) {
         try {
-          linkAuth.unmount();
+          const linkAuth = elements.create('linkAuthentication');
+          linkAuth.on('change', (event) => {
+            const email = event.value.email;
+            if (email) {
+              setLinkAuthEmail(email);
+              console.log('[LINK-AUTH] Email captured:', email);
+            } else {
+              setLinkAuthEmail('');
+            }
+          });
+          linkAuth.mount('#link-auth');
+          console.log('[LINK-AUTH] Element mounted for receipt generation');
         } catch (error) {
-          // Element may already be unmounted
-          console.log('[LINK-AUTH] Element already unmounted');
+          console.log('[LINK-AUTH] Element creation skipped (may already exist)');
         }
-      };
-    } catch (error) {
-      console.log('[LINK-AUTH] Element creation skipped (may already exist)');
+      }
+    } else {
+      // Hide Link Auth Element for anonymous donations
+      if (linkAuthContainer.hasChildNodes()) {
+        try {
+          linkAuthContainer.innerHTML = '';
+          setLinkAuthEmail('');
+          console.log('[LINK-AUTH] Element removed for anonymous donation');
+        } catch (error) {
+          console.log('[LINK-AUTH] Element cleanup failed:', error);
+        }
+      }
     }
-  }, [stripe, elements]);
+  }, [stripe, elements, wantsReceipt]);
 
   // Helper function to handle successful payments (both regular and anonymous)
   const handlePaymentSuccess = async (paymentIntent: any, email: string, fullName: string) => {
@@ -341,60 +360,6 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
       });
 
       if (error) {
-        // Check if it's an email validation error but we want anonymous donation
-        const isEmailError = error.code === 'incomplete_email' && !wantsReceipt;
-        
-        if (isEmailError) {
-          // For anonymous donations, we can ignore email validation errors
-          console.log('[ANONYMOUS-PAYMENT] Proceeding with anonymous donation despite email validation error');
-          
-          // Clear the link auth email to ensure anonymous processing
-          setLinkAuthEmail('');
-          
-          // Try again with elements that don't require email validation
-          try {
-            // Get card element directly for payment without email requirement
-            const cardElement = elements.getElement('card');
-            if (!cardElement) {
-              throw new Error('Card element not found');
-            }
-            
-            // Create payment method without email validation
-            const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
-              type: 'card',
-              card: cardElement,
-            });
-            
-            if (pmError) {
-              throw new Error(pmError.message);
-            }
-            
-            // Confirm payment with just the payment method
-            const { error: confirmError, paymentIntent: confirmedIntent } = await stripe.confirmCardPayment(
-              donationDetails?.clientSecret || '',
-              {
-                payment_method: paymentMethod.id,
-              }
-            );
-            
-            if (confirmError) {
-              throw new Error(confirmError.message);
-            }
-            
-            // Process successful anonymous payment
-            const processedIntent = confirmedIntent;
-            console.log('[ANONYMOUS-PAYMENT] Successfully processed anonymous donation');
-            
-            // Continue with success flow using the confirmed payment intent
-            if (processedIntent) {
-              await handlePaymentSuccess(processedIntent, '', ''); // Empty email and name for anonymous
-              return;
-            }
-          } catch (retryError: any) {
-            console.error('[ANONYMOUS-PAYMENT] Retry failed:', retryError.message);
-            // Fall through to normal error handling
-          }
-        }
         
         // Track payment failure
         trackEvent({
@@ -426,18 +391,6 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
     if (frequency === 'one-off') return 'One-time';
     return frequency.charAt(0).toUpperCase() + frequency.slice(1);
   };
-
-  // Validation helpers for optional receipt
-  const hasEmail = linkAuthEmail && linkAuthEmail.trim() && linkAuthEmail.includes('@') && linkAuthEmail.includes('.');
-  const hasName = name && name.trim() && name.length > 2;
-  const wantsReceipt = hasEmail || hasName;
-  
-  // If they want a receipt, both fields are required and valid
-  const missingFields = [];
-  if (wantsReceipt && !hasEmail) missingFields.push('email address');
-  if (wantsReceipt && !hasName) missingFields.push('full name');
-  
-  const isFormValid = !wantsReceipt || (hasEmail && hasName);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
