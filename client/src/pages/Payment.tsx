@@ -60,15 +60,13 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
 
   // Validation helpers for optional receipt (moved before useEffect)
   const hasEmail = linkAuthEmail && linkAuthEmail.trim() && linkAuthEmail.includes('@') && linkAuthEmail.includes('.');
-  const hasName = name && name.trim() && name.length > 2;
-  const wantsReceipt = hasEmail || hasName;
+  // For name, we'll rely on Stripe's Link Authentication Element to collect it
+  // The name will be available in payment method billing details after payment
+  const wantsReceipt = hasEmail;
   
-  // If they want a receipt, both fields are required and valid
-  const missingFields = [];
-  if (wantsReceipt && !hasEmail) missingFields.push('email address');
-  if (wantsReceipt && !hasName) missingFields.push('full name');
+  // If they want a receipt, email is required - name will come from Stripe Link Auth
   
-  const isFormValid = !wantsReceipt || (hasEmail && hasName);
+  const isFormValid = !wantsReceipt || hasEmail;
 
   useEffect(() => {
     if (!stripe || !elements) return;
@@ -422,16 +420,14 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         <h3 className="font-medium text-blue-800 mb-2">📧 Tax Receipt (Optional)</h3>
         <div className="bg-blue-100 p-3 rounded-md mb-3 border border-blue-300">
           <p className="text-sm font-medium text-blue-800 mb-1">💡 Want a receipt for tax claims or personal records?</p>
-          <p className="text-sm text-blue-700">Fill in both fields below to receive an official PDF receipt via email. Leave blank to donate anonymously.</p>
+          <p className="text-sm text-blue-700">Fill in the email and name fields below to receive an official PDF receipt via email. Leave blank to donate anonymously.</p>
         </div>
         
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-blue-700 mb-1">Email Address</label>
-            <div id="link-auth"></div>
-          </div>
-          
-          <div>
+        <div id="link-auth"></div>
+        
+        {/* Name field only appears when Link Auth Element is shown */}
+        {wantsReceipt && (
+          <div className="mt-4">
             <label htmlFor="donor-name" className="block text-sm font-medium text-blue-700 mb-1">Full Name</label>
             <input
               type="text"
@@ -442,13 +438,13 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
               placeholder="John Doe"
             />
           </div>
-        </div>
+        )}
         
         {/* Validation message */}
         {wantsReceipt && !isFormValid && (
           <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded-md">
             <p className="text-sm text-orange-700">
-              📋 For receipt generation, please fill in the missing {missingFields.length === 1 ? 'field' : 'fields'}: {missingFields.join(' and ')}
+              📋 For receipt generation, please fill in the email address above
             </p>
           </div>
         )}
@@ -461,24 +457,25 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           </div>
         )}
         
-        {/* Show helpful message if fields have content but aren't valid */}
-        {(linkAuthEmail && !hasEmail) || (name && !hasName) ? (
+        {/* Show helpful message if email field has content but isn't valid */}
+        {linkAuthEmail && !hasEmail ? (
           <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md flex items-center justify-between">
             <p className="text-sm text-yellow-700">
-              💡 Complete both fields for receipt, or clear both for anonymous donation
+              💡 Please enter a valid email address for receipt, or clear the field for anonymous donation
             </p>
             <button
               type="button"
               onClick={() => {
                 setLinkAuthEmail('');
-                setName('');
-                // Clear the Link Auth element
-                const linkAuthInput = document.querySelector('#link-auth input') as HTMLInputElement;
-                if (linkAuthInput) linkAuthInput.value = '';
+                // Clear the Link Auth element by re-mounting it
+                const linkAuthContainer = document.getElementById('link-auth');
+                if (linkAuthContainer) {
+                  linkAuthContainer.innerHTML = '';
+                }
               }}
               className="text-xs text-yellow-800 underline hover:no-underline"
             >
-              Clear fields
+              Clear field
             </button>
           </div>
         ) : null}
@@ -495,7 +492,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
             Processing
           </>
         ) : !isFormValid ? (
-          "Please complete receipt fields above"
+          "Please complete email field above"
         ) : (
           isSubscription ? 'Set Up Recurring Donation' : 'Complete Donation'
         )}
