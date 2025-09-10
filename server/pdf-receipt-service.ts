@@ -389,7 +389,7 @@ export async function generatePDFReceipt(receiptData: ReceiptData): Promise<stri
     console.log(`PDF receipt generated successfully: ${filepath}`);
     return filepath;
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating PDF receipt:', error);
     throw new Error(`Failed to generate PDF receipt: ${error.message}`);
   } finally {
