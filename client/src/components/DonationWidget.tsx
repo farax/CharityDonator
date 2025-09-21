@@ -12,6 +12,8 @@ import { apiRequest } from "@/lib/queryClient";
 import CurrencySelector from "@/components/CurrencySelector";
 import CaseSelector from "@/components/CaseSelector";
 import BankTransferInfo from "@/components/BankTransferInfo";
+import FeatureTour from "@/components/FeatureTour";
+import { useFeatureTours } from "@/hooks/useFeatureTours";
 import { ChevronRight } from "lucide-react";
 import { trackButtonClick, trackDonation, trackEvent } from "@/lib/analytics";
 
@@ -37,6 +39,8 @@ export default function DonationWidget() {
     showCaseSelector,
     setShowCaseSelector,
   } = useDonation();
+  
+  const { features } = useFeatureTours();
   
   // Use the enhanced currency and preset amount system
   const { formatAmount, getPresetAmount } = useCurrency();
@@ -199,7 +203,8 @@ export default function DonationWidget() {
   // Use the formatAmount function from the useCurrency hook
 
   return (
-    <div className="container mx-auto px-4 relative -mt-24 sm:-mt-32 lg:-mt-40 mb-16 max-w-4xl">
+    <FeatureTour features={features}>
+      <div className="container mx-auto px-4 relative -mt-24 sm:-mt-32 lg:-mt-40 mb-16 max-w-4xl">
       <Card className="bg-white rounded-lg shadow-xl overflow-hidden">
         <CardContent className="p-6 md:p-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
@@ -558,6 +563,7 @@ export default function DonationWidget() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </FeatureTour>
   );
 }
