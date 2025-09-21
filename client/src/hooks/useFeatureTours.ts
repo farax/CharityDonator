@@ -9,22 +9,22 @@ export const useFeatureTours = () => {
       steps: [
         {
           target: '[data-testid="button-bank-transfer-toggle"]',
-          content: (
+          content: `
             <div>
-              <h3 className="text-lg font-bold mb-2">🏦 New Feature: Bank Transfer</h3>
-              <p className="mb-2">
+              <h3 style="font-size: 1.125rem; font-weight: bold; margin-bottom: 0.5rem;">🏦 New Feature: Bank Transfer</h3>
+              <p style="margin-bottom: 0.5rem;">
                 You can now donate via direct bank transfer! This is perfect for:
               </p>
-              <ul className="list-disc list-inside space-y-1 text-sm">
+              <ul style="list-style-type: disc; list-style-position: inside; margin-left: 1rem;">
                 <li>Large donations (no card limits)</li>
                 <li>Fee-free transfers using PayID</li>
                 <li>Direct from your bank account</li>
               </ul>
-              <p className="mt-2 text-sm text-gray-600">
+              <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #6b7280;">
                 Click the banner below to see your bank details.
               </p>
             </div>
-          ),
+          `,
           placement: 'top',
           disableBeacon: true,
           styles: {
