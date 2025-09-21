@@ -66,7 +66,7 @@ export default function BankTransferInfo() {
         <div className="flex items-center">
           <Building2 className="h-4 w-4 mr-2 text-blue-600" />
           <span className="font-medium text-blue-700">
-            💳 Bank Transfer Available {isAustralia ? '(Australia)' : '(Pakistan)'}
+            💳 Bank Transfer Available {isAustralia ? '🇦🇺 (Australia)' : '🇵🇰 (Pakistan)'}
           </span>
         </div>
         {isExpanded ? (
@@ -82,7 +82,7 @@ export default function BankTransferInfo() {
             <div className="space-y-4">
               <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
                 <h4 className="font-semibold text-blue-800 mb-2">
-                  Direct Bank Transfer Details
+                  {isAustralia ? '🇦🇺' : '🇵🇰'} Direct Bank Transfer Details
                 </h4>
                 
                 {isAustralia && (
