@@ -839,10 +839,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stripe payment intent creation
+  // Stripe payment intent creation/reuse
   app.post("/api/create-payment-intent", async (req, res) => {
     // Enhanced debug logging
-    console.log(`[STRIPE-DEBUG] Creating payment intent in ${config.NODE_ENV} mode`);
+    console.log(`[STRIPE-DEBUG] Creating/updating payment intent in ${config.NODE_ENV} mode`);
     console.log(`[STRIPE-DEBUG] Stripe key type: ${config.STRIPE.SECRET_KEY?.startsWith('sk_test') ? 'TEST' : 'LIVE'}`);
     
     if (!stripe) {
@@ -851,8 +851,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const { amount, currency, donationId } = req.body;
-      console.log(`[STRIPE-DEBUG] Payment request: amount=${amount}, currency=${currency}, donationId=${donationId}`);
+      const { amount, currency, donationId, existingPaymentIntentId } = req.body;
+      console.log(`[STRIPE-DEBUG] Payment request: amount=${amount}, currency=${currency}, donationId=${donationId}, existing=${existingPaymentIntentId}`);
       
       // Validate currency and amount
       if (!amount || amount <= 0) {
@@ -863,6 +863,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Currency is required" });
       }
       
+      if (!donationId) {
+        return res.status(400).json({ message: "Donation ID is required" });
+      }
+      
       // Ensure currency is supported by Stripe
       const supportedCurrencies = ['aud', 'usd', 'eur', 'gbp', 'inr', 'cad', 'nzd'];
       const currencyLower = currency.toLowerCase();
@@ -870,35 +874,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!supportedCurrencies.includes(currencyLower)) {
         return res.status(400).json({ message: `Currency ${currency} is not supported` });
       }
-      
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
-        currency: currencyLower,
-        payment_method_types: ['card'], // Limit to card payments only
-        description: 'Donation to Aafiyaa Ltd.', // Set company name in payment authorization text
-        statement_descriptor_suffix: 'DONATION', // Text on credit card statement (max 22 chars)
-        metadata: {
-          donationId: donationId ? donationId.toString() : undefined
-        }
-      });
 
-      // Update donation with payment intent ID
-      if (donationId) {
-        console.log(`[STRIPE-DEBUG] Created payment intent for donation ${donationId}: ${paymentIntent.id}`);
-        console.log(`[STRIPE-DEBUG] Payment intent status: ${paymentIntent.status}`);
-        // Store both the payment intent ID and client secret to increase chances of matching
-        // in the webhook handler
-        await storage.updateDonationStatus(
-          donationId, 
-          "processing", 
-          `${paymentIntent.id}|${paymentIntent.client_secret}`
-        );
+      // Get existing donation to check for existing PaymentIntent
+      const donation = await storage.getDonation(Number(donationId));
+      if (!donation) {
+        return res.status(404).json({ message: "Donation not found" });
       }
 
-      res.json({ clientSecret: paymentIntent.client_secret });
+      let paymentIntent: any = null;
+      let existingPaymentIntentIdToUse = existingPaymentIntentId;
+
+      // Extract PaymentIntent ID from donation's stripePaymentId if not provided
+      if (!existingPaymentIntentIdToUse && donation.stripePaymentId) {
+        const paymentIdParts = donation.stripePaymentId.split('|');
+        existingPaymentIntentIdToUse = paymentIdParts[0];
+      }
+
+      // Try to reuse existing PaymentIntent if available
+      if (existingPaymentIntentIdToUse) {
+        try {
+          console.log(`[STRIPE-DEBUG] Checking existing PaymentIntent: ${existingPaymentIntentIdToUse}`);
+          const existingIntent = await stripe.paymentIntents.retrieve(existingPaymentIntentIdToUse);
+          
+          // Only reuse if it's still incomplete and belongs to this donation
+          if (existingIntent.status === 'requires_payment_method' || 
+              existingIntent.status === 'requires_confirmation' ||
+              existingIntent.status === 'requires_action') {
+            
+            // Verify it belongs to this donation
+            if (existingIntent.metadata?.donationId === donationId.toString()) {
+              console.log(`[STRIPE-DEBUG] Updating existing PaymentIntent: ${existingPaymentIntentIdToUse}`);
+              
+              // Update the existing PaymentIntent with new amount and currency
+              paymentIntent = await stripe.paymentIntents.update(existingPaymentIntentIdToUse, {
+                amount: Math.round(amount * 100), // Convert to cents
+                currency: currencyLower,
+                description: 'Donation to Aafiyaa Ltd.',
+                statement_descriptor_suffix: 'DONATION',
+                metadata: {
+                  donationId: donationId.toString(),
+                  updated_at: new Date().toISOString()
+                }
+              });
+              
+              console.log(`[STRIPE-DEBUG] Updated PaymentIntent ${paymentIntent.id} with amount ${amount} ${currencyLower}`);
+            } else {
+              console.log(`[STRIPE-DEBUG] Existing PaymentIntent belongs to different donation, creating new one`);
+            }
+          } else {
+            console.log(`[STRIPE-DEBUG] Existing PaymentIntent status is ${existingIntent.status}, creating new one`);
+          }
+        } catch (retrieveError: any) {
+          console.log(`[STRIPE-DEBUG] Could not retrieve existing PaymentIntent: ${retrieveError.message}, creating new one`);
+        }
+      }
+
+      // Create new PaymentIntent if we couldn't reuse existing one
+      if (!paymentIntent) {
+        console.log(`[STRIPE-DEBUG] Creating new PaymentIntent for donation ${donationId}`);
+        
+        // Use idempotency key to prevent duplicates from retries
+        const idempotencyKey = `donation-${donationId}-${Math.round(amount * 100)}-${currencyLower}`;
+        
+        paymentIntent = await stripe.paymentIntents.create({
+          amount: Math.round(amount * 100), // Convert to cents
+          currency: currencyLower,
+          payment_method_types: ['card'], // Limit to card payments only
+          description: 'Donation to Aafiyaa Ltd.', // Set company name in payment authorization text
+          statement_descriptor_suffix: 'DONATION', // Text on credit card statement (max 22 chars)
+          metadata: {
+            donationId: donationId.toString(),
+            created_at: new Date().toISOString()
+          }
+        }, {
+          idempotencyKey: idempotencyKey
+        });
+        
+        console.log(`[STRIPE-DEBUG] Created new PaymentIntent ${paymentIntent.id} with idempotency key ${idempotencyKey}`);
+      }
+
+      // Update donation with payment intent ID (always update to ensure latest info)
+      console.log(`[STRIPE-DEBUG] Final PaymentIntent for donation ${donationId}: ${paymentIntent.id}`);
+      console.log(`[STRIPE-DEBUG] PaymentIntent status: ${paymentIntent.status}`);
+      
+      // Store both the payment intent ID and client secret to increase chances of matching
+      // in the webhook handler
+      await storage.updateDonationStatus(
+        donationId, 
+        "processing", 
+        `${paymentIntent.id}|${paymentIntent.client_secret}`
+      );
+
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+        isExisting: !!existingPaymentIntentIdToUse && paymentIntent.metadata?.updated_at
+      });
     } catch (error: any) {
-      console.error('Error creating payment intent:', error.message);
-      res.status(500).json({ message: `Error creating payment intent: ${error.message}` });
+      console.error('Error creating/updating payment intent:', error.message);
+      res.status(500).json({ message: `Error creating/updating payment intent: ${error.message}` });
     }
   });
   
