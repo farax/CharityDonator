@@ -17,6 +17,8 @@ import { fromZodError } from "zod-validation-error";
 import {
   handlePaymentIntentSucceeded,
   handlePaymentIntentFailed,
+  handlePaymentIntentCreated,
+  handlePaymentIntentCanceled,
   handleCheckoutSessionCompleted,
   handleSubscriptionCreated,
   handleSubscriptionUpdated,
@@ -1676,6 +1678,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
         case 'invoice.payment_failed':
           await handleInvoicePaymentFailed(event.data.object);
+          break;
+        case 'payment_intent.created':
+          await handlePaymentIntentCreated(event.data.object);
+          break;
+        case 'payment_intent.canceled':
+          await handlePaymentIntentCanceled(event.data.object);
           break;
         default:
           // Unexpected event type

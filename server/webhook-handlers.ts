@@ -592,3 +592,90 @@ export const handleInvoicePaymentFailed = async (invoice: any) => {
     });
   }
 };
+
+// Handler for tracking incomplete payment intents
+export const handlePaymentIntentCreated = async (paymentIntent: any) => {
+  // Only track if the payment intent is incomplete (requires action or confirmation)
+  if (!paymentIntent || paymentIntent.status === 'succeeded' || paymentIntent.status === 'canceled') {
+    return; // Skip tracking for already completed or canceled payments
+  }
+
+  logWebhookEvent('PAYMENT_INTENT_CREATED', { 
+    id: paymentIntent.id, 
+    amount: paymentIntent.amount,
+    status: paymentIntent.status,
+    metadata: paymentIntent.metadata || {}
+  });
+  
+  try {
+    const donation = await findDonationByPaymentIntent(paymentIntent);
+    
+    if (donation) {
+      // Update donation with payment intent ID if not already set
+      if (!donation.stripePaymentId) {
+        await storage.updateDonationStatus(donation.id, donation.status, paymentIntent.id);
+        logWebhookEvent('PAYMENT_INTENT_LINKED', { 
+          donationId: donation.id, 
+          paymentIntentId: paymentIntent.id,
+          status: paymentIntent.status
+        });
+      }
+      
+      // Track incomplete payment metrics
+      logWebhookEvent('INCOMPLETE_PAYMENT_TRACKED', {
+        donationId: donation.id,
+        paymentIntentId: paymentIntent.id,
+        amount: paymentIntent.amount / 100, // Convert from cents
+        currency: paymentIntent.currency?.toUpperCase() || 'UNKNOWN',
+        status: paymentIntent.status,
+        requiresAction: paymentIntent.status === 'requires_action',
+        requiresConfirmation: paymentIntent.status === 'requires_confirmation'
+      });
+    } else {
+      // Track PaymentIntent created without matching donation (potential issue)
+      logWebhookEvent('UNMATCHED_PAYMENT_INTENT_CREATED', {
+        paymentIntentId: paymentIntent.id,
+        amount: paymentIntent.amount / 100,
+        currency: paymentIntent.currency?.toUpperCase() || 'UNKNOWN',
+        status: paymentIntent.status,
+        metadata: paymentIntent.metadata || {}
+      });
+    }
+  } catch (error: any) {
+    logWebhookEvent('PAYMENT_INTENT_CREATED_ERROR', { 
+      paymentIntentId: paymentIntent.id, 
+      error: error.message 
+    });
+  }
+};
+
+// Handler for tracking payment intent cancellations to clean up incomplete payments
+export const handlePaymentIntentCanceled = async (paymentIntent: any) => {
+  logWebhookEvent('PAYMENT_INTENT_CANCELED', { 
+    id: paymentIntent.id, 
+    amount: paymentIntent.amount,
+    status: paymentIntent.status,
+    cancellation_reason: paymentIntent.cancellation_reason || 'unknown'
+  });
+  
+  try {
+    const donation = await findDonationByPaymentIntent(paymentIntent);
+    
+    if (donation) {
+      // Mark donation as cancelled if it was pending
+      if (donation.status === 'pending') {
+        await storage.updateDonationStatus(donation.id, "cancelled", paymentIntent.id);
+        logWebhookEvent('DONATION_CANCELLED', { 
+          donationId: donation.id, 
+          paymentIntentId: paymentIntent.id,
+          reason: paymentIntent.cancellation_reason || 'payment_intent_canceled'
+        });
+      }
+    }
+  } catch (error: any) {
+    logWebhookEvent('PAYMENT_INTENT_CANCEL_ERROR', { 
+      paymentIntentId: paymentIntent.id, 
+      error: error.message 
+    });
+  }
+};
