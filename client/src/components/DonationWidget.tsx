@@ -11,6 +11,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { apiRequest } from "@/lib/queryClient";
 import CurrencySelector from "@/components/CurrencySelector";
 import CaseSelector from "@/components/CaseSelector";
+import BankTransferInfo from "@/components/BankTransferInfo";
 import { ChevronRight } from "lucide-react";
 import { trackButtonClick, trackDonation, trackEvent } from "@/lib/analytics";
 
@@ -543,10 +544,14 @@ export default function DonationWidget() {
               )}
             </div>
 
+            {/* Bank Transfer Alternative */}
+            <BankTransferInfo />
+
             {/* Donate Button */}
             <Button
               className="w-full bg-primary hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-md transition duration-150"
               onClick={handleDonateClick}
+              data-testid="button-donate-now"
             >
               Donate Now
             </Button>
