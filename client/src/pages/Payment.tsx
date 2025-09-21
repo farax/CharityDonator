@@ -348,14 +348,48 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         });
       }
     } else {
-      // One-time payment flow
-      // Use manual confirmation instead of redirect
-      const { error, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        redirect: 'if_required',
-      });
+      // One-time payment flow - create PaymentIntent during submission
+      try {
+        // 1. First, submit the Elements form to validate payment method
+        const { error: submitError } = await elements.submit();
+        if (submitError) {
+          throw new Error(submitError.message);
+        }
 
-      if (error) {
+        // 2. Create the PaymentIntent with the current donation details
+        const { useDonation } = await import('@/components/DonationContext');
+        const { coverFees, calculateFees } = useDonation();
+        const fees = calculateFees(donationDetails.amount, 'stripe');
+        const finalAmount = coverFees ? fees.totalWithFees : donationDetails.amount;
+
+        console.log('[PAYMENT-SUBMIT] Creating PaymentIntent for donation:', donationDetails.id);
+        
+        const response = await apiRequest("POST", "/api/create-payment-intent", {
+          amount: finalAmount,
+          currency: donationDetails.currency,
+          donationId: donationDetails.id
+        });
+        const data = await response.json();
+
+        console.log('[PAYMENT-SUBMIT] PaymentIntent created:', data.paymentIntentId);
+
+        // 3. Confirm the payment with the newly created PaymentIntent
+        const { error, paymentIntent } = await stripe.confirmPayment({
+          elements,
+          clientSecret: data.clientSecret,
+          redirect: 'if_required',
+        });
+
+        if (error) {
+          console.error('[PAYMENT-SUBMIT] Payment confirmation failed:', error);
+          throw new Error(error.message || 'Payment confirmation failed');
+        }
+
+        console.log('[PAYMENT-SUBMIT] Payment confirmed successfully:', paymentIntent.id);
+        await handlePaymentSuccess(paymentIntent, linkAuthEmail, name);
+
+      } catch (error: any) {
+        console.error('[PAYMENT-SUBMIT] Payment process failed:', error);
         
         // Track payment failure
         trackEvent({
@@ -364,18 +398,15 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           label: error.message || 'Payment error',
           attributes: {
             paymentMethod: 'stripe',
-            errorType: error.type || 'unknown',
-            errorCode: error.code || 'none'
+            errorMessage: error.message || 'Unknown error'
           }
         });
         
         toast({
           title: "Payment Failed",
-          description: error.message,
+          description: error.message || "There was an issue processing your payment. Please try again.",
           variant: "destructive",
         });
-      } else {
-        await handlePaymentSuccess(paymentIntent, linkAuthEmail, name);
       }
     }
     
@@ -875,120 +906,6 @@ const GooglePayment = ({ donationDetails }: { donationDetails: any }) => {
 
 
 
-// StripeCheckoutWrapper - handles PaymentIntent creation only when user clicks Complete Donation
-const StripeCheckoutWrapper = ({ 
-  stripePromise, 
-  isSubscription, 
-  donationDetails 
-}: { 
-  stripePromise: any; 
-  isSubscription: boolean; 
-  donationDetails: any;
-}) => {
-  const [clientSecret, setClientSecret] = useState("");
-  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
-  const { toast } = useToast();
-  const { currency, coverFees, calculateFees } = useDonation();
-
-  const createPaymentAndProceed = async () => {
-    if (!donationDetails) return;
-    
-    setIsCreatingPayment(true);
-    
-    try {
-      const fees = calculateFees(donationDetails.amount, 'stripe');
-      const finalAmount = coverFees ? fees.totalWithFees : donationDetails.amount;
-      
-      if (isSubscription) {
-        // For recurring payments, create SetupIntent
-        const response = await apiRequest("POST", "/api/create-setup-intent", {
-          donationId: donationDetails.id
-        });
-        const data = await response.json();
-        setClientSecret(data.clientSecret);
-      } else {
-        // For one-time payments, create PaymentIntent
-        const response = await apiRequest("POST", "/api/create-payment-intent", {
-          amount: finalAmount,
-          currency: donationDetails.currency || currency,
-          donationId: donationDetails.id
-        });
-        const data = await response.json();
-        setClientSecret(data.clientSecret);
-      }
-      
-      setShowPaymentForm(true);
-      
-    } catch (error: any) {
-      console.error('[PAYMENT-CREATE] Error creating payment:', error);
-      toast({
-        title: "Payment setup failed",
-        description: "There was an error setting up the payment. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCreatingPayment(false);
-    }
-  };
-
-  if (showPaymentForm && clientSecret) {
-    return (
-      <Elements 
-        stripe={stripePromise} 
-        options={{ 
-          clientSecret,
-          appearance: { 
-            theme: 'stripe',
-            variables: {
-              fontFamily: 'system-ui, sans-serif',
-              colorPrimary: '#10b981',
-            },
-            rules: {
-              '.Label': {
-                fontWeight: '500'
-              }
-            }
-          },
-          loader: 'auto',
-          ...(isSubscription && { paymentMethodCreation: 'manual' })
-        }}>
-        <CheckoutForm isSubscription={isSubscription} />
-      </Elements>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h4 className="text-lg font-medium text-blue-800 mb-2">
-          Ready to complete your donation?
-        </h4>
-        <p className="text-blue-600 mb-4">
-          Click below to proceed with secure payment processing. Your PaymentIntent will be created only when you're ready to pay.
-        </p>
-        <Button 
-          onClick={createPaymentAndProceed}
-          disabled={isCreatingPayment}
-          className="w-full max-w-sm mx-auto"
-          size="lg"
-        >
-          {isCreatingPayment ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Setting up payment...
-            </>
-          ) : (
-            <>
-              <CreditCard className="mr-2 h-4 w-4" />
-              Complete Donation
-            </>
-          )}
-        </Button>
-      </div>
-    </div>
-  );
-};
 
 // We no longer need a separate donor information form
 
@@ -1293,11 +1210,28 @@ export default function Payment() {
                 {paymentMethod === 'stripe' && (
                   <>
                     {stripePromise ? (
-                      <StripeCheckoutWrapper 
-                        stripePromise={stripePromise}
-                        isSubscription={isSubscription}
-                        donationDetails={donationDetails}
-                      />
+                      <Elements 
+                        stripe={stripePromise} 
+                        options={{ 
+                          mode: 'payment',
+                          currency: donationDetails?.currency?.toLowerCase() || currency?.toLowerCase() || 'usd',
+                          amount: donationDetails ? Math.round((coverFees ? feeBreakdown?.totalWithFees || donationDetails.amount : donationDetails.amount) * 100) : 100,
+                          appearance: { 
+                            theme: 'stripe',
+                            variables: {
+                              fontFamily: 'system-ui, sans-serif',
+                              colorPrimary: '#10b981',
+                            },
+                            rules: {
+                              '.Label': {
+                                fontWeight: '500'
+                              }
+                            }
+                          },
+                          loader: 'auto'
+                        }}>
+                        <CheckoutForm isSubscription={isSubscription} />
+                      </Elements>
                     ) : (
                       <div className="text-center py-6 text-red-500">
                         Stripe payment is not configured. Please contact the administrator.
