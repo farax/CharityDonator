@@ -5,7 +5,7 @@ This guide contains the DDL scripts needed to update your production database to
 
 ## Files Created
 
-1. **`production-delta-update.sql`** - The main update script
+1. **`21092025-schema-update.sql`** - The main update script
 2. **`production-delta-rollback.sql`** - Rollback script (use with caution)
 3. **`PRODUCTION-DEPLOYMENT-GUIDE.md`** - This guide
 
@@ -38,7 +38,7 @@ This guide contains the DDL scripts needed to update your production database to
    - Verify all functionality works correctly
 
 3. **Update the safety check** (optional but recommended)
-   - Edit `production-delta-update.sql` line 15
+   - Edit `21092025-schema-update.sql` line 15
    - Replace `'your_production_db_name'` with your actual database name
    - Uncomment lines 11-17 to enable the safety check
 
@@ -51,7 +51,7 @@ This guide contains the DDL scripts needed to update your production database to
 
 2. **Run the update script**
    ```sql
-   \i db/production-delta-update.sql
+   \i db/21092025-schema-update.sql
    ```
 
 3. **Verify the update**
