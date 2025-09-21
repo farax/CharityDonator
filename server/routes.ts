@@ -1388,9 +1388,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const donations = await storage.getDonations();
       const allCases = await storage.getCases();
       
-      // Filter out transactions with "processing" status and enhance with case names
+      // Include ALL donations (including processing status) and enhance with case names
       const enhancedDonations = donations
-        .filter(donation => donation.status !== 'processing')
         .map(donation => {
           // Add case name if caseId exists
           if (donation.caseId) {
