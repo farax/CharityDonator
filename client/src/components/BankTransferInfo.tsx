@@ -95,24 +95,31 @@ export default function BankTransferInfo() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-blue-700">Account Name:</span>
+                      <span className="text-sm font-medium text-blue-700">Account Title:</span>
                       <div className="flex items-center">
-                        <span className="text-sm text-blue-800">Aafiyaa LTD</span>
-                        <CopyButton text="Aafiyaa LTD" fieldName="Account Name" />
+                        <span className="text-sm text-blue-800">Aafiyaa Ltd.</span>
+                        <CopyButton text="Aafiyaa Ltd." fieldName="Account Title" />
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-blue-700">BSB:</span>
                       <div className="flex items-center">
-                        <span className="text-sm text-blue-800 font-mono">633-000</span>
-                        <CopyButton text="633-000" fieldName="BSB" />
+                        <span className="text-sm text-blue-800 font-mono">633000</span>
+                        <CopyButton text="633000" fieldName="BSB" />
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-blue-700">Account Number:</span>
                       <div className="flex items-center">
-                        <span className="text-sm text-blue-800 font-mono">123456789</span>
-                        <CopyButton text="123456789" fieldName="Account Number" />
+                        <span className="text-sm text-blue-800 font-mono">234382190</span>
+                        <CopyButton text="234382190" fieldName="Account Number" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-blue-700">PayID:</span>
+                      <div className="flex items-center">
+                        <span className="text-sm text-blue-800 font-mono">47 684 746 987</span>
+                        <CopyButton text="47 684 746 987" fieldName="PayID" />
                       </div>
                     </div>
                   </div>
