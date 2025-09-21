@@ -875,10 +875,124 @@ const GooglePayment = ({ donationDetails }: { donationDetails: any }) => {
 
 
 
+// StripeCheckoutWrapper - handles PaymentIntent creation only when user clicks Complete Donation
+const StripeCheckoutWrapper = ({ 
+  stripePromise, 
+  isSubscription, 
+  donationDetails 
+}: { 
+  stripePromise: any; 
+  isSubscription: boolean; 
+  donationDetails: any;
+}) => {
+  const [clientSecret, setClientSecret] = useState("");
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const { toast } = useToast();
+  const { currency, coverFees, calculateFees } = useDonation();
+
+  const createPaymentAndProceed = async () => {
+    if (!donationDetails) return;
+    
+    setIsCreatingPayment(true);
+    
+    try {
+      const fees = calculateFees(donationDetails.amount, 'stripe');
+      const finalAmount = coverFees ? fees.totalWithFees : donationDetails.amount;
+      
+      if (isSubscription) {
+        // For recurring payments, create SetupIntent
+        const response = await apiRequest("POST", "/api/create-setup-intent", {
+          donationId: donationDetails.id
+        });
+        const data = await response.json();
+        setClientSecret(data.clientSecret);
+      } else {
+        // For one-time payments, create PaymentIntent
+        const response = await apiRequest("POST", "/api/create-payment-intent", {
+          amount: finalAmount,
+          currency: donationDetails.currency || currency,
+          donationId: donationDetails.id
+        });
+        const data = await response.json();
+        setClientSecret(data.clientSecret);
+      }
+      
+      setShowPaymentForm(true);
+      
+    } catch (error: any) {
+      console.error('[PAYMENT-CREATE] Error creating payment:', error);
+      toast({
+        title: "Payment setup failed",
+        description: "There was an error setting up the payment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingPayment(false);
+    }
+  };
+
+  if (showPaymentForm && clientSecret) {
+    return (
+      <Elements 
+        stripe={stripePromise} 
+        options={{ 
+          clientSecret,
+          appearance: { 
+            theme: 'stripe',
+            variables: {
+              fontFamily: 'system-ui, sans-serif',
+              colorPrimary: '#10b981',
+            },
+            rules: {
+              '.Label': {
+                fontWeight: '500'
+              }
+            }
+          },
+          loader: 'auto',
+          ...(isSubscription && { paymentMethodCreation: 'manual' })
+        }}>
+        <CheckoutForm isSubscription={isSubscription} />
+      </Elements>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h4 className="text-lg font-medium text-blue-800 mb-2">
+          Ready to complete your donation?
+        </h4>
+        <p className="text-blue-600 mb-4">
+          Click below to proceed with secure payment processing. Your PaymentIntent will be created only when you're ready to pay.
+        </p>
+        <Button 
+          onClick={createPaymentAndProceed}
+          disabled={isCreatingPayment}
+          className="w-full max-w-sm mx-auto"
+          size="lg"
+        >
+          {isCreatingPayment ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Setting up payment...
+            </>
+          ) : (
+            <>
+              <CreditCard className="mr-2 h-4 w-4" />
+              Complete Donation
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 // We no longer need a separate donor information form
 
 export default function Payment() {
-  const [clientSecret, setClientSecret] = useState("");
   const [isSubscription, setIsSubscription] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -899,9 +1013,6 @@ export default function Payment() {
     donationAmount: number;
     feeDescription: string;
   } | null>(null);
-  const [paymentIntentId, setPaymentIntentId] = useState<string>("");
-  const [isPreparingPayment, setIsPreparingPayment] = useState(false);
-  const [paymentPrepared, setPaymentPrepared] = useState(false);
 
   useEffect(() => {
     // Get donation details from session storage
@@ -921,12 +1032,7 @@ export default function Payment() {
     setDonationDetails(donation);
     setEditableAmount(donation.amount.toString());
     
-    // Check if we have an existing PaymentIntent for this donation
-    const existingPaymentIntentId = sessionStorage.getItem(`paymentIntent_${donation.id}`);
-    if (existingPaymentIntentId) {
-      setPaymentIntentId(existingPaymentIntentId);
-      setPaymentPrepared(true);
-    }
+    // No need to check for existing PaymentIntents since we create them only on final submission
     
     // Set subscription flag for recurring payments
     if (donation.frequency !== 'one-off') {
@@ -942,103 +1048,8 @@ export default function Payment() {
     }
   }, [donationDetails, paymentMethod, coverFees, calculateFees]);
 
-  // Prepare payment (create or update PaymentIntent)
-  const preparePayment = async (amount?: number) => {
-    if (!donationDetails) return;
-    
-    setIsPreparingPayment(true);
-    
-    try {
-      // Use provided amount or current donation amount
-      const paymentAmount = amount || donationDetails.amount;
-      const fees = calculateFees(paymentAmount, paymentMethod);
-      const finalAmount = coverFees ? fees.totalWithFees : paymentAmount;
-      
-      if (paymentMethod === 'stripe') {
-        if (donationDetails.frequency === 'one-off') {
-          // For one-time payments, create or update PaymentIntent
-          const requestData = {
-            amount: finalAmount,
-            currency: donationDetails.currency || currency,
-            donationId: donationDetails.id,
-            existingPaymentIntentId: paymentIntentId || undefined
-          };
-          
-          console.log('[PAYMENT-PREP] Creating/updating PaymentIntent:', requestData);
-          
-          const response = await apiRequest("POST", "/api/create-payment-intent", requestData);
-          const data = await response.json();
-          
-          setClientSecret(data.clientSecret);
-          setPaymentIntentId(data.paymentIntentId);
-          setPaymentPrepared(true);
-          
-          // Store PaymentIntent ID for reuse
-          sessionStorage.setItem(`paymentIntent_${donationDetails.id}`, data.paymentIntentId);
-          
-          console.log('[PAYMENT-PREP] PaymentIntent prepared:', data.paymentIntentId, data.isExisting ? '(updated)' : '(new)');
-          
-        } else {
-          // For recurring payments, create SetupIntent
-          setIsSubscription(true);
-          
-          const response = await apiRequest("POST", "/api/create-setup-intent", {
-            donationId: donationDetails.id
-          });
-          const data = await response.json();
-          
-          setClientSecret(data.clientSecret);
-          setPaymentPrepared(true);
-          
-          console.log('[PAYMENT-PREP] SetupIntent prepared for subscription');
-        }
-      } else {
-        // For non-Stripe payments, just mark as prepared
-        setPaymentPrepared(true);
-      }
-      
-    } catch (error: any) {
-      console.error('[PAYMENT-PREP] Error preparing payment:', error);
-      toast({
-        title: "Payment setup failed",
-        description: "There was an error setting up the payment. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsPreparingPayment(false);
-    }
-  };
-
-  // Debounced amount update function
-  const debouncedAmountUpdate = useCallback(
-    debounce(async (newAmount: number) => {
-      console.log('[AMOUNT-UPDATE] Debounced update to:', newAmount);
-      
-      // Update donation details
-      const updatedDonation = { ...donationDetails, amount: newAmount };
-      setDonationDetails(updatedDonation);
-      
-      // Update session storage
-      sessionStorage.setItem('currentDonation', JSON.stringify(updatedDonation));
-      
-      // Update the donation in the backend
-      try {
-        await apiRequest("PATCH", `/api/donations/${donationDetails.id}`, {
-          amount: newAmount
-        });
-        console.log('[AMOUNT-UPDATE] Donation updated in backend');
-      } catch (error: any) {
-        console.error('[AMOUNT-UPDATE] Error updating donation:', error);
-      }
-      
-      // If payment is already prepared, update the PaymentIntent with new amount
-      if (paymentPrepared && paymentMethod === 'stripe' && donationDetails.frequency === 'one-off') {
-        console.log('[AMOUNT-UPDATE] Updating existing PaymentIntent with new amount');
-        await preparePayment(newAmount);
-      }
-    }, 500), // 500ms debounce
-    [donationDetails, paymentPrepared, paymentMethod, preparePayment]
-  );
+  // Amount updates are now much simpler since we don't need to update PaymentIntents
+  // PaymentIntents are only created when the user clicks "Complete Donation"
 
   // Handle amount update
   const handleAmountUpdate = async () => {
@@ -1281,72 +1292,12 @@ export default function Payment() {
                 {/* Show payment options directly, email will be collected by payment providers */}
                 {paymentMethod === 'stripe' && (
                   <>
-                    {!paymentPrepared ? (
-                      <div className="space-y-4">
-                        <div className="text-center py-6">
-                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                            <h4 className="text-lg font-medium text-blue-800 mb-2">
-                              Ready to donate?
-                            </h4>
-                            <p className="text-blue-600 mb-4">
-                              Click below to prepare your secure payment with Stripe. No charges will be made until you complete the payment.
-                            </p>
-                            <Button 
-                              onClick={() => preparePayment()}
-                              disabled={isPreparingPayment}
-                              className="w-full max-w-sm mx-auto"
-                              size="lg"
-                            >
-                              {isPreparingPayment ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Preparing Payment...
-                                </>
-                              ) : (
-                                <>
-                                  <CreditCard className="mr-2 h-4 w-4" />
-                                  Prepare Payment
-                                </>
-                              )}
-                            </Button>
-                            {paymentIntentId && (
-                              <p className="text-xs text-green-600 mt-2">
-                                ✓ Payment prepared - you can update your amount above and it will be automatically updated
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ) : !clientSecret ? (
-                      <div className="flex items-center justify-center py-10">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      </div>
-                    ) : stripePromise ? (
-                      <Elements 
-                        key={clientSecret} 
-                        stripe={stripePromise} 
-                        options={{ 
-                          clientSecret, 
-                          appearance: { 
-                            theme: 'stripe',
-                            variables: {
-                              // Customize the font to match our branding
-                              fontFamily: 'system-ui, sans-serif',
-                              colorPrimary: '#10b981', // Emerald-500 - match our primary brand color
-                            },
-                            rules: {
-                              '.Label': {
-                                fontWeight: '500'
-                              }
-                            }
-                          },
-                          loader: 'auto',
-                          // For subscriptions, we need manual payment method creation
-                          ...(isSubscription && { paymentMethodCreation: 'manual' })
-                          // Note: We'll rely on server-side configuration for payment method restriction
-                        }}>
-                        <CheckoutForm isSubscription={isSubscription} />
-                      </Elements>
+                    {stripePromise ? (
+                      <StripeCheckoutWrapper 
+                        stripePromise={stripePromise}
+                        isSubscription={isSubscription}
+                        donationDetails={donationDetails}
+                      />
                     ) : (
                       <div className="text-center py-6 text-red-500">
                         Stripe payment is not configured. Please contact the administrator.
