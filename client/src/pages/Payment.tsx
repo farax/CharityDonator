@@ -49,6 +49,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   const elements = useElements();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { coverFees, calculateFees } = useDonation();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [linkAuthEmail, setLinkAuthEmail] = useState('');
@@ -357,8 +358,6 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         }
 
         // 2. Create the PaymentIntent with the current donation details
-        const { useDonation } = await import('@/components/DonationContext');
-        const { coverFees, calculateFees } = useDonation();
         const fees = calculateFees(donationDetails.amount, 'stripe');
         const finalAmount = coverFees ? fees.totalWithFees : donationDetails.amount;
 
