@@ -941,7 +941,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentIntent = await stripe.paymentIntents.create({
           amount: Math.round(amount * 100), // Convert to cents
           currency: currencyLower,
-          payment_method_types: ['card'], // Limit to card payments only
+          automatic_payment_methods: { enabled: true }, // Use automatic payment methods for Elements compatibility
           description: 'Donation to Aafiyaa Ltd.', // Set company name in payment authorization text
           statement_descriptor_suffix: 'DONATION', // Text on credit card statement (max 22 chars)
           metadata: {
