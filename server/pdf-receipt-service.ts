@@ -417,10 +417,9 @@ export async function generatePDFReceipt(receiptData: ReceiptData): Promise<stri
   
   let browser;
   try {
-    // Launch browser with system Chrome
-    browser = await puppeteer.launch({
+    // Launch browser with appropriate configuration for environment
+    const launchOptions: any = {
       headless: true,
-      executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium',
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox',
@@ -428,9 +427,29 @@ export async function generatePDFReceipt(receiptData: ReceiptData): Promise<stri
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
         '--no-zygote',
-        '--disable-gpu'
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=site-per-process'
       ]
-    });
+    };
+
+    // Only set executablePath if we're in development and the path exists
+    if (process.env.NODE_ENV === 'development') {
+      try {
+        const { execSync } = await import('child_process');
+        // Try to find chromium/chrome executable
+        const chromiumPath = execSync('which chromium-browser || which google-chrome || which chromium', 
+          { encoding: 'utf8', stdio: 'pipe' }).trim();
+        if (chromiumPath) {
+          launchOptions.executablePath = chromiumPath;
+        }
+      } catch (error) {
+        // If we can't find a browser, let Puppeteer handle it with bundled Chromium
+        console.log('Using bundled Chromium for PDF generation');
+      }
+    }
+    
+    browser = await puppeteer.launch(launchOptions);
     
     const page = await browser.newPage();
     
