@@ -39,12 +39,6 @@ export default function BankTransferInfo() {
     }
   };
 
-  // Generate a unique reference number (you can use donation ID later)
-  const generateReference = () => {
-    return `AAFY-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-  };
-
-  const referenceNumber = generateReference();
 
   const CopyButton = ({ text, fieldName }: { text: string; fieldName: string }) => (
     <Button
@@ -157,20 +151,6 @@ export default function BankTransferInfo() {
                   </div>
                 )}
 
-                <div className="mt-3 pt-3 border-t border-blue-300">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-blue-700">Reference:</span>
-                    <div className="flex items-center">
-                      <span className="text-sm text-blue-800 font-mono bg-blue-100 px-2 py-1 rounded">
-                        {referenceNumber}
-                      </span>
-                      <CopyButton text={referenceNumber} fieldName="Reference" />
-                    </div>
-                  </div>
-                  <p className="text-xs text-blue-600 mt-1">
-                    ⚠️ Please include this reference in your transfer description
-                  </p>
-                </div>
               </div>
 
               {/* Important Notes */}
@@ -188,17 +168,6 @@ export default function BankTransferInfo() {
                 </div>
               </div>
 
-              {/* Instructions */}
-              <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                <h5 className="font-semibold text-gray-800 mb-2">🏦 Transfer Instructions:</h5>
-                <ol className="text-sm text-gray-700 space-y-1 list-decimal list-inside">
-                  <li>Use your banking app or online banking</li>
-                  <li>Enter the bank details above</li>
-                  <li>Include the reference number in the description</li>
-                  <li>Complete your transfer</li>
-                  <li>Email payment proof to info@aafiyaa.com (if receipt needed)</li>
-                </ol>
-              </div>
             </div>
           </CardContent>
         </Card>
