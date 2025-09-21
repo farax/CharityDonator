@@ -232,12 +232,6 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
     if (isSubscription) {
       // For subscriptions, we need to collect payment method and then create a subscription
       try {
-        // First submit the Elements form to validate card details
-        const { error: submitError } = await elements.submit();
-        if (submitError) {
-          throw new Error(submitError.message);
-        }
-
         // Create the SetupIntent with the current donation details
         const response = await apiRequest("POST", "/api/create-setup-intent", {
           donationId: donationDetails.id
@@ -356,33 +350,16 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         });
       }
     } else {
-      // One-time payment flow - create PaymentIntent during submission
+      // One-time payment flow - use Elements mode: 'payment' approach
       try {
-        // 1. First, submit the Elements form to validate payment method
-        const { error: submitError } = await elements.submit();
-        if (submitError) {
-          throw new Error(submitError.message);
-        }
-
-        // 2. Create the PaymentIntent with the current donation details
         const fees = calculateFees(donationDetails.amount, 'stripe');
         const finalAmount = coverFees ? fees.totalWithFees : donationDetails.amount;
 
-        console.log('[PAYMENT-SUBMIT] Creating PaymentIntent for donation:', donationDetails.id);
-        
-        const response = await apiRequest("POST", "/api/create-payment-intent", {
-          amount: finalAmount,
-          currency: donationDetails.currency,
-          donationId: donationDetails.id
-        });
-        const data = await response.json();
+        console.log('[PAYMENT-SUBMIT] Processing payment for donation:', donationDetails.id);
 
-        console.log('[PAYMENT-SUBMIT] PaymentIntent created:', data.paymentIntentId);
-
-        // 3. Confirm the payment with the newly created PaymentIntent
+        // Confirm the payment directly with Elements (no need to create PaymentIntent manually)
         const { error, paymentIntent } = await stripe.confirmPayment({
           elements,
-          clientSecret: data.clientSecret,
           redirect: 'if_required',
           confirmParams: {
             return_url: `${window.location.origin}/donation-success`,
@@ -394,7 +371,19 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           throw new Error(error.message || 'Payment confirmation failed');
         }
 
+        if (!paymentIntent) {
+          throw new Error('Payment confirmation succeeded but no PaymentIntent returned');
+        }
+
         console.log('[PAYMENT-SUBMIT] Payment confirmed successfully:', paymentIntent.id);
+        
+        // Update donation with payment intent ID
+        await apiRequest("POST", "/api/update-donation-payment", {
+          donationId: donationDetails.id,
+          paymentIntentId: paymentIntent.id,
+          status: 'completed'
+        });
+
         await handlePaymentSuccess(paymentIntent, linkAuthEmail, name);
 
       } catch (error: any) {
@@ -1192,6 +1181,9 @@ export default function Payment() {
                       <Elements 
                         stripe={stripePromise} 
                         options={{ 
+                          mode: 'payment',
+                          currency: donationDetails?.currency?.toLowerCase() || currency?.toLowerCase() || 'usd',
+                          amount: donationDetails ? Math.round((coverFees ? feeBreakdown?.totalWithFees || donationDetails.amount : donationDetails.amount) * 100) : 100,
                           appearance: { 
                             theme: 'stripe',
                             variables: {

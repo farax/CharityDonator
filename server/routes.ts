@@ -1015,6 +1015,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Update donation payment status
+  app.post('/api/update-donation-payment', async (req, res) => {
+    try {
+      const { donationId, paymentIntentId, status } = req.body;
+      
+      if (!donationId || !paymentIntentId) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+      
+      // Update donation with payment intent ID and status
+      await storage.updateDonationStatus(donationId, status || 'completed', paymentIntentId);
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error updating donation payment:', error.message);
+      res.status(500).json({ message: `Error updating donation payment: ${error.message}` });
+    }
+  });
+
   // Create a subscription with Stripe 
   app.post('/api/create-subscription', async (req, res) => {
     if (!stripe) {
