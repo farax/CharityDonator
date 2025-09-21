@@ -614,6 +614,46 @@ export default function Admin() {
             </TabsContent>
             
             <TabsContent value="statistics" className="space-y-6">
+              {/* Admin Tools */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Admin Tools</CardTitle>
+                  <CardDescription>System maintenance and sync tools</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-4">
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const response = await apiRequest('POST', '/api/admin/sync-stripe-payments', {});
+                          const result = await response.json();
+                          
+                          if (response.ok) {
+                            toast({
+                              title: "Sync Completed",
+                              description: `${result.syncedCount} stuck payments synced from Stripe`,
+                            });
+                            // Refresh the payment data
+                            window.location.reload();
+                          } else {
+                            throw new Error(result.message);
+                          }
+                        } catch (error: any) {
+                          toast({
+                            title: "Sync Failed",
+                            description: error.message || "Failed to sync payments",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                      variant="outline"
+                    >
+                      Sync Stripe Payments
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>

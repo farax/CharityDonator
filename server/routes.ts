@@ -1388,8 +1388,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const donations = await storage.getDonations();
       const allCases = await storage.getCases();
       
-      // Include ALL donations (including processing status) and enhance with case names
+      // Filter to show only completed donations and enhance with case names
       const enhancedDonations = donations
+        .filter(donation => donation.status === 'completed')
         .map(donation => {
           // Add case name if caseId exists
           if (donation.caseId) {
@@ -1621,6 +1622,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedCase);
     } catch (error) {
       res.status(500).json({ message: "Failed to update case amount" });
+    }
+  });
+
+  // Manual sync for stuck processing payments - protected
+  app.post("/api/admin/sync-stripe-payments", isAdminAuthenticated, async (req, res) => {
+    if (!stripe) {
+      return res.status(500).json({ message: "Stripe is not configured" });
+    }
+
+    try {
+      console.log('[STRIPE-SYNC] Starting manual sync for stuck processing payments');
+      
+      // Get all donations with processing status and stripe payment IDs
+      const allDonations = await storage.getDonations();
+      const stuckDonations = allDonations.filter(
+        donation => donation.status === 'processing' && donation.stripePaymentId
+      );
+      
+      console.log(`[STRIPE-SYNC] Found ${stuckDonations.length} donations to sync`);
+      
+      let syncedCount = 0;
+      let errors = [];
+      
+      for (const donation of stuckDonations) {
+        try {
+          // Extract payment intent ID (remove client secret if present)
+          const paymentIntentId = donation.stripePaymentId.split('|')[0];
+          
+          console.log(`[STRIPE-SYNC] Checking payment intent ${paymentIntentId} for donation ${donation.id}`);
+          
+          // Retrieve payment intent from Stripe
+          const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+          
+          if (paymentIntent.status === 'succeeded') {
+            console.log(`[STRIPE-SYNC] PaymentIntent ${paymentIntentId} succeeded in Stripe, updating donation ${donation.id}`);
+            
+            // Update donation status to completed
+            await storage.updateDonationStatus(donation.id, "completed", paymentIntentId);
+            syncedCount++;
+          } else {
+            console.log(`[STRIPE-SYNC] PaymentIntent ${paymentIntentId} status in Stripe: ${paymentIntent.status}`);
+          }
+        } catch (error: any) {
+          console.error(`[STRIPE-SYNC] Error syncing donation ${donation.id}:`, error.message);
+          errors.push({ donationId: donation.id, error: error.message });
+        }
+      }
+      
+      console.log(`[STRIPE-SYNC] Sync completed: ${syncedCount} payments synced, ${errors.length} errors`);
+      
+      res.json({
+        success: true,
+        message: `Synced ${syncedCount} stuck payments`,
+        syncedCount,
+        totalChecked: stuckDonations.length,
+        errors
+      });
+    } catch (error: any) {
+      console.error('[STRIPE-SYNC] Sync failed:', error.message);
+      res.status(500).json({ message: `Sync failed: ${error.message}` });
     }
   });
 
