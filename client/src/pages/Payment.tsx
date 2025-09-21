@@ -377,6 +377,9 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           elements,
           clientSecret: data.clientSecret,
           redirect: 'if_required',
+          confirmParams: {
+            return_url: `${window.location.origin}/donation-success`,
+          },
         });
 
         if (error) {
