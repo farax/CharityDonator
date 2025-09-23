@@ -936,7 +936,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[STRIPE-DEBUG] Creating new PaymentIntent for donation ${donationId}`);
         
         // Use idempotency key to prevent duplicates from retries
-        const idempotencyKey = `donation-${donationId}-${Math.round(amount * 100)}-${currencyLower}`;
+        // Include timestamp to make each attempt unique while still preventing true duplicates
+        const timestamp = Date.now();
+        const idempotencyKey = `donation-${donationId}-${Math.round(amount * 100)}-${currencyLower}-${timestamp}`;
         
         paymentIntent = await stripe.paymentIntents.create({
           amount: Math.round(amount * 100), // Convert to cents
