@@ -168,8 +168,9 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
       currency: donationDetails.currency,
       type: donationDetails.type,
       frequency: donationDetails.frequency,
-      email: paymentEmail,
-      name: paymentName,
+      email: paymentEmail || 'not provided',
+      name: paymentName || 'not provided',
+      hasReceiptData: hasReceiptData, // Add this flag
       caseId: donationDetails.caseId,
       caseTitle: donationDetails.caseTitle,
       destinationProject: donationDetails.destinationProject,

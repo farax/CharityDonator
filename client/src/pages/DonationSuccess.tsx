@@ -182,26 +182,27 @@ export default function DonationSuccess() {
               )}
             </div>
 
-            {/* Receipt Information */}
-            <div className="bg-blue-50 rounded-lg p-6">
-              <div className="flex items-start space-x-3">
-                <FileText className="h-6 w-6 text-blue-600 mt-1" />
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-2">Receipt & Tax Information</h3>
-                  <ul className="space-y-2 text-blue-800 mb-4">
-                    <li className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4" />
-                      <span>A PDF receipt will be emailed to you within a few minutes</span>
-                    </li>
-                    <li className="flex items-center space-x-2">
-                      <FileText className="h-4 w-4" />
-                      <span>This receipt is valid for tax deduction purposes</span>
-                    </li>
-                    <li className="flex items-center space-x-2">
-                      <CheckCircle className="h-4 w-4" />
-                      <span>Keep this receipt for your financial records</span>
-                    </li>
-                  </ul>
+            {/* Receipt Information - Only show if email was provided */}
+            {donationDetails.hasReceiptData && (
+              <div className="bg-blue-50 rounded-lg p-6">
+                <div className="flex items-start space-x-3">
+                  <FileText className="h-6 w-6 text-blue-600 mt-1" />
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-2">Receipt & Tax Information</h3>
+                    <ul className="space-y-2 text-blue-800 mb-4">
+                      <li className="flex items-center space-x-2">
+                        <Mail className="h-4 w-4" />
+                        <span>A PDF receipt will be emailed to you within a few minutes</span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        <FileText className="h-4 w-4" />
+                        <span>This receipt is valid for tax deduction purposes</span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Keep this receipt for your financial records</span>
+                      </li>
+                    </ul>
                   
                   {/* Download Receipt Button */}
                   <Button 
@@ -225,6 +226,7 @@ export default function DonationSuccess() {
                 </div>
               </div>
             </div>
+            )}
 
             {/* Navigation Options */}
             <div className="text-center bg-gray-50 rounded-lg p-6">
