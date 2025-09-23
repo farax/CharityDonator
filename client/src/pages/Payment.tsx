@@ -90,7 +90,12 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
     // Mount the Link Auth Element only once in our designated container
     if (!linkAuthContainer.hasChildNodes()) {
       try {
-        const linkAuth = elements.create('linkAuthentication');
+        const linkAuth = elements.create('linkAuthentication', {
+          // Configure the element for better UX
+          defaultValues: {
+            email: ''
+          }
+        });
         linkAuth.on('change', (event: any) => {
           const email = event.value.email;
           if (email) {
@@ -459,6 +464,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           <div>
             <label className="block text-sm font-medium text-blue-700 mb-1">Email Address</label>
             <div id="link-auth"></div>
+            <p className="text-xs text-blue-600 mt-1">💡 Tip: "Incomplete" warnings while typing are normal - they'll disappear when you finish your email address</p>
           </div>
           
           <div>
