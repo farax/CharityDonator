@@ -33,6 +33,75 @@ This application is designed to be easily deployable to any hosting environment.
 - npm (v9+)
 - PostgreSQL (optional, for production)
 
+#### PDF Receipt Generation Dependencies (VPS Deployment Only)
+
+If deploying to a VPS (like IONOS, DigitalOcean, AWS EC2, etc.), you'll need to install system dependencies for PDF receipt generation. **Note: This is not required for managed platforms like Replit, Heroku, or Render.**
+
+**Ubuntu/Debian systems:**
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+  libnss3 \
+  libatk1.0-0 \
+  libatk-bridge2.0-0 \
+  libcups2 \
+  libdrm2 \
+  libgtk-3-0 \
+  libgtk-4-1 \
+  libxss1 \
+  libasound2 \
+  libx11-xcb1 \
+  libxcomposite1 \
+  libxdamage1 \
+  libxext6 \
+  libxfixes3 \
+  libxi6 \
+  libxrandr2 \
+  libgbm1 \
+  libxkbcommon0 \
+  libatspi2.0-0 \
+  libxtst6 \
+  libxrender1 \
+  libcairo2 \
+  libdbus-1-3 \
+  libexpat1 \
+  libfontconfig1 \
+  libgcc1 \
+  libglib2.0-0 \
+  libnspr4 \
+  libpango-1.0-0 \
+  libpangocairo-1.0-0 \
+  libstdc++6 \
+  libx11-6 \
+  libxcb1 \
+  libxcursor1
+```
+
+**CentOS/RHEL/Amazon Linux:**
+```bash
+sudo yum install -y \
+  nss \
+  atk \
+  at-spi2-atk \
+  cups-libs \
+  libdrm \
+  gtk3 \
+  libXScrnSaver \
+  alsa-lib \
+  libX11-xcb \
+  libXcomposite \
+  libXdamage \
+  libXext \
+  libXfixes \
+  libXi \
+  libXrandr \
+  mesa-libgbm \
+  libxkbcommon \
+  at-spi2-core
+```
+
+> **Why these dependencies?** The application uses Puppeteer to generate PDF receipts. While Puppeteer includes a bundled Chromium browser, it requires these system libraries to run properly on Linux servers.
+
 ### Environment Configuration
 
 1. Copy the `.env.example` file to `.env` and fill in the required environment variables:
