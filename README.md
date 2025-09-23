@@ -102,6 +102,102 @@ sudo yum install -y \
 
 > **Why these dependencies?** The application uses Puppeteer to generate PDF receipts. While Puppeteer includes a bundled Chromium browser, it requires these system libraries to run properly on Linux servers.
 
+#### Troubleshooting PDF Receipt Generation
+
+If you're experiencing PDF receipt generation issues after deploying to a VPS, here are common problems and solutions:
+
+**Problem 1: "failed to launch the browser process" or "libatk-1.0.so.0: cannot open shared object file"**
+
+This indicates missing or incomplete system dependencies.
+
+**Solution:**
+```bash
+# Check if critical libraries are installed
+dpkg -l | grep -E "(libnss3|libatk|libgtk)"
+
+# If missing, install them:
+sudo apt-get update
+sudo apt-get install -y \
+  libnss3 \
+  libatk1.0-0 \
+  libatk-bridge2.0-0 \
+  libcups2 \
+  libdrm2 \
+  libgtk-3-0 \
+  libxss1 \
+  libasound2t64
+
+# Restart your application
+pm2 restart aafiyaa  # or your app name
+```
+
+**Problem 2: Installation gets stuck on "libasound2 package selection"**
+
+Ubuntu systems may ask you to choose between libasound2 packages.
+
+**Solution:**
+```bash
+# Install the correct package for modern Ubuntu
+sudo apt-get install -y libasound2t64
+
+# Then complete the installation with remaining dependencies
+sudo apt-get install -y \
+  libx11-xcb1 libxcomposite1 libxdamage1 libxext6 \
+  libxfixes3 libxi6 libxrandr2 libgbm1 libxkbcommon0 \
+  libatspi2.0-0 libxtst6 libxrender1 libcairo2
+```
+
+**Problem 3: Testing if browser launches correctly**
+
+Use this test command to verify Puppeteer can launch the browser:
+
+```bash
+cd /path/to/your/app
+node -e "
+const puppeteer = require('puppeteer');
+puppeteer.launch({
+  headless: true, 
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
+}).then(() => {
+  console.log('✅ Browser launches successfully!');
+  process.exit(0);
+}).catch(err => {
+  console.error('❌ Browser launch failed:', err.message);
+  process.exit(1);
+});
+"
+```
+
+**Problem 4: Permission issues with receipts directory**
+
+PDF files might fail to save due to permission issues:
+
+```bash
+# Create and set proper permissions for receipts directory
+mkdir -p /path/to/your/app/receipts
+chmod 755 /path/to/your/app/receipts
+chown -R $USER:$USER /path/to/your/app/receipts
+```
+
+**Problem 5: User context issues**
+
+Dependencies might be installed for the wrong user. Check who's running your app:
+
+```bash
+# Check which user is running your Node.js process
+ps aux | grep node
+pm2 status
+
+# Install dependencies system-wide if needed
+sudo apt-get install -y [dependencies from above]
+```
+
+**Verification Steps:**
+1. Run the browser test command above
+2. Check application logs: `pm2 logs your-app-name`
+3. Make a test donation to verify PDF generation works
+4. Check if receipt files are created in the `receipts/` directory
+
 ### Environment Configuration
 
 1. Copy the `.env.example` file to `.env` and fill in the required environment variables:
