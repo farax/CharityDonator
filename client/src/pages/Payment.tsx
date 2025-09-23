@@ -68,13 +68,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   }, []);
 
   // Validation helpers for optional receipt
-  // More robust email validation that rejects placeholder text
-  const hasEmail = email && email.trim() && 
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) && 
-    !email.includes('example.com') && 
-    !email.includes('placeholder') &&
-    email.trim() !== 'you@example.com' &&
-    email.trim() !== 'your@example.com';
+  const hasEmail = email && email.trim() && email.includes('@') && email.includes('.');
   const hasName = name && name.trim() && name.length > 2;
   const wantsReceipt = hasEmail || hasName;
   
@@ -402,7 +396,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-6">
 
       {donationDetails && isSubscription && (
         <div className="bg-blue-50 p-4 rounded-md mb-4 border border-blue-100">
@@ -443,8 +437,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-2 border border-blue-300 rounded-md text-sm"
-              placeholder="Enter your email address"
-              autoComplete={wantsReceipt ? "email" : "off"}
+              placeholder="your@example.com"
             />
           </div>
           
@@ -496,20 +489,10 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
             </button>
           </div>
         ) : null}
-        
-        {/* Special message for invalid email formats */}
-        {email && !hasEmail && (
-          <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-700">
-              ❌ Please enter a valid email address or clear the field for anonymous donation
-            </p>
-          </div>
-        )}
       </div>
 
       <Button 
         type="submit" 
-        formNoValidate={true}
         className="w-full py-3" 
         disabled={!stripe || isLoading || (wantsReceipt && !isFormValid)}
       >
