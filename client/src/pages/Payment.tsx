@@ -444,6 +444,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-2 border border-blue-300 rounded-md text-sm"
               placeholder="Enter your email address"
+              autoComplete={wantsReceipt ? "email" : "off"}
             />
           </div>
           
@@ -508,6 +509,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
 
       <Button 
         type="submit" 
+        formNoValidate={true}
         className="w-full py-3" 
         disabled={!stripe || isLoading || (wantsReceipt && !isFormValid)}
       >
