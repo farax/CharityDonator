@@ -68,7 +68,13 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   }, []);
 
   // Validation helpers for optional receipt
-  const hasEmail = email && email.trim() && email.includes('@') && email.includes('.');
+  // More robust email validation that rejects placeholder text
+  const hasEmail = email && email.trim() && 
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) && 
+    !email.includes('example.com') && 
+    !email.includes('placeholder') &&
+    email.trim() !== 'you@example.com' &&
+    email.trim() !== 'your@example.com';
   const hasName = name && name.trim() && name.length > 2;
   const wantsReceipt = hasEmail || hasName;
   
@@ -437,7 +443,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-2 border border-blue-300 rounded-md text-sm"
-              placeholder="your@example.com"
+              placeholder="Enter your email address"
             />
           </div>
           
