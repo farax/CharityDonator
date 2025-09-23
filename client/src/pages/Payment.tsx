@@ -402,7 +402,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
 
       {donationDetails && isSubscription && (
         <div className="bg-blue-50 p-4 rounded-md mb-4 border border-blue-100">
@@ -495,6 +495,15 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
             </button>
           </div>
         ) : null}
+        
+        {/* Special message for invalid email formats */}
+        {email && !hasEmail && (
+          <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-700">
+              ❌ Please enter a valid email address or clear the field for anonymous donation
+            </p>
+          </div>
+        )}
       </div>
 
       <Button 
