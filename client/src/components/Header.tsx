@@ -132,7 +132,7 @@ export default function Header() {
             >
               Contact Us
             </Link>
-            <Link href="/payment">
+            <Link href="/">
               <Button className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 text-sm">
                 Donate Now
               </Button>
