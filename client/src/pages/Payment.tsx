@@ -396,7 +396,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
 
       {donationDetails && isSubscription && (
         <div className="bg-blue-50 p-4 rounded-md mb-4 border border-blue-100">
