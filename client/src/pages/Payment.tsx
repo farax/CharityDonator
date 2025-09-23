@@ -52,7 +52,6 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   const { coverFees, calculateFees } = useDonation();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
-  const [linkAuthEmail, setLinkAuthEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [name, setName] = useState('');
@@ -69,7 +68,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   }, []);
 
   // Validation helpers for optional receipt
-  const hasEmail = linkAuthEmail && linkAuthEmail.trim() && linkAuthEmail.includes('@') && linkAuthEmail.includes('.');
+  const hasEmail = email && email.trim() && email.includes('@') && email.includes('.');
   const hasName = name && name.trim() && name.length > 2;
   const wantsReceipt = hasEmail || hasName;
   
@@ -80,38 +79,6 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
   
   const isFormValid = !wantsReceipt || (hasEmail && hasName);
 
-  useEffect(() => {
-    if (!stripe || !elements) return;
-
-    // Always mount Link Auth Element in the tax receipt section only
-    const linkAuthContainer = document.getElementById('link-auth');
-    if (!linkAuthContainer) return;
-
-    // Mount the Link Auth Element only once in our designated container
-    if (!linkAuthContainer.hasChildNodes()) {
-      try {
-        const linkAuth = elements.create('linkAuthentication', {
-          // Configure the element for better UX
-          defaultValues: {
-            email: ''
-          }
-        });
-        linkAuth.on('change', (event: any) => {
-          const email = event.value.email;
-          if (email) {
-            setLinkAuthEmail(email);
-            console.log('[LINK-AUTH] Email captured:', email);
-          } else {
-            setLinkAuthEmail('');
-          }
-        });
-        linkAuth.mount('#link-auth');
-        console.log('[LINK-AUTH] Element mounted in tax receipt section');
-      } catch (error) {
-        console.log('[LINK-AUTH] Element creation skipped (may already exist)');
-      }
-    }
-  }, [stripe, elements]);
 
   // Helper function to handle successful payments (both regular and anonymous)
   const handlePaymentSuccess = async (paymentIntent: any, email: string, fullName: string) => {
@@ -394,7 +361,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         }
 
         console.log('[PAYMENT-SUBMIT] Payment confirmed successfully:', paymentIntent.id);
-        await handlePaymentSuccess(paymentIntent, linkAuthEmail, name);
+        await handlePaymentSuccess(paymentIntent, email, name);
 
       } catch (error: any) {
         console.error('[PAYMENT-SUBMIT] Payment process failed:', error);
@@ -462,9 +429,15 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-blue-700 mb-1">Email Address</label>
-            <div id="link-auth"></div>
-            <p className="text-xs text-blue-600 mt-1">💡 Tip: "Incomplete" warnings while typing are normal - they'll disappear when you finish your email address</p>
+            <label htmlFor="donor-email" className="block text-sm font-medium text-blue-700 mb-1">Email Address</label>
+            <input
+              type="email"
+              id="donor-email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-2 border border-blue-300 rounded-md text-sm"
+              placeholder="your@example.com"
+            />
           </div>
           
           <div>
@@ -498,7 +471,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         )}
         
         {/* Show helpful message if fields have content but aren't valid */}
-        {(linkAuthEmail && !hasEmail) || (name && !hasName) ? (
+        {(email && !hasEmail) || (name && !hasName) ? (
           <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md flex items-center justify-between">
             <p className="text-sm text-yellow-700">
               💡 Complete both fields for receipt, or clear both for anonymous donation
@@ -506,13 +479,8 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
             <button
               type="button"
               onClick={() => {
-                setLinkAuthEmail('');
+                setEmail('');
                 setName('');
-                // Clear the Link Auth element
-                const linkAuthContainer = document.getElementById('link-auth');
-                if (linkAuthContainer) {
-                  linkAuthContainer.innerHTML = '';
-                }
               }}
               className="text-xs text-yellow-800 underline hover:no-underline"
             >
