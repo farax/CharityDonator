@@ -915,6 +915,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 statement_descriptor_suffix: 'DONATION',
                 metadata: {
                   donationId: donationId.toString(),
+                  donation_type: donation?.type || 'unknown',
                   updated_at: new Date().toISOString()
                 }
               });
@@ -948,6 +949,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           statement_descriptor_suffix: 'DONATION', // Text on credit card statement (max 22 chars)
           metadata: {
             donationId: donationId.toString(),
+            donation_type: donation?.type || 'unknown',
             created_at: new Date().toISOString()
           }
         }, {
