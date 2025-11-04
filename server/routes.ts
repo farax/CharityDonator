@@ -12,7 +12,7 @@ import { storage } from "./storage";
 import Stripe from "stripe";
 import fetch from "node-fetch";
 import { insertDonationSchema, insertCaseSchema, contactFormSchema, ContactMessage } from "@shared/schema";
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import {
   handlePaymentIntentSucceeded,
@@ -140,6 +140,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedStats);
     } catch (error) {
       res.status(500).json({ message: "Failed to update stats" });
+    }
+  });
+
+  // Manual receipt generation - protected by admin authentication
+  app.post("/api/admin/generate-receipt", isAdminAuthenticated, async (req, res) => {
+    try {
+      // Define Zod schema for manual receipt generation
+      const manualReceiptSchema = z.object({
+        amount: z.number().positive("Amount must be a positive number"),
+        email: z.string().email("Invalid email address").trim().toLowerCase(),
+        donationType: z.enum(["zakaat", "sadqah", "interest"], {
+          errorMap: () => ({ message: "Invalid donation type" })
+        }),
+        currency: z.enum(["AUD", "USD", "GBP", "EUR", "PKR"], {
+          errorMap: () => ({ message: "Invalid currency" })
+        })
+      });
+      
+      // Validate request body
+      const validationResult = manualReceiptSchema.safeParse(req.body);
+      
+      if (!validationResult.success) {
+        const errorMessage = fromZodError(validationResult.error).message;
+        return res.status(400).json({ message: errorMessage });
+      }
+      
+      const { amount, email, donationType, currency } = validationResult.data;
+      
+      // Create a donation record in the database for auditability
+      const donation = await storage.createDonation({
+        type: donationType,
+        amount: amount,
+        currency: currency,
+        frequency: 'one-off',
+        status: 'completed',
+        paymentMethod: 'manual',
+        email: email,
+        caseId: null,
+        destinationProject: null
+      });
+      
+      // Generate unique receipt number
+      const receiptNumber = generateReceiptNumber();
+      
+      // Create receipt record in database for tracking
+      const receiptRecord = await storage.createReceipt({
+        donationId: donation.id,
+        receiptNumber,
+        amount: amount,
+        currency: currency,
+        donorName: null,
+        donorEmail: email,
+        donationType: donationType,
+        caseId: null,
+        status: 'pending'
+      });
+      
+      try {
+        // Generate PDF receipt
+        const pdfPath = await generatePDFReceipt({
+          donation: donation,
+          receiptNumber
+        });
+        
+        // Update receipt status to generated
+        await storage.updateReceiptStatus(receiptRecord.id, 'generated', pdfPath);
+        
+        // Send email with PDF attachment
+        const emailSent = await sendPDFReceipt(donation, receiptNumber, pdfPath);
+        
+        if (emailSent) {
+          // Update receipt status to sent
+          await storage.updateReceiptSentAt(receiptRecord.id);
+          
+          res.json({ 
+            success: true, 
+            message: `Receipt sent successfully to ${email}`,
+            receiptNumber,
+            donationId: donation.id
+          });
+        } else {
+          // Update receipt status to failed
+          await storage.updateReceiptStatus(receiptRecord.id, 'failed');
+          
+          res.status(500).json({ 
+            success: false, 
+            message: "Receipt was generated but failed to send email" 
+          });
+        }
+      } catch (pdfError: any) {
+        // Update receipt status to failed
+        await storage.updateReceiptStatus(receiptRecord.id, 'failed');
+        throw pdfError;
+      }
+    } catch (error: any) {
+      console.error("Error generating manual receipt:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "Failed to generate receipt" 
+      });
     }
   });
 

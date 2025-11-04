@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { Loader2, Calendar, Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import CaseManagementForm from '@/components/CaseManagementForm';
 import CaseManagementTable from '@/components/CaseManagementTable';
 import { type Case } from '@shared/schema';
@@ -58,6 +62,20 @@ const statusColors: Record<string, string> = {
   'unknown': 'bg-gray-100 text-gray-800'
 };
 
+// Zod schema for manual receipt generation form
+const manualReceiptFormSchema = z.object({
+  amount: z.coerce.number().positive("Amount must be a positive number"),
+  email: z.string().email("Invalid email address").trim().toLowerCase(),
+  donationType: z.enum(["zakaat", "sadqah", "interest"], {
+    required_error: "Please select a donation type"
+  }),
+  currency: z.enum(["AUD", "USD", "GBP", "EUR", "PKR"], {
+    required_error: "Please select a currency"
+  })
+});
+
+type ManualReceiptFormData = z.infer<typeof manualReceiptFormSchema>;
+
 export default function Admin() {
   const [activeTab, setActiveTab] = useState('overview');
   const [, setLocation] = useLocation();
@@ -87,6 +105,18 @@ export default function Admin() {
   const [totalPatients, setTotalPatients] = useState<string>('');
   const [monthlyPatients, setMonthlyPatients] = useState<string>('');
   const [statsUpdateMessage, setStatsUpdateMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  
+  // For manual receipt generation using react-hook-form
+  const manualReceiptForm = useForm<ManualReceiptFormData>({
+    resolver: zodResolver(manualReceiptFormSchema),
+    defaultValues: {
+      amount: '' as any,
+      email: '',
+      donationType: 'sadqah',
+      currency: 'AUD'
+    }
+  });
+  const [receiptMessage, setReceiptMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   
   // For case management
   const [caseFormOpen, setCaseFormOpen] = useState(false);
@@ -226,6 +256,66 @@ export default function Admin() {
       toast({
         title: "Update Failed",
         description: error.message || 'Failed to update statistics',
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handler for generating manual receipt
+  const handleGenerateReceipt = async (data: ManualReceiptFormData) => {
+    setReceiptMessage(null);
+    
+    try {
+      const response = await apiRequest('POST', '/api/admin/generate-receipt', {
+        amount: data.amount,
+        email: data.email,
+        donationType: data.donationType,
+        currency: data.currency
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage = errorData.message || 'Failed to generate receipt';
+        
+        setReceiptMessage({
+          type: 'error',
+          message: errorMessage
+        });
+        
+        toast({
+          title: "Generation Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const result = await response.json();
+      const successMessage = result.message || 'Receipt generated and sent successfully';
+      
+      setReceiptMessage({
+        type: 'success',
+        message: successMessage
+      });
+      
+      // Reset the form
+      manualReceiptForm.reset();
+      
+      toast({
+        title: "Receipt Sent",
+        description: successMessage,
+      });
+    } catch (error: any) {
+      const errorMessage = error.message || 'Failed to generate receipt';
+      
+      setReceiptMessage({
+        type: 'error',
+        message: errorMessage
+      });
+      
+      toast({
+        title: "Generation Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -824,6 +914,135 @@ export default function Admin() {
                       Update Statistics
                     </Button>
                   </form>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Generate Manual Receipt</CardTitle>
+                  <CardDescription>
+                    Generate and send a PDF receipt to a donor via email. This creates the same receipt that is sent after a successful donation.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Form {...manualReceiptForm}>
+                    <form onSubmit={manualReceiptForm.handleSubmit(handleGenerateReceipt)} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={manualReceiptForm.control}
+                          name="amount"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Amount</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0.01"
+                                  placeholder="Enter donation amount"
+                                  {...field}
+                                  data-testid="input-receipt-amount"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={manualReceiptForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email Address</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="email"
+                                  placeholder="recipient@example.com"
+                                  {...field}
+                                  data-testid="input-receipt-email"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={manualReceiptForm.control}
+                          name="donationType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Donation Type</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-receipt-donation-type">
+                                    <SelectValue placeholder="Select donation type" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="zakaat">Zakaat</SelectItem>
+                                  <SelectItem value="sadqah">Sadqah</SelectItem>
+                                  <SelectItem value="interest">Interest Disposal</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={manualReceiptForm.control}
+                          name="currency"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Currency</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-receipt-currency">
+                                    <SelectValue placeholder="Select currency" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
+                                  <SelectItem value="USD">USD - US Dollar</SelectItem>
+                                  <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                                  <SelectItem value="EUR">EUR - Euro</SelectItem>
+                                  <SelectItem value="PKR">PKR - Pakistani Rupee</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      {receiptMessage && (
+                        <div className={`p-3 rounded-md ${
+                          receiptMessage.type === 'success' 
+                            ? 'bg-green-50 text-green-700 border border-green-200' 
+                            : 'bg-red-50 text-red-700 border border-red-200'
+                        }`}>
+                          {receiptMessage.message}
+                        </div>
+                      )}
+                      
+                      <Button 
+                        type="submit" 
+                        disabled={manualReceiptForm.formState.isSubmitting} 
+                        data-testid="button-send-receipt"
+                      >
+                        {manualReceiptForm.formState.isSubmitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Generating Receipt...
+                          </>
+                        ) : (
+                          'Generate & Send Receipt'
+                        )}
+                      </Button>
+                    </form>
+                  </Form>
                 </CardContent>
               </Card>
             </TabsContent>
