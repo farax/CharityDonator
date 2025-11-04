@@ -43,6 +43,7 @@ Preferred communication style: Simple, everyday language.
 - **Security**: Environment variable separation for test and production API keys
 - **Access Control**: Role-based access to administrative functions and donation management
 - **Admin Portal**: Comprehensive case management interface with create, edit, delete, and status toggle capabilities
+- **Manual Receipt Generation**: Admin capability to generate and send PDF receipts retroactively for any donation amount, type (zakaat/sadqah/interest), and currency (AUD/USD/GBP/EUR/PKR) with full database auditability
 
 ### Analytics and Monitoring
 - **Performance Monitoring**: New Relic integration for application performance monitoring
