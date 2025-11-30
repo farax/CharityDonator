@@ -48,15 +48,15 @@ export default function VideoTestimonials() {
             } max-w-5xl w-full
           `}>
             {testimonials.map((testimonial) => (
-              <Card 
+              <div 
                 key={testimonial.id} 
                 className={`
-                  overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white
-                  ${testimonials.length === 1 ? 'w-full max-w-sm' : ''}
+                  overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300
+                  ${testimonials.length === 1 ? 'w-72' : ''}
                 `}
                 data-testid={`video-testimonial-${testimonial.id}`}
               >
-                <div className="relative aspect-[9/16] max-h-[450px] bg-gray-900">
+                <div className="relative aspect-[9/16] bg-gray-900">
                   {activeVideo === testimonial.youtubeId ? (
                     <iframe
                       src={`https://www.youtube.com/embed/${testimonial.youtubeId}?autoplay=1&rel=0`}
@@ -80,20 +80,20 @@ export default function VideoTestimonials() {
                         }}
                       />
                       <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
-                        <div className="w-16 h-16 rounded-full bg-teal-600 group-hover:bg-teal-500 transition-colors duration-300 flex items-center justify-center shadow-lg">
-                          <Play className="h-8 w-8 text-white ml-1" fill="white" />
+                        <div className="w-14 h-14 rounded-full bg-teal-600 group-hover:bg-teal-500 transition-colors duration-300 flex items-center justify-center shadow-lg">
+                          <Play className="h-7 w-7 text-white ml-1" fill="white" />
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-gray-800 mb-1">{testimonial.title}</h3>
+                <div className="bg-white p-3">
+                  <h3 className="font-semibold text-gray-800 text-sm">{testimonial.title}</h3>
                   {testimonial.description && (
-                    <p className="text-sm text-gray-600">{testimonial.description}</p>
+                    <p className="text-xs text-gray-600 mt-1">{testimonial.description}</p>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         </div>
