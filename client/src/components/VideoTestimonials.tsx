@@ -41,14 +41,22 @@ export default function VideoTestimonials() {
         </div>
 
         <div className="flex justify-center">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl">
+          <div className={`
+            ${testimonials.length === 1 
+              ? 'flex justify-center' 
+              : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8'
+            } max-w-5xl w-full
+          `}>
             {testimonials.map((testimonial) => (
               <Card 
                 key={testimonial.id} 
-                className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white"
+                className={`
+                  overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white
+                  ${testimonials.length === 1 ? 'w-full max-w-sm' : ''}
+                `}
                 data-testid={`video-testimonial-${testimonial.id}`}
               >
-                <div className="relative aspect-[9/16] max-h-[400px] bg-gray-900">
+                <div className="relative aspect-[9/16] max-h-[450px] bg-gray-900">
                   {activeVideo === testimonial.youtubeId ? (
                     <iframe
                       src={`https://www.youtube.com/embed/${testimonial.youtubeId}?autoplay=1&rel=0`}
