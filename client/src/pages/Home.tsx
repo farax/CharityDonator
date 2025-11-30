@@ -3,6 +3,7 @@ import Hero from '@/components/Hero';
 import DonationWidget from '@/components/DonationWidget';
 import CounterWidgets from '@/components/CounterWidgets';
 import EndorsementsTicker from '@/components/EndorsementsTicker';
+import VideoTestimonials from '@/components/VideoTestimonials';
 import Footer from '@/components/Footer';
 
 export default function Home() {
@@ -15,6 +16,7 @@ export default function Home() {
         </Hero>
         <CounterWidgets />
         <EndorsementsTicker />
+        <VideoTestimonials />
       </main>
       <Footer />
     </div>
