@@ -111,7 +111,7 @@ export default function FeatureTour({ features, children }: FeatureTourProps) {
         callback={handleJoyrideCallback}
         styles={{
           options: {
-            primaryColor: '#0d9488', // Your teal primary color
+            primaryColor: '#2D5A3D',
             textColor: '#374151',
             backgroundColor: '#ffffff',
             overlayColor: 'rgba(0, 0, 0, 0.4)',
