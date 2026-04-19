@@ -1,6 +1,6 @@
 import { Link } from 'wouter';
 import { Heart, MapPin, Mail, Phone, Facebook, Twitter, Instagram, Linkedin, X } from 'lucide-react';
-import aafiyaaLogo from '@assets/ChatGPT_Image_Apr_19,_2026,_07_02_27_PM_1776589362003.png';
+import aafiyaaLogo from '@assets/ChatGPT_Image_Apr_19,_2026,_07_24_23_PM_1776590725191.png';
 import additionalLogo from '@assets/WhatsApp Image 2025-06-17 at 21.06.34_1750160957596.jpeg';
 import { useState } from 'react';
 
@@ -14,7 +14,7 @@ export default function Footer() {
           {/* Organization Info */}
           <div>
             <div className="flex items-center mb-4">
-              <img src={aafiyaaLogo} alt="Aafiyaa Charity Clinics Logo" className="h-24 object-contain" />
+              <img src={aafiyaaLogo} alt="Aafiyaa Charity Clinics Logo" className="h-24 w-24 rounded-full object-cover" />
             </div>
             <p className="mb-4 text-sm" style={{ color: 'rgba(245,237,214,0.7)' }}>
               Aafiyaa Charity Clinics provides essential medical services to those in need worldwide through your generous donations.

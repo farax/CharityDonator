@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useRoute } from "wouter";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import aafiyaaLogo from "@assets/ChatGPT_Image_Apr_19,_2026,_07_02_27_PM_1776589362003.png";
+import aafiyaaLogo from "@assets/ChatGPT_Image_Apr_19,_2026,_07_24_23_PM_1776590725191.png";
 import { cn } from "@/lib/utils";
 
 export default function Header() {
@@ -60,8 +60,8 @@ export default function Header() {
                 src={aafiyaaLogo}
                 alt="Aafiyaa Charity Clinics Logo"
                 className={cn(
-                  "transition-all duration-300 mr-4 object-contain",
-                  scrolled ? "h-[68px]" : "h-[80px]"
+                  "transition-all duration-300 mr-4 rounded-full object-cover",
+                  scrolled ? "h-[68px] w-[68px]" : "h-[80px] w-[80px]"
                 )}
               />
               <div className="flex flex-col">
