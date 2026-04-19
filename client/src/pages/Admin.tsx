@@ -71,7 +71,8 @@ const manualReceiptFormSchema = z.object({
   }),
   currency: z.enum(["AUD", "USD", "GBP", "EUR", "PKR"], {
     required_error: "Please select a currency"
-  })
+  }),
+  receiptDate: z.string().optional()
 });
 
 type ManualReceiptFormData = z.infer<typeof manualReceiptFormSchema>;
@@ -107,13 +108,15 @@ export default function Admin() {
   const [statsUpdateMessage, setStatsUpdateMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   
   // For manual receipt generation using react-hook-form
+  const todayStr = new Date().toISOString().split('T')[0];
   const manualReceiptForm = useForm<ManualReceiptFormData>({
     resolver: zodResolver(manualReceiptFormSchema),
     defaultValues: {
       amount: '' as any,
       email: '',
       donationType: 'sadqah',
-      currency: 'AUD'
+      currency: 'AUD',
+      receiptDate: todayStr
     }
   });
   const [receiptMessage, setReceiptMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -270,7 +273,8 @@ export default function Admin() {
         amount: data.amount,
         email: data.email,
         donationType: data.donationType,
-        currency: data.currency
+        currency: data.currency,
+        receiptDate: data.receiptDate || undefined
       });
       
       if (!response.ok) {
@@ -1016,6 +1020,24 @@ export default function Admin() {
                           )}
                         />
                       </div>
+
+                      <FormField
+                        control={manualReceiptForm.control}
+                        name="receiptDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Receipt Date <span className="text-muted-foreground font-normal">(defaults to today)</span></FormLabel>
+                            <FormControl>
+                              <Input
+                                type="date"
+                                {...field}
+                                data-testid="input-receipt-date"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       
                       {receiptMessage && (
                         <div className={`p-3 rounded-md ${

@@ -155,7 +155,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }),
         currency: z.enum(["AUD", "USD", "GBP", "EUR", "PKR"], {
           errorMap: () => ({ message: "Invalid currency" })
-        })
+        }),
+        receiptDate: z.string().optional()
       });
       
       // Validate request body
@@ -166,7 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: errorMessage });
       }
       
-      const { amount, email, donationType, currency } = validationResult.data;
+      const { amount, email, donationType, currency, receiptDate } = validationResult.data;
       
       // Create a donation record in the database for auditability
       const donation = await storage.createDonation({
@@ -201,7 +202,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Generate PDF receipt
         const pdfPath = await generatePDFReceipt({
           donation: donation,
-          receiptNumber
+          receiptNumber,
+          customDate: receiptDate
         });
         
         // Update receipt status to generated

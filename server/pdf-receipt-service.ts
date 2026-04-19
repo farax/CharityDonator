@@ -7,6 +7,7 @@ interface ReceiptData {
   donation: Donation;
   receiptNumber: string;
   caseTitle?: string;
+  customDate?: string; // ISO date string e.g. "2024-03-15"
 }
 
 // Ensure receipts directory exists
@@ -79,7 +80,7 @@ function getFrequencyLabel(frequency: string): string {
 
 // Generate HTML receipt template
 async function generateReceiptHTML(data: ReceiptData): Promise<string> {
-  const { donation, receiptNumber } = data;
+  const { donation, receiptNumber, customDate } = data;
   const currentDate = new Date();
   const logoBase64 = await getLogoBase64();
   
@@ -88,18 +89,17 @@ async function generateReceiptHTML(data: ReceiptData): Promise<string> {
     `${donation.paymentMethod.toUpperCase()} - ${donation.stripePaymentId ? donation.stripePaymentId.slice(-4) : '****'}` :
     'CARD - ****';
   
-  // Format dates
-  const donationDate = new Date(donation.createdAt).toLocaleDateString('en-AU', { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
-  });
+  // Use customDate if provided (for manually generated receipts), otherwise use donation creation date
+  const effectiveDate = customDate ? new Date(customDate + 'T12:00:00') : new Date(donation.createdAt);
   
-  const issueDate = currentDate.toLocaleDateString('en-AU', { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
-  });
+  const dateOptions: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+
+  // Format dates
+  const donationDate = effectiveDate.toLocaleDateString('en-AU', dateOptions);
+  
+  const issueDate = customDate
+    ? effectiveDate.toLocaleDateString('en-AU', dateOptions)
+    : currentDate.toLocaleDateString('en-AU', dateOptions);
   
   return `
     <!DOCTYPE html>
