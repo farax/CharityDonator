@@ -1,0 +1,21 @@
+<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main Logo Design with teal/green gradient -->
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#13a89e" />
+      <stop offset="100%" stop-color="#0e847d" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Stylized medical cross/symbol -->
+  <path d="M40 10 C 50 5, 60 15, 55 25 C 60 35, 50 45, 40 40 C 30 45, 20 35, 25 25 C 20 15, 30 5, 40 10 Z" 
+        fill="url(#logoGradient)" />
+  
+  <!-- Heartbeat line in the middle -->
+  <path d="M32 25 L37 25 L40 15 L43 35 L46 25 L51 25" 
+        stroke="white" stroke-width="2" fill="none" />
+  
+  <!-- Logo Text -->
+  <text x="70" y="30" font-family="Arial, sans-serif" font-weight="bold" font-size="22" fill="#13a89e">MedDonate</text>
+  <text x="70" y="45" font-family="Arial, sans-serif" font-size="12" fill="#555">Healthcare for All</text>
+</svg>
