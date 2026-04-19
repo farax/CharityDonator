@@ -17,6 +17,8 @@ import { useFeatureTours } from "@/hooks/useFeatureTours";
 import { ChevronRight } from "lucide-react";
 import { trackButtonClick, trackDonation, trackEvent } from "@/lib/analytics";
 
+type DonationMode = "general" | "islamic";
+
 export default function DonationWidget() {
   const {
     type,
@@ -48,24 +50,27 @@ export default function DonationWidget() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  // When donation type changes, update frequency if needed
+  // UI-only mode state — does not affect what gets stored in the database
+  const [mode, setMode] = useState<DonationMode>("general");
+  const [islamicType, setIslamicType] = useState<"sadqah" | "zakaat" | "interest">("sadqah");
+
+  // Sync mode + islamicType → internal type (what gets saved to DB)
+  useEffect(() => {
+    const effectiveType = mode === "general" ? "sadqah" : islamicType;
+    setType(effectiveType);
+    trackEvent({
+      category: "Donation",
+      action: "SelectType",
+      label: effectiveType,
+    });
+  }, [mode, islamicType]);
+
+  // When effective type changes to non-sadqah, reset frequency to one-off
   useEffect(() => {
     if (type !== "sadqah") {
       setFrequency("one-off");
     }
   }, [type, setFrequency]);
-
-  const handleDonationTypeChange = (newType: string) => {
-    const typedValue = newType as "zakaat" | "sadqah" | "interest";
-    setType(typedValue);
-
-    // Track donation type selection
-    trackEvent({
-      category: "Donation",
-      action: "SelectType",
-      label: typedValue,
-    });
-  };
 
   const handleAmountClick = (selectedAmount: number | "custom") => {
     if (selectedAmount === "custom") {
@@ -211,54 +216,106 @@ export default function DonationWidget() {
             Make a quick donation
           </h2>
 
-          {/* Donation Type Tabs */}
-          <div className="flex flex-wrap border-b border-gray-200 mb-6">
-            <button
-              className={`px-4 py-2 font-semibold text-sm sm:text-base ${
-                type === "sadqah"
-                  ? "text-primary bg-blue-50 rounded-t-lg border-b-2 border-primary"
-                  : "text-gray-600 hover:text-primary"
-              }`}
-              onClick={() => handleDonationTypeChange("sadqah")}
-            >
-              Sadqah
-            </button>
-            <button
-              className={`px-4 py-2 font-semibold text-sm sm:text-base ${
-                type === "zakaat"
-                  ? "text-primary bg-blue-50 rounded-t-lg border-b-2 border-primary"
-                  : "text-gray-600 hover:text-primary"
-              }`}
-              onClick={() => handleDonationTypeChange("zakaat")}
-            >
-              Zakaat
-            </button>
-            <button
-              className={`px-4 py-2 font-semibold text-sm sm:text-base ${
-                type === "interest"
-                  ? "text-primary bg-blue-50 rounded-t-lg border-b-2 border-primary"
-                  : "text-gray-600 hover:text-primary"
-              }`}
-              onClick={() => handleDonationTypeChange("interest")}
-            >
-              Dispose Interest
-            </button>
+          {/* Choice Cards — How would you like to give? */}
+          <div className="mb-5">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+              How would you like to give?
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setMode("general")}
+                className={`text-left p-4 rounded-xl border-2 transition-all duration-150 ${
+                  mode === "general"
+                    ? "border-teal-500 bg-teal-50"
+                    : "border-gray-200 bg-white hover:border-gray-300"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 ${
+                    mode === "general"
+                      ? "border-teal-500 bg-teal-500"
+                      : "border-gray-300 bg-white"
+                  }`} />
+                  <span className={`font-semibold text-sm ${mode === "general" ? "text-teal-800" : "text-gray-700"}`}>
+                    General charity
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed pl-5">
+                  Any cause — goes to clinic operations
+                </p>
+              </button>
+
+              <button
+                onClick={() => setMode("islamic")}
+                className={`text-left p-4 rounded-xl border-2 transition-all duration-150 ${
+                  mode === "islamic"
+                    ? "border-teal-500 bg-teal-50"
+                    : "border-gray-200 bg-white hover:border-gray-300"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 ${
+                    mode === "islamic"
+                      ? "border-teal-500 bg-teal-500"
+                      : "border-gray-300 bg-white"
+                  }`} />
+                  <span className={`font-semibold text-sm ${mode === "islamic" ? "text-teal-800" : "text-gray-700"}`}>
+                    Islamic giving
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed pl-5">
+                  Zakaat, Sadqah, or interest disposal
+                </p>
+              </button>
+            </div>
           </div>
 
-          {/* Dispose Interest Note */}
-          {type === "interest" && (
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm mb-6">
-              <p className="text-amber-800">
-                In Islam, interest (riba) is unlawful. You may dispose of interest funds by donating them to charity without expecting reward, as a means of purification.{" "}
-                <a 
-                  href="https://islamqa.org/hanafi/muftionline/114377/using-bank-interest-for-charity-permissible-or-not/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="underline hover:text-amber-900 font-medium"
+          {/* Islamic sub-type pills */}
+          {mode === "islamic" && (
+            <div className="flex gap-2 mb-5 flex-wrap">
+              {[
+                { key: "sadqah", label: "Sadqah" },
+                { key: "zakaat", label: "Zakaat" },
+                { key: "interest", label: "Dispose Interest" },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setIslamicType(key as "sadqah" | "zakaat" | "interest")}
+                  className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-all duration-150 ${
+                    islamicType === key
+                      ? "border-teal-500 bg-teal-50 text-teal-700"
+                      : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                  }`}
                 >
-                  View fatwa
-                </a>
-              </p>
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Context banners */}
+          {mode === "general" && (
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-sm text-emerald-800 mb-5 flex items-start gap-3">
+              <span className="text-base mt-0.5">🏥</span>
+              <p>Your donation funds <strong>clinic operations</strong> — consultations, medicines, and care for patients who cannot afford treatment.</p>
+            </div>
+          )}
+          {mode === "islamic" && islamicType === "sadqah" && (
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-sm text-emerald-800 mb-5 flex items-start gap-3">
+              <span className="text-base mt-0.5">🤲</span>
+              <p><strong>Sadqah</strong> is voluntary charity given freely. Recurring donations are available for ongoing reward.</p>
+            </div>
+          )}
+          {mode === "islamic" && islamicType === "zakaat" && (
+            <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-sm text-amber-800 mb-5 flex items-start gap-3">
+              <span className="text-base mt-0.5">⭐</span>
+              <p><strong>Zakaat</strong> is allocated to the most deserving cases. Select a specific case or let us distribute where needed most.</p>
+            </div>
+          )}
+          {mode === "islamic" && islamicType === "interest" && (
+            <div className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-3 text-sm text-orange-800 mb-5 flex items-start gap-3">
+              <span className="text-base mt-0.5">🔄</span>
+              <p>Dispose of interest (riba) funds by donating to charity without expecting reward, as a means of purification. <a href="https://islamqa.org/hanafi/muftionline/114377/" target="_blank" rel="noopener noreferrer" className="underline font-medium">View fatwa</a></p>
             </div>
           )}
 
@@ -270,7 +327,7 @@ export default function DonationWidget() {
                 Donate For: {destinationProject}
               </h3>
 
-              {type === "zakaat" && (
+              {mode === "islamic" && islamicType === "zakaat" && (
                 <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex justify-between items-center">
                   {selectedCase ? (
                     <div>
@@ -302,8 +359,8 @@ export default function DonationWidget() {
               />
             </div>
 
-            {/* Frequency Selection (Only visible for Sadqah) */}
-            {type === "sadqah" && (
+            {/* Frequency Selection — visible for general giving or Islamic Sadqah */}
+            {(mode === "general" || (mode === "islamic" && islamicType === "sadqah")) && (
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">
                   Payment Frequency
