@@ -988,7 +988,12 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(cases)
-      .where(eq(cases.active, true));
+      .where(
+        and(
+          eq(cases.active, true),
+          gt(cases.amountRequired, cases.amountCollected)
+        )
+      );
   }
   
   async getCase(id: number): Promise<Case | undefined> {
