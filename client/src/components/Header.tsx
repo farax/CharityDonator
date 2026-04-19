@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useRoute } from "wouter";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import aafiyaaLogo from "@assets/ChatGPT_Image_Apr_19,_2026,_06_47_56_PM_1776588506889.png";
+import aafiyaaLogo from "@assets/Gemini_Generated_Image_k78z1bk78z1bk78z_1776588506892.png";
 import { cn } from "@/lib/utils";
 
 export default function Header() {
