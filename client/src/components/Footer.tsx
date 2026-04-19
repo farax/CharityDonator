@@ -14,7 +14,7 @@ export default function Footer() {
           {/* Organization Info */}
           <div>
             <div className="flex items-center mb-4">
-              <img src={aafiyaaLogo} alt="Aafiyaa Charity Clinics Logo" className="h-20 w-20 rounded-full object-cover shadow-md" />
+              <img src={aafiyaaLogo} alt="Aafiyaa Charity Clinics Logo" className="h-24 w-24 rounded-full object-cover shadow-md" />
             </div>
             <p className="mb-4 text-sm" style={{ color: 'rgba(245,237,214,0.7)' }}>
               Aafiyaa Charity Clinics provides essential medical services to those in need worldwide through your generous donations.

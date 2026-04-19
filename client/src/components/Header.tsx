@@ -61,7 +61,7 @@ export default function Header() {
                 alt="Aafiyaa Charity Clinics Logo"
                 className={cn(
                   "transition-all duration-300 transform mr-4 rounded-full object-cover",
-                  scrolled ? "h-[50px] w-[50px]" : "h-[60px] w-[60px]"
+                  scrolled ? "h-[68px] w-[68px]" : "h-[80px] w-[80px]"
                 )}
               />
               <div className="flex flex-col">
