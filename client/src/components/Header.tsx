@@ -56,14 +56,19 @@ export default function Header() {
             scrolled ? "scale-95" : "scale-100"
           )}>
             <Link href="/" className="flex items-center group">
-              <img
-                src={aafiyaaLogo}
-                alt="Aafiyaa Charity Clinics Logo"
+              <div
                 className={cn(
-                  "transition-all duration-300 transform mr-4 rounded-full object-cover",
+                  "rounded-full overflow-hidden flex-shrink-0 transition-all duration-300 mr-4",
                   scrolled ? "h-[68px] w-[68px]" : "h-[80px] w-[80px]"
                 )}
-              />
+                style={{ boxShadow: 'inset 0 0 0 3px #C8A850' }}
+              >
+                <img
+                  src={aafiyaaLogo}
+                  alt="Aafiyaa Charity Clinics Logo"
+                  className="w-full h-full object-cover"
+                />
+              </div>
               <div className="flex flex-col">
                 <div className="flex items-baseline space-x-2">
                   <h1 className={cn(
