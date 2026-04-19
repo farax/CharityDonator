@@ -176,7 +176,7 @@ export default function ContactUs() {
                     </p>
                     <Button 
                       onClick={() => setFormSuccess(false)}
-                      className="bg-primary hover:bg-teal-600"
+                      style={{ backgroundColor: '#2D5A3D', color: '#F5EDD6' }}
                     >
                       Send Another Message
                     </Button>
@@ -247,7 +247,8 @@ export default function ContactUs() {
                       <div className="space-y-2">
                         <Button 
                           type="submit" 
-                          className="w-full bg-primary hover:bg-teal-600"
+                          className="w-full"
+                          style={{ backgroundColor: '#2D5A3D', color: '#F5EDD6' }}
                           disabled={isSubmitting}
                         >
                           {isSubmitting ? 'Sending...' : 'Send Message'}

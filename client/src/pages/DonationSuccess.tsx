@@ -88,14 +88,17 @@ export default function DonationSuccess() {
 
   if (!donationDetails) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-teal-50 to-white flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #F0F9F4 0%, #FDFAF3 100%)' }}>
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
-              <CheckCircle className="h-16 w-16 text-teal-600 mx-auto mb-4" />
+              <CheckCircle className="h-16 w-16 mx-auto mb-4" style={{ color: '#2D5A3D' }} />
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Thank You!</h1>
               <p className="text-gray-600 mb-4">Your donation has been processed successfully.</p>
-              <Button onClick={() => navigate('/')} className="bg-teal-600 hover:bg-teal-700">
+              <Button
+                onClick={() => navigate('/')}
+                style={{ backgroundColor: '#2D5A3D', color: '#F5EDD6' }}
+              >
                 Return to Home
               </Button>
             </div>
@@ -131,14 +134,14 @@ export default function DonationSuccess() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-white flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #F0F9F4 0%, #FDFAF3 100%)' }}>
       <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center bg-teal-600 text-white rounded-t-lg">
+        <CardHeader className="text-center rounded-t-lg" style={{ backgroundColor: '#1C3D28', color: '#F5EDD6' }}>
           <div className="flex justify-center mb-4">
             <CheckCircle className="h-20 w-20" />
           </div>
           <CardTitle className="text-3xl font-bold">Donation Successful!</CardTitle>
-          <p className="text-teal-100 mt-2">Thank you for your generous contribution</p>
+          <p className="mt-2" style={{ color: 'rgba(245,237,214,0.8)' }}>Thank you for your generous contribution</p>
         </CardHeader>
         
         <CardContent className="pt-6">
@@ -149,7 +152,7 @@ export default function DonationSuccess() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <span className="text-sm text-gray-600">Amount</span>
-                  <p className="text-2xl font-bold text-teal-600">
+                  <p className="text-2xl font-bold" style={{ color: '#2D5A3D' }}>
                     {formatAmount(donationDetails.amount, donationDetails.currency)}
                   </p>
                 </div>
@@ -234,7 +237,7 @@ export default function DonationSuccess() {
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button 
                   onClick={() => navigate('/')}
-                  className="bg-teal-600 hover:bg-teal-700"
+                  style={{ backgroundColor: '#2D5A3D', color: '#F5EDD6' }}
                 >
                   Return to Home
                 </Button>

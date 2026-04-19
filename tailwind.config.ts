@@ -11,6 +11,23 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       colors: {
+        brand: {
+          green: {
+            dark:  '#1C3D28',
+            mid:   '#2D5A3D',
+            light: '#F0F9F4',
+          },
+          gold: {
+            dark:  '#9A7820',
+            mid:   '#C8A850',
+            light: '#FDF8EE',
+          },
+          cream: {
+            dark:  '#E8DFC0',
+            mid:   '#F5EDD6',
+            light: '#FDFAF3',
+          },
+        },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {

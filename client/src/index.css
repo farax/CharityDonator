@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Brand colour tokens */
+:root {
+  --color-primary:        #2D5A3D;
+  --color-primary-dark:   #1C3D28;
+  --color-primary-light:  #F0F9F4;
+  --color-accent:         #C8A850;
+  --color-accent-light:   #FDF8EE;
+  --color-cream:          #FDFAF3;
+  --color-cream-border:   #D8C89A;
+  --color-text-dark:      #1C3D28;
+  --color-text-muted:     #8A7A50;
+}
+
 /* Stripe Element styling - default values */
 .StripeElement iframe {
   --stripe-font-family: system-ui, sans-serif;

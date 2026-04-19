@@ -77,7 +77,7 @@ export default function CaseSelector({ open, onOpenChange }: CaseSelectorProps) 
         
         {isLoading ? (
           <div className="flex items-center justify-center p-8 h-64">
-            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#2D5A3D', borderTopColor: 'transparent' }}></div>
           </div>
         ) : cases.length === 0 ? (
           <div className="text-center p-8 h-64 flex flex-col items-center justify-center">
@@ -101,15 +101,15 @@ export default function CaseSelector({ open, onOpenChange }: CaseSelectorProps) 
               <p className="text-gray-600 mb-4">{currentCase?.description}</p>
               
               <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="bg-green-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">Raised so far</p>
-                  <p className="text-lg font-semibold text-green-600">
+                <div className="p-3 rounded-lg" style={{ backgroundColor: '#F0F9F4' }}>
+                  <p className="text-sm" style={{ color: '#8A7A50' }}>Raised so far</p>
+                  <p className="text-lg font-semibold" style={{ color: '#2D5A3D' }}>
                     {currentCase && formatAmount(currentCase.amountCollected)}
                   </p>
                 </div>
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">Still needed</p>
-                  <p className="text-lg font-semibold text-primary">
+                <div className="p-3 rounded-lg" style={{ backgroundColor: '#FDF8EE' }}>
+                  <p className="text-sm" style={{ color: '#8A7A50' }}>Still needed</p>
+                  <p className="text-lg font-semibold" style={{ color: '#C8A850' }}>
                     {currentCase && formatAmount(Math.max(0, currentCase.amountRequired - currentCase.amountCollected))}
                   </p>
                 </div>
@@ -118,8 +118,9 @@ export default function CaseSelector({ open, onOpenChange }: CaseSelectorProps) 
               <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
                 {currentCase && (
                   <div 
-                    className="bg-primary h-2.5 rounded-full" 
+                    className="h-2.5 rounded-full"
                     style={{ 
+                      backgroundColor: '#2D5A3D',
                       width: `${Math.min(
                         (currentCase.amountCollected / currentCase.amountRequired) * 100, 
                         100
@@ -159,7 +160,8 @@ export default function CaseSelector({ open, onOpenChange }: CaseSelectorProps) 
                   </Button>
                   <Button 
                     onClick={handleSelect}
-                    className="bg-teal-600 hover:bg-teal-700 text-white font-semibold"
+                    className="font-semibold text-white"
+                    style={{ backgroundColor: '#2D5A3D' }}
                   >
                     Select This Case
                   </Button>

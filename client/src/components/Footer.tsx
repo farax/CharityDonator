@@ -9,113 +9,111 @@ export default function Footer() {
   
   return (
     <>
-      <footer className="bg-gray-800 text-white pt-12 pb-6">
+      <footer className="pt-12 pb-6" style={{ backgroundColor: '#1C3D28', color: '#F5EDD6' }}>
         <div className="container mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 items-start">
           {/* Organization Info */}
           <div>
             <div className="flex items-center mb-4">
               <img src={aafiyaaLogo} alt="Aafiyaa Charity Clinics Logo" className="h-20 filter brightness-0 invert" />
             </div>
-            <p className="text-gray-300 mb-4">
+            <p className="mb-4 text-sm" style={{ color: 'rgba(245,237,214,0.7)' }}>
               Aafiyaa Charity Clinics provides essential medical services to those in need worldwide through your generous donations.
             </p>
             <div className="flex space-x-4">
-              <a 
-                href="https://www.facebook.com/profile.php?id=61574053173620" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-gray-300 hover:text-white"
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white">
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white">
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white">
-                <Linkedin className="h-5 w-5" />
-              </a>
+              {[
+                { href: 'https://www.facebook.com/profile.php?id=61574053173620', Icon: Facebook },
+                { href: '#', Icon: Twitter },
+                { href: '#', Icon: Instagram },
+                { href: '#', Icon: Linkedin },
+              ].map(({ href, Icon }, i) => (
+                <a
+                  key={i}
+                  href={href}
+                  target={href !== '#' ? '_blank' : undefined}
+                  rel="noopener noreferrer"
+                  className="transition-colors"
+                  style={{ color: 'rgba(245,237,214,0.6)' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#C8A850')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'rgba(245,237,214,0.6)')}
+                >
+                  <Icon className="h-5 w-5" />
+                </a>
+              ))}
             </div>
           </div>
           
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+            <h3 className="text-lg font-semibold mb-4" style={{ color: '#F5EDD6' }}>Quick Links</h3>
             <ul className="space-y-2">
-              <li>
-                <Link href="/" className="text-gray-300 hover:text-white">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link href="/get-involved" className="text-gray-300 hover:text-white">
-                  Get Involved
-                </Link>
-              </li>
-              <li>
-                <Link href="/active-cases" className="text-gray-300 hover:text-white">
-                  Active Cases
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="text-gray-300 hover:text-white">
-                  About Us
-                </Link>
-              </li>
+              {[
+                { href: '/', label: 'Home' },
+                { href: '/get-involved', label: 'Get Involved' },
+                { href: '/active-cases', label: 'Active Cases' },
+                { href: '/about', label: 'About Us' },
+              ].map(({ href, label }) => (
+                <li key={href + label}>
+                  <Link
+                    href={href}
+                    className="text-sm transition-colors"
+                    style={{ color: 'rgba(245,237,214,0.7)' }}
+                    onMouseEnter={(e: any) => (e.currentTarget.style.color = '#C8A850')}
+                    onMouseLeave={(e: any) => (e.currentTarget.style.color = 'rgba(245,237,214,0.7)')}
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* Get Involved */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Get Involved</h3>
+            <h3 className="text-lg font-semibold mb-4" style={{ color: '#F5EDD6' }}>Get Involved</h3>
             <ul className="space-y-2">
-              <li>
-                <Link href="/" className="text-gray-300 hover:text-white">
-                  Donate Now
-                </Link>
-              </li>
-              <li>
-                <Link href="/get-involved" className="text-gray-300 hover:text-white">
-                  Volunteer
-                </Link>
-              </li>
-              <li>
-                <Link href="/sponsor" className="text-gray-300 hover:text-white">
-                  Sponsor a Case
-                </Link>
-              </li>
-              <li>
-                <Link href="/events" className="text-gray-300 hover:text-white">
-                  Events
-                </Link>
-              </li>
+              {[
+                { href: '/', label: 'Donate Now' },
+                { href: '/get-involved', label: 'Volunteer' },
+                { href: '/sponsor', label: 'Sponsor a Case' },
+                { href: '/events', label: 'Events' },
+              ].map(({ href, label }) => (
+                <li key={href + label}>
+                  <Link
+                    href={href}
+                    className="text-sm transition-colors"
+                    style={{ color: 'rgba(245,237,214,0.7)' }}
+                    onMouseEnter={(e: any) => (e.currentTarget.style.color = '#C8A850')}
+                    onMouseLeave={(e: any) => (e.currentTarget.style.color = 'rgba(245,237,214,0.7)')}
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
+            <h3 className="text-lg font-semibold mb-4" style={{ color: '#F5EDD6' }}>Contact Us</h3>
             <ul className="space-y-2">
               <li className="flex items-center">
-                <MapPin className="h-4 w-4 mr-3 text-teal-400" />
-                <span className="text-gray-300">Australia & Pakistan</span>
+                <MapPin className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: '#C8A850' }} />
+                <span className="text-sm" style={{ color: 'rgba(245,237,214,0.7)' }}>Australia & Pakistan</span>
               </li>
               <li className="flex items-center">
-                <Mail className="h-4 w-4 mr-3 text-teal-400" />
-                <span className="text-gray-300">info@aafiyaa.org</span>
+                <Mail className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: '#C8A850' }} />
+                <span className="text-sm" style={{ color: 'rgba(245,237,214,0.7)' }}>info@aafiyaa.org</span>
               </li>
               <li className="flex items-center">
-                <Phone className="h-4 w-4 mr-3 text-teal-400" />
-                <span className="text-gray-300">+61 (04) 1234 5678</span>
+                <Phone className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: '#C8A850' }} />
+                <span className="text-sm" style={{ color: 'rgba(245,237,214,0.7)' }}>+61 (04) 1234 5678</span>
               </li>
             </ul>
           </div>
 
-          {/* ACNC Registration - Prominent Column */}
+          {/* ACNC Registration */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Registered Charity</h3>
+            <h3 className="text-lg font-semibold mb-4" style={{ color: '#F5EDD6' }}>Registered Charity</h3>
             <div className="flex flex-col items-start">
               <div className="flex items-center space-x-4 mb-3">
                 <div 
@@ -125,7 +123,8 @@ export default function Footer() {
                   <img 
                     src="/images/ACNC-Registered-Charity-Logo_RGB.png" 
                     alt="ACNC Registered Charity" 
-                    className="h-20 w-20 md:h-24 md:w-24 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group-hover:ring-4 group-hover:ring-teal-400/50"
+                    className="h-20 w-20 md:h-24 md:w-24 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+                    style={{ '--tw-ring-color': 'rgba(200,168,80,0.5)' } as any}
                   />
                 </div>
                 <div className="transition-transform duration-300 hover:scale-105">
@@ -136,10 +135,10 @@ export default function Footer() {
                   />
                 </div>
               </div>
-              <p className="text-gray-300 text-sm font-medium">
+              <p className="text-sm font-medium" style={{ color: 'rgba(245,237,214,0.7)' }}>
                 Click ACNC logo to expand
               </p>
-              <p className="text-gray-400 text-xs">
+              <p className="text-xs mt-1" style={{ color: 'rgba(245,237,214,0.5)' }}>
                 Officially Registered & Certified
               </p>
             </div>
@@ -147,30 +146,33 @@ export default function Footer() {
         </div>
 
         {/* Bottom Copyright Section */}
-        <div className="container mx-auto px-4 mt-8 pt-6 border-t border-gray-700">
+        <div
+          className="container mx-auto px-4 mt-8 pt-6 border-t"
+          style={{ borderColor: 'rgba(200,168,80,0.2)' }}
+        >
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
-              <p className="text-gray-400 text-sm">© {new Date().getFullYear()} Aafiyaa Charity Clinics. All rights reserved.</p>
-            </div>
-            <div className="mt-4 md:mt-0">
-              <ul className="flex space-x-4 text-sm">
-                <li>
-                  <Link href="/privacy" className="text-gray-400 hover:text-white">
-                    Privacy Policy
+            <p className="text-sm" style={{ color: 'rgba(245,237,214,0.5)' }}>
+              © {new Date().getFullYear()} Aafiyaa Charity Clinics. All rights reserved.
+            </p>
+            <ul className="flex space-x-4 text-sm mt-4 md:mt-0">
+              {[
+                { href: '/privacy', label: 'Privacy Policy' },
+                { href: '/terms', label: 'Terms of Service' },
+                { href: '/donation-policy', label: 'Donation Policy' },
+              ].map(({ href, label }) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className="transition-colors"
+                    style={{ color: 'rgba(245,237,214,0.5)' }}
+                    onMouseEnter={(e: any) => (e.currentTarget.style.color = '#C8A850')}
+                    onMouseLeave={(e: any) => (e.currentTarget.style.color = 'rgba(245,237,214,0.5)')}
+                  >
+                    {label}
                   </Link>
                 </li>
-                <li>
-                  <Link href="/terms" className="text-gray-400 hover:text-white">
-                    Terms of Service
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/donation-policy" className="text-gray-400 hover:text-white">
-                    Donation Policy
-                  </Link>
-                </li>
-              </ul>
-            </div>
+              ))}
+            </ul>
           </div>
         </div>
       </footer>
@@ -199,7 +201,7 @@ export default function Footer() {
               </div>
               
               <div className="space-y-4 text-gray-700">
-                <p className="text-lg font-semibold text-center text-teal-600">
+                <p className="text-lg font-semibold text-center" style={{ color: '#2D5A3D' }}>
                   Australian Charities and Not-for-profits Commission
                 </p>
                 
@@ -209,7 +211,7 @@ export default function Footer() {
                     <li><strong>Organization:</strong> Aafiyaa Charity Clinics</li>
                     <li><strong>Status:</strong> Registered Charity</li>
                     <li><strong>Registry:</strong> Australian Charities and Not-for-profits Commission (ACNC)</li>
-                    <li><strong>Website:</strong> <a href="https://acnc.gov.au/charityregister" target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">acnc.gov.au/charityregister</a></li>
+                    <li><strong>Website:</strong> <a href="https://acnc.gov.au/charityregister" target="_blank" rel="noopener noreferrer" style={{ color: '#2D5A3D' }} className="hover:underline">acnc.gov.au/charityregister</a></li>
                   </ul>
                 </div>
                 
@@ -222,7 +224,10 @@ export default function Footer() {
                 <div className="flex justify-center pt-4">
                   <button
                     onClick={() => setShowAcncModal(false)}
-                    className="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition-colors"
+                    className="text-white px-6 py-2 rounded-lg transition-colors"
+                    style={{ backgroundColor: '#2D5A3D' }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#1C3D28')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#2D5A3D')}
                   >
                     Close
                   </button>

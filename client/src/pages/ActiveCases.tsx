@@ -200,7 +200,8 @@ export default function ActiveCases() {
                   <CardFooter>
                     <Link href="/">
                       <Button 
-                        className="w-full bg-primary hover:bg-teal-600"
+                        className="w-full"
+                        style={{ backgroundColor: '#2D5A3D', color: '#F5EDD6' }}
                         onClick={() => handleDonateClick(caseItem)}
                       >
                         Donate to this case

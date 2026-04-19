@@ -29,7 +29,7 @@ export default function VideoTestimonials() {
     <section className="py-16 bg-gradient-to-b from-white to-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-teal-100 text-teal-600 mb-4">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-4" style={{ backgroundColor: '#F0F9F4', color: '#2D5A3D' }}>
             <Quote className="h-6 w-6" />
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3">
@@ -80,7 +80,7 @@ export default function VideoTestimonials() {
                         }}
                       />
                       <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
-                        <div className="w-14 h-14 rounded-full bg-teal-600 group-hover:bg-teal-500 transition-colors duration-300 flex items-center justify-center shadow-lg">
+                        <div className="w-14 h-14 rounded-full transition-colors duration-300 flex items-center justify-center shadow-lg" style={{ backgroundColor: '#2D5A3D' }}>
                           <Play className="h-7 w-7 text-white ml-1" fill="white" />
                         </div>
                       </div>

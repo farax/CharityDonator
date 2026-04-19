@@ -8,6 +8,25 @@ Aafiyaa Charity Clinics is a sophisticated donation platform that facilitates ch
 
 Preferred communication style: Simple, everyday language.
 
+## Brand Colours (Updated April 2026)
+
+Deep forest green + warm gold + cream palette to match new Aafiyaa logo.
+
+| Token | Hex |
+|---|---|
+| Green dark | `#1C3D28` |
+| Green mid (primary) | `#2D5A3D` |
+| Green light (bg) | `#F0F9F4` |
+| Gold mid (accent) | `#C8A850` |
+| Gold light (bg) | `#FDF8EE` |
+| Cream (card bg) | `#FDFAF3` |
+| Cream border | `#D8C89A` |
+| Text dark | `#1C3D28` |
+| Text muted | `#8A7A50` |
+| Text gold-brown | `#6B5020` |
+
+All teal (`bg-teal-*`, `text-teal-*`) replaced sitewide. Colours applied via inline `style` props and CSS variables in `index.css`. Brand tokens also defined in `tailwind.config.ts` under `colors.brand.*`.
+
 ## System Architecture
 
 ### Frontend Architecture
