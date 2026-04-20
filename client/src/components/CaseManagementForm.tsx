@@ -59,6 +59,7 @@ export default function CaseManagementForm({
       amountRequired: 0,
       active: true,
       recurringAllowed: false,
+      zakaatEligible: true,
       imageUrl: '',
     },
   });
@@ -72,6 +73,7 @@ export default function CaseManagementForm({
         amountRequired: caseToEdit.amountRequired,
         active: caseToEdit.active,
         recurringAllowed: caseToEdit.recurringAllowed,
+        zakaatEligible: caseToEdit.zakaatEligible ?? true,
         imageUrl: caseToEdit.imageUrl || '',
       });
     } else {
@@ -81,6 +83,7 @@ export default function CaseManagementForm({
         amountRequired: 0,
         active: true,
         recurringAllowed: false,
+        zakaatEligible: true,
         imageUrl: '',
       });
     }
@@ -252,6 +255,27 @@ export default function CaseManagementForm({
                     <FormLabel className="text-base">
                       Recurring Donation
                     </FormLabel>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="zakaatEligible"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Zakaat Eligible</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Show this case as eligible for Zakaat donations
+                    </div>
                   </div>
                   <FormControl>
                     <Switch

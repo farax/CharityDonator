@@ -67,6 +67,7 @@ var cases = pgTable("cases", {
   amountCollected: real("amount_collected").notNull().default(0),
   active: boolean("active").notNull().default(true),
   recurringAllowed: boolean("recurring_allowed").notNull().default(false),
+  zakaatEligible: boolean("zakaat_eligible").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
 var insertCaseSchema = createInsertSchema(cases).omit({

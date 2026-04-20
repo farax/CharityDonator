@@ -132,12 +132,21 @@ export default function ActiveCases() {
                     <div className="mb-3">
                       <CardTitle className="text-xl font-bold mb-3">{caseItem.title}</CardTitle>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge 
-                          variant="secondary" 
-                          className="bg-green-100 text-green-800 border-green-200 font-medium"
-                        >
-                          ✓ Zakaat Eligible
-                        </Badge>
+                        {caseItem.zakaatEligible !== false ? (
+                          <Badge
+                            variant="secondary"
+                            className="bg-green-100 text-green-800 border-green-200 font-medium"
+                          >
+                            ✓ Zakaat Eligible
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="secondary"
+                            className="bg-red-100 text-red-800 border-red-200 font-medium"
+                          >
+                            ✗ Not Zakaat Eligible
+                          </Badge>
+                        )}
                         {caseItem.recurringAllowed && (
                           <Badge 
                             variant="secondary" 
