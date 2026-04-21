@@ -1,7 +1,7 @@
 import { Link } from 'wouter';
 import { Heart, MapPin, Mail, Phone, Facebook, Twitter, Instagram, Linkedin, X } from 'lucide-react';
-import aafiyaaLogo from '@assets/ChatGPT_Image_Apr_19,_2026,_07_24_23_PM_1776590725191.png';
-import additionalLogo from '@assets/WhatsApp Image 2025-06-17 at 21.06.34_1750160957596.jpeg';
+import aafiyaaLogo from '../assets/aafiyaa-logo.png';
+import additionalLogo from '../assets/additional-logo.jpeg';
 import { useState } from 'react';
 
 export default function Footer() {

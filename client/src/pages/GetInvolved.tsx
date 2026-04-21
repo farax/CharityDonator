@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import volunteerPoster from "@assets/volunteer.png";
+import volunteerPoster from "../assets/volunteer.png";
 import { Link } from "wouter";
 import { 
   Card, 
