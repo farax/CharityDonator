@@ -205,7 +205,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
     if (isSubscription) {
       // For subscriptions, we need to collect payment method and then create a subscription
       try {
-        // Must call elements.submit() before any async work and before confirmSetup
+        // Validate the form fields first
         const { error: submitError } = await elements.submit();
         if (submitError) {
           toast({ variant: "destructive", title: "Payment validation failed", description: submitError.message });
@@ -213,38 +213,27 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           return;
         }
 
-        // Create the SetupIntent with the current donation details
-        const response = await apiRequest("POST", "/api/create-setup-intent", {
-          donationId: donationDetails.id
-        });
-        const data = await response.json();
-
-        // Confirm the SetupIntent with the collected payment method
-        const { error: confirmError, setupIntent } = await stripe.confirmSetup({
-          elements,
-          clientSecret: data.clientSecret,
-          confirmParams: {
-            return_url: window.location.origin, // Not used but required
-          },
-          redirect: 'if_required'
-        });
+        // Extract payment method directly from the Elements form
+        const { paymentMethod, error: pmError } = await stripe.createPaymentMethod({ elements });
         
-        if (confirmError) {
-          throw new Error(confirmError.message);
+        if (pmError) {
+          toast({ variant: "destructive", title: "Payment validation failed", description: pmError.message });
+          setIsLoading(false);
+          return;
         }
         
-        if (!setupIntent || !setupIntent.payment_method) {
+        if (!paymentMethod) {
           throw new Error('Failed to collect payment method');
         }
-        
-        // 2. Create a subscription with the payment method
+
+        // Create a subscription with the payment method
         const subscriptionResponse = await apiRequest("POST", "/api/create-subscription", {
           donationId: donationDetails.id,
           amount: donationDetails.amount,
           currency: donationDetails.currency,
           email: email,
           name: name,
-          paymentMethodId: typeof setupIntent.payment_method === 'string' ? setupIntent.payment_method : setupIntent.payment_method.id,
+          paymentMethodId: paymentMethod.id,
           frequency: donationDetails.frequency
         });
         
