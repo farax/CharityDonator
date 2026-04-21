@@ -1167,9 +1167,26 @@ export default function Payment() {
                   <>
                     {stripePromise ? (
                       <Elements 
+                        key={isSubscription ? 'setup' : 'payment'}
                         stripe={stripePromise} 
-                        options={{ 
-                          mode: 'payment',
+                        options={isSubscription ? {
+                          mode: 'setup' as const,
+                          currency: donationDetails?.currency?.toLowerCase() || currency?.toLowerCase() || 'usd',
+                          appearance: { 
+                            theme: 'stripe',
+                            variables: {
+                              fontFamily: 'system-ui, sans-serif',
+                              colorPrimary: '#10b981',
+                            },
+                            rules: {
+                              '.Label': {
+                                fontWeight: '500'
+                              }
+                            }
+                          },
+                          loader: 'auto'
+                        } : {
+                          mode: 'payment' as const,
                           currency: donationDetails?.currency?.toLowerCase() || currency?.toLowerCase() || 'usd',
                           amount: donationDetails ? Math.round((coverFees ? feeBreakdown?.totalWithFees || donationDetails.amount : donationDetails.amount) * 100) : 100,
                           appearance: { 
