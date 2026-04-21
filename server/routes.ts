@@ -1166,7 +1166,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         frequency = 'monthly' 
       } = req.body;
       
+      console.log('[CREATE-SUBSCRIPTION] Received:', { donationId, amount, currency, email: email ? '[set]' : '[MISSING]', name: name ? '[set]' : '[empty]', paymentMethodId: paymentMethodId ? '[set]' : '[MISSING]', frequency });
       if (!donationId || !amount || !email || !paymentMethodId) {
+        console.log('[CREATE-SUBSCRIPTION] Validation failed - missing fields:', { donationId: !!donationId, amount: !!amount, email: !!email, paymentMethodId: !!paymentMethodId });
         return res.status(400).json({ 
           message: 'Donation ID, amount, email, and payment method ID are required' 
         });

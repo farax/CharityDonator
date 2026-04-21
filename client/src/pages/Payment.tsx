@@ -216,23 +216,29 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         // Extract payment method directly from the Elements form
         const { paymentMethod, error: pmError } = await stripe.createPaymentMethod({ elements });
         
+        console.log('[SUBSCRIPTION DEBUG] createPaymentMethod result:', { paymentMethod, pmError });
+        
         if (pmError) {
           toast({ variant: "destructive", title: "Payment validation failed", description: pmError.message });
           setIsLoading(false);
           return;
         }
         
-        if (!paymentMethod) {
+        if (!paymentMethod || !paymentMethod.id) {
           throw new Error('Failed to collect payment method');
         }
+        
+        const resolvedEmail = email || donationDetails?.email || '';
+        const resolvedName = name || donationDetails?.name || '';
+        console.log('[SUBSCRIPTION DEBUG] sending paymentMethodId:', paymentMethod.id, 'donationId:', donationDetails.id, 'email:', resolvedEmail);
 
         // Create a subscription with the payment method
         const subscriptionResponse = await apiRequest("POST", "/api/create-subscription", {
           donationId: donationDetails.id,
           amount: donationDetails.amount,
           currency: donationDetails.currency,
-          email: email,
-          name: name,
+          email: resolvedEmail,
+          name: resolvedName,
           paymentMethodId: paymentMethod.id,
           frequency: donationDetails.frequency
         });
