@@ -1160,6 +1160,7 @@ export default function Payment() {
                         stripe={stripePromise} 
                         options={isSubscription ? {
                           mode: 'setup' as const,
+                          paymentMethodCreation: 'manual' as const,
                           currency: donationDetails?.currency?.toLowerCase() || currency?.toLowerCase() || 'usd',
                           appearance: { 
                             theme: 'stripe',
