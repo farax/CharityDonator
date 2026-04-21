@@ -1113,9 +1113,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create a SetupIntent to collect payment method for future subscription charges
       const setupIntent = await stripe.setupIntents.create({
-        payment_method_types: ['card'], // Limit to card payments only
-        usage: 'off_session', // Allow using this payment method for future off-session charges
-        description: 'Recurring donation to Aafiyaa Ltd.', // Set the company name in authorization text
+        automatic_payment_methods: { enabled: true },
+        usage: 'off_session',
+        description: 'Recurring donation to Aafiyaa Ltd.',
         metadata: {
           donationId: donationId.toString(),
           isSubscription: 'true',
