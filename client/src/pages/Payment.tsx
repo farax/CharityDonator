@@ -205,6 +205,14 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
     if (isSubscription) {
       // For subscriptions, we need to collect payment method and then create a subscription
       try {
+        // Must call elements.submit() before any async work and before confirmSetup
+        const { error: submitError } = await elements.submit();
+        if (submitError) {
+          setError(submitError.message || 'Payment validation failed');
+          setIsLoading(false);
+          return;
+        }
+
         // Create the SetupIntent with the current donation details
         const response = await apiRequest("POST", "/api/create-setup-intent", {
           donationId: donationDetails.id
