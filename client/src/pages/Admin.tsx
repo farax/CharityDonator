@@ -167,27 +167,21 @@ export default function Admin() {
   
   // Check for authentication status and redirect if unauthorized
   useEffect(() => {
-    // First, attempt to verify admin status with a simple request
     const checkAdminStatus = async () => {
       try {
-        const res = await apiRequest('GET', '/api/payment-history');
-        if (!res.ok) {
-          if (res.status === 401) {
-            toast({
-              title: "Authentication Required",
-              description: "Please log in to access the admin dashboard",
-              variant: "destructive",
-            });
-            setLocation('/admin/login');
-          }
+        const res = await apiRequest('GET', '/api/admin/status');
+        if (res.status === 401) {
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to access the admin dashboard",
+            variant: "destructive",
+          });
+          setLocation('/admin/login');
         }
+        // Any other response (200 or server error) — stay on the page
       } catch (error) {
-        toast({
-          title: "Authentication Error",
-          description: "Unable to verify authentication status",
-          variant: "destructive",
-        });
-        setLocation('/admin/login');
+        // Network error — don't redirect, just log
+        console.error("Could not verify admin status:", error);
       }
     };
     

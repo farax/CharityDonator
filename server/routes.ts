@@ -108,6 +108,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
   
+  // Lightweight admin auth check - no DB queries
+  app.get("/api/admin/status", (req, res) => {
+    if (req.session && req.session.adminAuthenticated === true) {
+      res.json({ authenticated: true });
+    } else {
+      res.status(401).json({ authenticated: false });
+    }
+  });
+
   // API routes
   app.get("/api/stats", async (req, res) => {
     try {
