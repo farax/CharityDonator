@@ -16,6 +16,7 @@ interface DonationDetails {
   caseTitle?: string;
   destinationProject?: string;
   donationId?: number;
+  hasReceiptData?: boolean;
 }
 
 export default function DonationSuccess() {

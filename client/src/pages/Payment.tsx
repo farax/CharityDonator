@@ -208,7 +208,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
         // Must call elements.submit() before any async work and before confirmSetup
         const { error: submitError } = await elements.submit();
         if (submitError) {
-          setError(submitError.message || 'Payment validation failed');
+          toast({ variant: "destructive", title: "Payment validation failed", description: submitError.message });
           setIsLoading(false);
           return;
         }
@@ -502,7 +502,7 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
       <Button 
         type="submit" 
         className="w-full py-3" 
-        disabled={!stripe || isLoading || (wantsReceipt && !isFormValid)}
+        disabled={!stripe || isLoading || !!(wantsReceipt && !isFormValid)}
       >
         {isLoading ? (
           <>

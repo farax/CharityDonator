@@ -662,6 +662,8 @@ var MemStorage = class {
       createdAt: /* @__PURE__ */ new Date(),
       name: insertDonation.name || null,
       email: insertDonation.email || null,
+      firstName: insertDonation.firstName ?? null,
+      lastName: insertDonation.lastName ?? null,
       status: insertDonation.status || "pending",
       currency: insertDonation.currency || "USD",
       frequency: insertDonation.frequency || "one-off",
@@ -833,6 +835,7 @@ var MemStorage = class {
       amountCollected: 0,
       active: caseData.active !== void 0 ? caseData.active : true,
       recurringAllowed: caseData.recurringAllowed ?? false,
+      zakaatEligible: caseData.zakaatEligible !== void 0 ? caseData.zakaatEligible : true,
       createdAt: /* @__PURE__ */ new Date()
     };
     this.casesList.set(id, newCase);
@@ -905,7 +908,15 @@ var MemStorage = class {
     const receipt = {
       ...receiptData,
       id,
-      createdAt: /* @__PURE__ */ new Date()
+      createdAt: /* @__PURE__ */ new Date(),
+      status: receiptData.status || "pending",
+      donorName: receiptData.donorName ?? null,
+      donorEmail: receiptData.donorEmail ?? null,
+      errorMessage: receiptData.errorMessage ?? null,
+      caseId: receiptData.caseId ?? null,
+      filePath: receiptData.filePath ?? null,
+      generatedAt: receiptData.generatedAt ?? null,
+      sentAt: receiptData.sentAt ?? null
     };
     this.receiptsList.set(id, receipt);
     return receipt;
@@ -914,7 +925,7 @@ var MemStorage = class {
     return this.receiptsList.get(id);
   }
   async getReceiptByNumber(receiptNumber) {
-    for (const receipt of this.receiptsList.values()) {
+    for (const receipt of Array.from(this.receiptsList.values())) {
       if (receipt.receiptNumber === receiptNumber) {
         return receipt;
       }
@@ -923,7 +934,7 @@ var MemStorage = class {
   }
   async getReceiptsByDonationId(donationId) {
     const receipts2 = [];
-    for (const receipt of this.receiptsList.values()) {
+    for (const receipt of Array.from(this.receiptsList.values())) {
       if (receipt.donationId === donationId) {
         receipts2.push(receipt);
       }
@@ -3683,7 +3694,8 @@ async function registerRoutes(app2) {
       let errors = [];
       for (const donation of stuckDonations) {
         try {
-          const paymentIntentId = donation.stripePaymentId.split("|")[0];
+          const paymentIntentId = (donation.stripePaymentId ?? "").split("|")[0];
+          if (!paymentIntentId) continue;
           console.log(`[STRIPE-SYNC] Checking payment intent ${paymentIntentId} for donation ${donation.id}`);
           const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
           if (paymentIntent.status === "succeeded") {

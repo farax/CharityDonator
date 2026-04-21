@@ -1754,7 +1754,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const donation of stuckDonations) {
         try {
           // Extract payment intent ID (remove client secret if present)
-          const paymentIntentId = donation.stripePaymentId.split('|')[0];
+          const paymentIntentId = (donation.stripePaymentId ?? '').split('|')[0];
+          if (!paymentIntentId) continue;
           
           console.log(`[STRIPE-SYNC] Checking payment intent ${paymentIntentId} for donation ${donation.id}`);
           

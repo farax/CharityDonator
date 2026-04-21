@@ -284,6 +284,8 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       name: insertDonation.name || null,
       email: insertDonation.email || null,
+      firstName: insertDonation.firstName ?? null,
+      lastName: insertDonation.lastName ?? null,
       status: insertDonation.status || 'pending',
       currency: insertDonation.currency || 'USD',
       frequency: insertDonation.frequency || 'one-off',
@@ -508,6 +510,7 @@ export class MemStorage implements IStorage {
       amountCollected: 0,
       active: caseData.active !== undefined ? caseData.active : true,
       recurringAllowed: caseData.recurringAllowed ?? false,
+      zakaatEligible: caseData.zakaatEligible !== undefined ? caseData.zakaatEligible : true,
       createdAt: new Date()
     };
     this.casesList.set(id, newCase);
@@ -597,7 +600,15 @@ export class MemStorage implements IStorage {
     const receipt: Receipt = {
       ...receiptData,
       id,
-      createdAt: new Date()
+      createdAt: new Date(),
+      status: receiptData.status || 'pending',
+      donorName: receiptData.donorName ?? null,
+      donorEmail: receiptData.donorEmail ?? null,
+      errorMessage: receiptData.errorMessage ?? null,
+      caseId: receiptData.caseId ?? null,
+      filePath: receiptData.filePath ?? null,
+      generatedAt: receiptData.generatedAt ?? null,
+      sentAt: receiptData.sentAt ?? null,
     };
     this.receiptsList.set(id, receipt);
     return receipt;
@@ -608,7 +619,7 @@ export class MemStorage implements IStorage {
   }
   
   async getReceiptByNumber(receiptNumber: string): Promise<Receipt | undefined> {
-    for (const receipt of this.receiptsList.values()) {
+    for (const receipt of Array.from(this.receiptsList.values())) {
       if (receipt.receiptNumber === receiptNumber) {
         return receipt;
       }
@@ -618,7 +629,7 @@ export class MemStorage implements IStorage {
   
   async getReceiptsByDonationId(donationId: number): Promise<Receipt[]> {
     const receipts: Receipt[] = [];
-    for (const receipt of this.receiptsList.values()) {
+    for (const receipt of Array.from(this.receiptsList.values())) {
       if (receipt.donationId === donationId) {
         receipts.push(receipt);
       }
