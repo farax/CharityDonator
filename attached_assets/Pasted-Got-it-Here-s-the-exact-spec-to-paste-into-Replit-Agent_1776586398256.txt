@@ -1,0 +1,161 @@
+Got it. Here's the exact spec to paste into Replit Agent:
+
+---
+
+**Revamp `client/src/components/DonationWidget.tsx` — Option B: Choice Cards**
+
+**Goal:** Replace the current tab-based donation type selector with two side-by-side choice cards as the first thing the user sees in the widget. General charity is selected by default. Islamic giving reveals sub-options (Sadqah, Zakaat, Dispose Interest) when selected.
+
+---
+
+**1. Add a `mode` state at the top of the component:**
+
+```ts
+type DonationMode = "general" | "islamic";
+const [mode, setMode] = useState<DonationMode>("general");
+const [islamicType, setIslamicType] = useState<"sadqah" | "zakaat" | "interest">("sadqah");
+```
+
+**2. Sync `mode` + `islamicType` → internal `type` (from DonationContext):**
+
+```ts
+useEffect(() => {
+  if (mode === "general") setType("sadqah");
+  else setType(islamicType);
+}, [mode, islamicType]);
+```
+
+**3. Replace the existing donation type tabs section with these two choice cards:**
+
+```tsx
+<div className="mb-5">
+  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+    How would you like to give?
+  </h3>
+  <div className="grid grid-cols-2 gap-3">
+
+    {/* General card */}
+    <button
+      onClick={() => setMode("general")}
+      className={`text-left p-4 rounded-xl border-2 transition-all duration-150 ${
+        mode === "general"
+          ? "border-teal-500 bg-teal-50"
+          : "border-gray-200 bg-white hover:border-gray-300"
+      }`}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 ${
+          mode === "general"
+            ? "border-teal-500 bg-teal-500"
+            : "border-gray-300 bg-white"
+        }`} />
+        <span className={`font-semibold text-sm ${mode === "general" ? "text-teal-800" : "text-gray-700"}`}>
+          General charity
+        </span>
+      </div>
+      <p className="text-xs text-gray-500 leading-relaxed pl-5">
+        Any cause — goes to clinic operations
+      </p>
+    </button>
+
+    {/* Islamic giving card */}
+    <button
+      onClick={() => setMode("islamic")}
+      className={`text-left p-4 rounded-xl border-2 transition-all duration-150 ${
+        mode === "islamic"
+          ? "border-teal-500 bg-teal-50"
+          : "border-gray-200 bg-white hover:border-gray-300"
+      }`}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 ${
+          mode === "islamic"
+            ? "border-teal-500 bg-teal-500"
+            : "border-gray-300 bg-white"
+        }`} />
+        <span className={`font-semibold text-sm ${mode === "islamic" ? "text-teal-800" : "text-gray-700"}`}>
+          Islamic giving
+        </span>
+      </div>
+      <p className="text-xs text-gray-500 leading-relaxed pl-5">
+        Zakaat, Sadqah, or interest disposal
+      </p>
+    </button>
+
+  </div>
+</div>
+```
+
+**4. When `mode === "islamic"`, show sub-type pills immediately below the cards:**
+
+```tsx
+{mode === "islamic" && (
+  <div className="flex gap-2 mb-5 flex-wrap">
+    {[
+      { key: "sadqah", label: "Sadqah" },
+      { key: "zakaat", label: "Zakaat" },
+      { key: "interest", label: "Dispose Interest" },
+    ].map(({ key, label }) => (
+      <button
+        key={key}
+        onClick={() => setIslamicType(key as "sadqah" | "zakaat" | "interest")}
+        className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-all duration-150 ${
+          islamicType === key
+            ? "border-teal-500 bg-teal-50 text-teal-700"
+            : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+        }`}
+      >
+        {label}
+      </button>
+    ))}
+  </div>
+)}
+```
+
+**5. Context banners — show below the choice cards / pills based on current selection:**
+
+```tsx
+{mode === "general" && (
+  <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-sm text-emerald-800 mb-5 flex items-start gap-3">
+    <span className="text-base mt-0.5">🏥</span>
+    <p>Your donation funds <strong>clinic operations</strong> — consultations, medicines, and care for patients who cannot afford treatment.</p>
+  </div>
+)}
+{mode === "islamic" && islamicType === "sadqah" && (
+  <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-sm text-emerald-800 mb-5 flex items-start gap-3">
+    <span className="text-base mt-0.5">🤲</span>
+    <p><strong>Sadqah</strong> is voluntary charity given freely. Recurring donations are available for ongoing reward.</p>
+  </div>
+)}
+{mode === "islamic" && islamicType === "zakaat" && (
+  <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-sm text-amber-800 mb-5 flex items-start gap-3">
+    <span className="text-base mt-0.5">⭐</span>
+    <p><strong>Zakaat</strong> is allocated to the most deserving cases. Select a specific case or let us distribute where needed most.</p>
+  </div>
+)}
+{mode === "islamic" && islamicType === "interest" && (
+  <div className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-3 text-sm text-orange-800 mb-5 flex items-start gap-3">
+    <span className="text-base mt-0.5">🔄</span>
+    <p>Dispose of interest (riba) funds by donating to charity without expecting reward, as a means of purification. <a href="https://islamqa.org/hanafi/muftionline/114377/" target="_blank" rel="noopener noreferrer" className="underline font-medium">View fatwa</a></p>
+  </div>
+)}
+```
+
+**6. Zakaat case selector — show only when `mode === "islamic" && islamicType === "zakaat"`:**
+
+Keep the existing case selector block but change its condition from `type === "zakaat"` to `mode === "islamic" && islamicType === "zakaat"`.
+
+**7. Frequency selector — show only when the effective type is `"sadqah"` (i.e. `mode === "general"` or `mode === "islamic" && islamicType === "sadqah"`):**
+
+Change the condition from `type === "sadqah"` to:
+```ts
+(mode === "general" || (mode === "islamic" && islamicType === "sadqah"))
+```
+
+**8. Remove the old tab buttons entirely** — the three `<button>` elements for Sadqah / Zakaat / Dispose Interest at the top of the widget. Everything is now driven by `mode` + `islamicType`.
+
+**9. No backend changes needed.** The internal `type` value passed to the API remains `"sadqah" | "zakaat" | "interest"` — the `mode` state is UI-only.
+
+---
+
+That's the full spec. Paste this into Replit Agent and it should be able to execute it cleanly against the existing file.
