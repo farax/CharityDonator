@@ -228,8 +228,8 @@ const CheckoutForm = ({ isSubscription = false }: { isSubscription?: boolean }) 
           throw new Error('Failed to collect payment method');
         }
         
-        const resolvedEmail = email || donationDetails?.email || '';
-        const resolvedName = name || donationDetails?.name || '';
+        const resolvedEmail = email || donationDetails?.email || paymentMethod.billing_details?.email || '';
+        const resolvedName = name || donationDetails?.name || paymentMethod.billing_details?.name || '';
         console.log('[SUBSCRIPTION DEBUG] sending paymentMethodId:', paymentMethod.id, 'donationId:', donationDetails.id, 'email:', resolvedEmail);
 
         // Create a subscription with the payment method
