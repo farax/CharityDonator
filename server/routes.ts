@@ -1443,6 +1443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cases = await storage.getActiveZakaatCases();
       res.json(cases);
     } catch (error) {
+      console.error("Failed to fetch active zakaat cases:", error);
       res.status(500).json({ message: "Failed to fetch active zakaat cases" });
     }
   });
